@@ -39,16 +39,6 @@ export async function POST(request: NextRequest) {
                     ? '/admin/dashboard'
                     : '/exporter/dashboard';
 
-        const { cookies } = require('next/headers');
-        const cookieStore = await cookies();
-        cookieStore.set('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 7,
-            path: '/',
-        });
-
         const response = NextResponse.json({
             success: true,
             redirectUrl: dashboardUrl,

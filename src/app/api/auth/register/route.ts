@@ -41,16 +41,6 @@ export async function POST(request: NextRequest) {
 
         const token = generateToken({ userId: user.id, email: user.email, role: user.role });
 
-        const { cookies } = require('next/headers');
-        const cookieStore = await cookies();
-        cookieStore.set('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 7,
-            path: '/',
-        });
-
         const response = NextResponse.json(
             {
                 user: { id: user.id, email: user.email, name: user.name, role: user.role, phone: user.phone },
