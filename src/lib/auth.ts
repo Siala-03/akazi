@@ -2,11 +2,12 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as jwt.SignOptions['expiresIn'];
 
-if (!JWT_SECRET) {
-    throw new Error('Please define the JWT_SECRET environment variable inside .env.local');
+function getJwtSecret(): string {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET environment variable is not set');
+    return secret;
 }
 
 export interface JWTPayload {
@@ -39,10 +40,7 @@ export async function verifyPassword(
  * Generate JWT token
  */
 export function generateToken(payload: JWTPayload): string {
-    console.log('[Auth] Generating token with JWT_SECRET length:', JWT_SECRET?.length || 0);
-    console.log('[Auth] Token payload:', { userId: payload.userId, email: payload.email, role: payload.role });
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    console.log('[Auth] Generated token length:', token.length);
+    const token = jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
     return token;
 }
 
@@ -51,7 +49,7 @@ export function generateToken(payload: JWTPayload): string {
  */
 export function verifyToken(token: string): JWTPayload | null {
     try {
-        const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+        const decoded = jwt.verify(token, getJwtSecret()) as JWTPayload;
         console.log('[Auth] Token verified successfully for user:', decoded.email);
         return decoded;
     } catch (error) {

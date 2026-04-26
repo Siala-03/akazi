@@ -1,9 +1,9 @@
 import { SignJWT, jwtVerify } from 'jose';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
-
-if (!JWT_SECRET) {
-    throw new Error('Please define the JWT_SECRET environment variable');
+function getJwtSecret(): string {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET environment variable is not set');
+    return secret;
 }
 
 export interface JWTPayload {
@@ -19,7 +19,7 @@ export interface JWTPayload {
  */
 export async function verifyTokenEdge(token: string): Promise<JWTPayload | null> {
     try {
-        const secret = new TextEncoder().encode(JWT_SECRET);
+        const secret = new TextEncoder().encode(getJwtSecret());
         const { payload } = await jwtVerify(token, secret);
         
         console.log('[Auth Edge] Token verified successfully for user:', payload.email);
@@ -41,7 +41,7 @@ export async function verifyTokenEdge(token: string): Promise<JWTPayload | null>
  * Generate JWT token (Edge runtime compatible)
  */
 export async function generateTokenEdge(payload: JWTPayload): Promise<string> {
-    const secret = new TextEncoder().encode(JWT_SECRET);
+    const secret = new TextEncoder().encode(getJwtSecret());
     const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
     
     // Convert expires in to seconds
