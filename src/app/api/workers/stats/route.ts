@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import WorkerModel from '@/models/Worker';
-import SessionModel from '@/models/Session';
-import BagModel from '@/models/Bag';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function GET() {
@@ -12,70 +9,57 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const DEFAULT_HOURLY_RATE = 50;
 
-        // Get worker counts
         const [totalActiveWorkers, totalInactiveWorkers] = await Promise.all([
-            WorkerModel.countDocuments({ status: 'active' }),
-            WorkerModel.countDocuments({ status: { $ne: 'active' } })
+            prisma.worker.count({ where: { status: 'active' } }),
+            prisma.worker.count({ where: { status: { not: 'active' } } }),
         ]);
 
-        // Get all sessions to calculate hours and costs
-        const allSessions = await SessionModel.find({ status: { $in: ['active', 'completed'] } })
-            .select('startTime endTime status');
-
-        let totalHours = 0;
-        allSessions.forEach((session: any) => {
-            if (session.endTime) {
-                const hours = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / (1000 * 60 * 60);
-                totalHours += hours;
-            } else if (session.status === 'active') {
-                const hours = (Date.now() - new Date(session.startTime).getTime()) / (1000 * 60 * 60);
-                totalHours += hours;
-            }
+        const allSessions = await prisma.session.findMany({
+            where: { status: { in: ['active', 'closed'] } },
+            select: { startTime: true, endTime: true, status: true },
         });
 
-        const totalLaborCosts = totalHours * DEFAULT_HOURLY_RATE;
+        let totalHours = 0;
+        for (const s of allSessions) {
+            if (s.endTime) {
+                totalHours += (s.endTime.getTime() - s.startTime.getTime()) / (1000 * 60 * 60);
+            } else if (s.status === 'active') {
+                totalHours += (Date.now() - s.startTime.getTime()) / (1000 * 60 * 60);
+            }
+        }
+
         const avgHoursPerWorker = totalActiveWorkers > 0 ? totalHours / totalActiveWorkers : 0;
 
-        // Find top performer (most bags processed)
-        const topPerformerData = await BagModel.aggregate([
-            { $unwind: '$workers' },
-            {
-                $group: {
-                    _id: '$workers',
-                    bagsProcessed: { $sum: 1 }
-                }
+        // Top performer: worker with most bag associations
+        const topBagCounts = await prisma.bagWorker.groupBy({
+            by: ['workerId'],
+            _count: { id: true },
+            orderBy: { _count: { id: 'desc' } },
+            take: 1,
+        });
+
+        let topPerformer = null;
+        if (topBagCounts.length > 0) {
+            const topWorker = await prisma.worker.findUnique({
+                where: { id: topBagCounts[0].workerId },
+                select: { fullName: true },
+            });
+            if (topWorker) {
+                topPerformer = { name: topWorker.fullName, bagsProcessed: topBagCounts[0]._count.id };
+            }
+        }
+
+        return NextResponse.json({
+            stats: {
+                totalActiveWorkers,
+                totalInactiveWorkers,
+                totalLaborCosts: Math.round(totalHours * DEFAULT_HOURLY_RATE * 100) / 100,
+                avgHoursPerWorker: Math.round(avgHoursPerWorker * 10) / 10,
+                topPerformer,
             },
-            { $sort: { bagsProcessed: -1 } },
-            { $limit: 1 },
-            {
-                $lookup: {
-                    from: 'workers',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'workerInfo'
-                }
-            },
-            { $unwind: '$workerInfo' }
-        ]);
-
-        const topPerformer = topPerformerData.length > 0 ? {
-            name: topPerformerData[0].workerInfo.fullName,
-            bagsProcessed: topPerformerData[0].bagsProcessed
-        } : null;
-
-        const stats = {
-            totalActiveWorkers,
-            totalInactiveWorkers,
-            totalLaborCosts: Math.round(totalLaborCosts * 100) / 100,
-            avgHoursPerWorker: Math.round(avgHoursPerWorker * 10) / 10,
-            topPerformer
-        };
-
-        return NextResponse.json({ stats });
+        });
     } catch (error) {
         console.error('Get worker stats error:', error);
         return NextResponse.json(

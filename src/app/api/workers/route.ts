@@ -1,60 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import WorkerModel from '@/models/Worker';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { generateWorkerId } from '@/lib/utils';
 import { randomUUID } from 'crypto';
 import QRCode from 'qrcode';
 import { sendQrBadgeEmail } from '@/lib/email';
+import { toMongoArray, toMongo } from '@/lib/serialize';
 
-// GET - List all workers
 export async function GET(request: NextRequest) {
     try {
-        console.log('[Workers API] GET request received');
-        
         const currentUser = await getCurrentUser();
-        console.log('[Workers API] Current user:', currentUser?.email || 'none');
-        
         if (!currentUser) {
-            console.log('[Workers API] No authenticated user');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
-
-        console.log('[Workers API] Connecting to database...');
-        await dbConnect();
-        console.log('[Workers API] Database connected');
 
         const { searchParams } = new URL(request.url);
         const search = searchParams.get('search');
         const status = searchParams.get('status');
 
-        let query: any = {};
-
-        // Filter by status
-        if (status) {
-            query.status = status;
-        }
-
-        // Search by name, phone, or workerId
+        const where: any = {};
+        if (status) where.status = status;
         if (search) {
-            query.$or = [
-                { fullName: { $regex: search, $options: 'i' } },
-                { phone: { $regex: search, $options: 'i' } },
-                { workerId: { $regex: search, $options: 'i' } },
+            where.OR = [
+                { fullName: { contains: search, mode: 'insensitive' } },
+                { phone: { contains: search, mode: 'insensitive' } },
+                { workerId: { contains: search, mode: 'insensitive' } },
             ];
         }
 
-        console.log('[Workers API] Query:', JSON.stringify(query));
-        const workers = await WorkerModel.find(query)
-            .populate('cooperativeId')
-            .sort({ createdAt: -1 })
-            .limit(100);
+        const workers = await prisma.worker.findMany({
+            where,
+            include: { cooperative: true },
+            orderBy: { createdAt: 'desc' },
+            take: 100,
+        });
 
-        console.log('[Workers API] Found', workers.length, 'workers');
-        
-        // Get start/end of the current week (Monday–Sunday)
+        // Calculate weekly sessions for each worker
         const now = new Date();
-        const dayOfWeek = now.getDay(); // 0 = Sun, 1 = Mon, ...
+        const dayOfWeek = now.getDay();
         const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
         const weekStart = new Date(now);
         weekStart.setDate(now.getDate() - daysFromMonday);
@@ -62,21 +45,23 @@ export async function GET(request: NextRequest) {
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 7);
 
-        const SESSION_RATE = 2000; // RWF per session
-
-        // Single aggregation replaces N individual queries (one per worker)
-        const SessionModel = (await import('@/models/Session')).default;
-        const sessionCounts = await SessionModel.aggregate([
-            { $match: { workerId: { $in: workers.map(w => w._id) }, date: { $gte: weekStart, $lt: weekEnd } } },
-            { $group: { _id: '$workerId', count: { $sum: 1 } } },
-        ]);
-        const sessionCountMap = new Map(sessionCounts.map((s: any) => [s._id.toString(), s.count]));
-
-        const workersWithEarnings = workers.map(worker => {
-            const weekSessions = sessionCountMap.get(worker._id.toString()) || 0;
-            return { ...worker.toObject(), weekSessions, earnings: weekSessions * SESSION_RATE };
+        const SESSION_RATE = 2000;
+        const sessionCounts = await prisma.session.groupBy({
+            by: ['workerId'],
+            where: {
+                workerId: { in: workers.map(w => w.id) },
+                date: { gte: weekStart, lt: weekEnd },
+            },
+            _count: { id: true },
         });
-        
+        const sessionCountMap = new Map(sessionCounts.map(s => [s.workerId, s._count.id]));
+
+        const workersWithEarnings = workers.map(w => {
+            const weekSessions = sessionCountMap.get(w.id) || 0;
+            const serialized = toMongo(w, { cooperative: 'cooperativeId' });
+            return { ...serialized, weekSessions, earnings: weekSessions * SESSION_RATE };
+        });
+
         return NextResponse.json({ workers: workersWithEarnings });
     } catch (error) {
         console.error('[Workers API] Error:', error);
@@ -87,70 +72,48 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST - Create new worker
 export async function POST(request: NextRequest) {
     try {
-        console.log('[Workers API] POST - Creating new worker');
-        
         const currentUser = await getCurrentUser();
         if (!currentUser || !['supervisor', 'admin'].includes(currentUser.role)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const body = await request.json();
-        console.log('[Workers API] Request body received:', { ...body, photo: body.photo ? '[photo data]' : 'none' });
 
-        // Validate required fields
         if (!body.cooperativeId) {
-            return NextResponse.json(
-                { error: 'Cooperative ID is required', details: 'Please select a cooperative' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'Cooperative ID is required' }, { status: 400 });
         }
-
         if (!body.fullName || !body.phone) {
-            return NextResponse.json(
-                { error: 'Missing required fields', details: 'Full name and phone are required' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'Missing required fields', details: 'Full name and phone are required' }, { status: 400 });
         }
 
-        // Use provided national ID, or auto-generate one if blank
         let workerId: string;
         if (body.workerId && String(body.workerId).trim()) {
             workerId = String(body.workerId).trim().toUpperCase();
-            // Ensure this national ID is not already registered
-            const existing = await WorkerModel.findOne({ workerId });
+            const existing = await prisma.worker.findUnique({ where: { workerId } });
             if (existing) {
-                return NextResponse.json(
-                    { error: 'A worker with this National ID is already registered' },
-                    { status: 409 }
-                );
+                return NextResponse.json({ error: 'A worker with this National ID is already registered' }, { status: 409 });
             }
         } else {
             workerId = generateWorkerId();
         }
-        console.log('[Workers API] Worker ID:', workerId);
 
-        // Clean up empty string values for optional ObjectId fields
-        const cleanedBody = { ...body };
-        if (cleanedBody.facilityId === '' || cleanedBody.facilityId === null) {
-            delete cleanedBody.facilityId;
-        }
-        // Remove workerId from body so we use our resolved value
-        delete cleanedBody.workerId;
+        const { workerId: _wid, facilityId: rawFacility, ...rest } = body;
+        const facilityId = rawFacility || null;
 
-        const worker = await WorkerModel.create({
-            ...cleanedBody,
-            workerId,
-            qrToken: randomUUID(),
-            enrollmentDate: new Date(),
-            consentTimestamp: new Date(),
+        const worker = await prisma.worker.create({
+            data: {
+                ...rest,
+                workerId,
+                facilityId,
+                qrToken: randomUUID(),
+                enrollmentDate: new Date(),
+                consentTimestamp: new Date(),
+            },
+            include: { cooperative: true },
         });
 
-        // Send QR badge email if worker has email
         if (worker.email) {
             try {
                 const qrDataUrl = await QRCode.toDataURL(`AKAZI:${worker.qrToken}`, {
@@ -165,27 +128,11 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        console.log('[Workers API] Worker created successfully:', worker._id);
-        return NextResponse.json({ worker }, { status: 201 });
+        return NextResponse.json({ worker: toMongo(worker, { cooperative: 'cooperativeId' }) }, { status: 201 });
     } catch (error) {
         console.error('[Workers API] Create worker error:', error);
-        
-        // Handle validation errors
-        if (error instanceof Error && error.name === 'ValidationError') {
-            return NextResponse.json(
-                { 
-                    error: 'Validation failed', 
-                    details: error.message 
-                },
-                { status: 400 }
-            );
-        }
-        
         return NextResponse.json(
-            { 
-                error: 'Internal server error',
-                details: error instanceof Error ? error.message : 'Unknown error'
-            },
+            { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
             { status: 500 }
         );
     }

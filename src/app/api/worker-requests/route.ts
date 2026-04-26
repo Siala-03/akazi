@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import WorkerRequestModel from '@/models/WorkerRequest';
-import ExporterModel from '@/models/Exporter';
-import UserModel from '@/models/User';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { toMongo } from '@/lib/serialize';
 
-// GET - List worker requests
+async function resolveExporterId(userId: string, email: string): Promise<string | null> {
+    const dbUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (dbUser?.exporterId) return dbUser.exporterId;
+
+    const matched = await prisma.exporter.findFirst({ where: { email: email.toLowerCase(), isActive: true } });
+    if (matched) {
+        await prisma.user.update({ where: { id: userId }, data: { exporterId: matched.id } });
+        return matched.id;
+    }
+    return null;
+}
+
 export async function GET(request: NextRequest) {
     try {
         const currentUser = await getCurrentUser();
@@ -13,54 +22,36 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
+        const where: any = {};
 
-        let query: any = {};
-
-        // Exporters can only see their own requests
         if (currentUser.role === 'exporter') {
-            // Always fetch fresh exporterId from DB — JWT may be stale
-            const dbUser = await UserModel.findById(currentUser.userId);
-            let exporterId = dbUser?.exporterId;
-
-            // Auto-link by email if exporterId not set yet
-            if (!exporterId) {
-                const matchedExporter = await ExporterModel.findOne({
-                    email: currentUser.email.toLowerCase(),
-                    isActive: true,
-                });
-                if (matchedExporter) {
-                    await UserModel.findByIdAndUpdate(currentUser.userId, { exporterId: matchedExporter._id });
-                    exporterId = matchedExporter._id;
-                }
-            }
-
-            if (!exporterId) {
-                return NextResponse.json({ workerRequests: [], notLinked: true });
-            }
-            query.exporterId = exporterId;
+            const exporterId = await resolveExporterId(currentUser.userId, currentUser.email);
+            if (!exporterId) return NextResponse.json({ workerRequests: [], notLinked: true });
+            where.exporterId = exporterId;
         }
 
-        // Optional status filter from query params
         const { searchParams } = new URL(request.url);
         const status = searchParams.get('status');
-        if (status && status !== 'all') {
-            query.status = status;
-        }
+        if (status && status !== 'all') where.status = status;
 
-        const workerRequests = await WorkerRequestModel.find(query)
-            .populate('exporterId', 'companyTradingName exporterCode')
-            .populate('reviewedBy', 'name email')
-            .sort({ createdAt: -1 });
+        const workerRequests = await prisma.workerRequest.findMany({
+            where,
+            include: {
+                exporter: { select: { id: true, companyTradingName: true, exporterCode: true } },
+                reviewer: { select: { id: true, name: true, email: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
 
-        return NextResponse.json({ workerRequests });
+        return NextResponse.json({
+            workerRequests: workerRequests.map(wr => toMongo(wr, { exporter: 'exporterId', reviewer: 'reviewedBy' })),
+        });
     } catch (error) {
         console.error('Get worker requests error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
 
-// POST - Create a new worker request (Exporter only)
 export async function POST(request: NextRequest) {
     try {
         const currentUser = await getCurrentUser();
@@ -68,24 +59,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized. Only exporters can submit requests.' }, { status: 403 });
         }
 
-        await dbConnect();
-
-        // Always fetch fresh exporterId from DB — JWT may be stale
-        const dbUser = await UserModel.findById(currentUser.userId);
-        let exporterId = dbUser?.exporterId;
-
-        // Auto-link by email if exporterId not set yet
-        if (!exporterId) {
-            const matchedExporter = await ExporterModel.findOne({
-                email: currentUser.email.toLowerCase(),
-                isActive: true,
-            });
-            if (matchedExporter) {
-                await UserModel.findByIdAndUpdate(currentUser.userId, { exporterId: matchedExporter._id });
-                exporterId = matchedExporter._id;
-            }
-        }
-
+        const exporterId = await resolveExporterId(currentUser.userId, currentUser.email);
         if (!exporterId) {
             return NextResponse.json(
                 { error: 'Your account is not linked to an exporter profile. Ask the administrator to link your account email to an exporter.' },
@@ -93,40 +67,32 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const body = await request.json();
-        const {
-            numberOfContainers,
-            numberOfBags,
-            numberOfWorkersNeeded,
-            startDate,
-            idealCompletionDate,
-            notes,
-        } = body;
+        const { numberOfContainers, numberOfBags, numberOfWorkersNeeded, startDate, idealCompletionDate, notes } = await request.json();
 
-        // Validate required fields
         if (!numberOfContainers || !numberOfBags || !numberOfWorkersNeeded || !startDate || !idealCompletionDate) {
             return NextResponse.json({ error: 'All required fields must be provided.' }, { status: 400 });
         }
-
         if (new Date(idealCompletionDate) <= new Date(startDate)) {
             return NextResponse.json({ error: 'Ideal completion date must be after start date.' }, { status: 400 });
         }
 
-        const workerRequest = await WorkerRequestModel.create({
-            exporterId,
-            numberOfContainers,
-            numberOfBags,
-            numberOfWorkersNeeded,
-            startDate: new Date(startDate),
-            idealCompletionDate: new Date(idealCompletionDate),
-            notes,
-            status: 'pending',
+        const workerRequest = await prisma.workerRequest.create({
+            data: {
+                exporterId,
+                numberOfContainers,
+                numberOfBags,
+                numberOfWorkersNeeded,
+                startDate: new Date(startDate),
+                idealCompletionDate: new Date(idealCompletionDate),
+                notes,
+                status: 'pending',
+            },
+            include: {
+                exporter: { select: { id: true, companyTradingName: true, exporterCode: true } },
+            },
         });
 
-        const populated = await WorkerRequestModel.findById(workerRequest._id)
-            .populate('exporterId', 'companyTradingName exporterCode');
-
-        return NextResponse.json({ workerRequest: populated }, { status: 201 });
+        return NextResponse.json({ workerRequest: toMongo(workerRequest, { exporter: 'exporterId' }) }, { status: 201 });
     } catch (error) {
         console.error('Create worker request error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import AttendanceModel from '@/models/Attendance';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { toMongo } from '@/lib/serialize';
 
 export async function GET(request: NextRequest) {
     try {
@@ -10,70 +10,44 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const { searchParams } = new URL(request.url);
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
-        const workerId = searchParams.get('workerId');
+        const workerIdParam = searchParams.get('workerId');
 
-        let query: any = {};
-
-        // Date range filter
+        const where: any = {};
         if (startDate && endDate) {
-            query.date = {
-                $gte: new Date(startDate),
-                $lte: new Date(endDate),
-            };
+            where.date = { gte: new Date(startDate), lte: new Date(endDate) };
         }
+        if (workerIdParam) where.workerId = workerIdParam;
 
-        // Worker filter
-        if (workerId) {
-            query.workerId = workerId;
-        }
-
-        const attendance = await AttendanceModel.find(query)
-            .populate('workerId')
-            .populate('facilityId')
-            .sort({ date: -1 });
-
-        // Calculate statistics
-        const totalDays = attendance.length;
-        const checkedOut = attendance.filter((a: any) => a.status === 'checked-out').length;
-        const onSite = attendance.filter((a: any) => a.status === 'on-site').length;
-
-        // Group by worker
-        const workerStats: any = {};
-        attendance.forEach((record: any) => {
-            const workerId = record.workerId._id.toString();
-            if (!workerStats[workerId]) {
-                workerStats[workerId] = {
-                    worker: record.workerId,
-                    totalDays: 0,
-                    checkedOutDays: 0,
-                };
-            }
-            workerStats[workerId].totalDays++;
-            if (record.status === 'checked-out') {
-                workerStats[workerId].checkedOutDays++;
-            }
+        const attendance = await prisma.attendance.findMany({
+            where,
+            include: { worker: true, facility: true },
+            orderBy: { date: 'desc' },
         });
 
+        const totalDays = attendance.length;
+        const checkedOut = attendance.filter(a => a.status === 'checked-out').length;
+        const onSite = attendance.filter(a => a.status === 'on-site').length;
+
+        const workerStats: Record<string, any> = {};
+        for (const record of attendance) {
+            const wid = record.workerId;
+            if (!workerStats[wid]) {
+                workerStats[wid] = { worker: toMongo(record.worker), totalDays: 0, checkedOutDays: 0 };
+            }
+            workerStats[wid].totalDays++;
+            if (record.status === 'checked-out') workerStats[wid].checkedOutDays++;
+        }
+
         return NextResponse.json({
-            attendance,
-            summary: {
-                totalRecords: totalDays,
-                checkedOut,
-                onSite,
-                uniqueWorkers: Object.keys(workerStats).length,
-            },
+            attendance: attendance.map(a => toMongo(a, { worker: 'workerId', facility: 'facilityId' })),
+            summary: { totalRecords: totalDays, checkedOut, onSite, uniqueWorkers: Object.keys(workerStats).length },
             workerStats: Object.values(workerStats),
         });
     } catch (error) {
         console.error('Attendance report error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import AttendanceModel from '@/models/Attendance';
-import WorkerModel from '@/models/Worker';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfDay, getEndOfDay } from '@/lib/utils';
+import { toMongo } from '@/lib/serialize';
 
-// POST - Check in worker
 export async function POST(request: NextRequest) {
     try {
         const currentUser = await getCurrentUser();
@@ -13,62 +11,43 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
+        const { workerId } = await request.json();
 
-        const body = await request.json();
-        const { workerId } = body;
-
-        // Validate worker exists and is active
-        const worker = await WorkerModel.findById(workerId);
+        const worker = await prisma.worker.findUnique({ where: { id: workerId } });
         if (!worker) {
             return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
         }
         if (worker.status !== 'active') {
-            return NextResponse.json(
-                { error: 'Worker is not active' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'Worker is not active' }, { status: 400 });
         }
 
         const today = new Date();
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
-        // Check if worker has ANY attendance record today (on-site or checked-out)
-        // According to documentation: One check-in per day only
-        const existingAttendance = await AttendanceModel.findOne({
-            workerId,
-            date: { $gte: startOfDay, $lte: endOfDay },
+        const existingAttendance = await prisma.attendance.findFirst({
+            where: { workerId, date: { gte: startOfDay, lte: endOfDay } },
         });
 
         if (existingAttendance) {
             if (existingAttendance.status === 'on-site') {
-                return NextResponse.json(
-                    { error: 'Worker is already checked in and currently on-site' },
-                    { status: 400 }
-                );
-            } else {
-                // Worker already checked in and out today
-                return NextResponse.json(
-                    { error: 'Worker has already completed attendance for today (checked in and out)' },
-                    { status: 400 }
-                );
+                return NextResponse.json({ error: 'Worker is already checked in and currently on-site' }, { status: 400 });
             }
+            return NextResponse.json({ error: 'Worker has already completed attendance for today (checked in and out)' }, { status: 400 });
         }
 
-        // Create attendance record
-        const attendance = await AttendanceModel.create({
-            workerId,
-            date: today,
-            checkInTime: new Date(),
-            status: 'on-site',
-            supervisorId: currentUser.userId,
+        const attendance = await prisma.attendance.create({
+            data: {
+                workerId,
+                date: today,
+                checkInTime: new Date(),
+                status: 'on-site',
+                supervisorId: currentUser.userId,
+            },
+            include: { worker: true },
         });
 
-        const populatedAttendance = await AttendanceModel.findById(attendance._id)
-            .populate('workerId');
-
-        return NextResponse.json({ attendance: populatedAttendance }, { status: 201 });
+        return NextResponse.json({ attendance: toMongo(attendance, { worker: 'workerId' }) }, { status: 201 });
     } catch (error) {
         console.error('[Check-in] Error:', error);
         return NextResponse.json(
@@ -78,7 +57,6 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// GET - Get today's attendance
 export async function GET() {
     try {
         const currentUser = await getCurrentUser();
@@ -86,25 +64,16 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const today = new Date();
-        const startOfDay = getStartOfDay(today);
-        const endOfDay = getEndOfDay(today);
+        const attendance = await prisma.attendance.findMany({
+            where: { date: { gte: getStartOfDay(today), lte: getEndOfDay(today) } },
+            include: { worker: true, facility: true },
+            orderBy: { checkInTime: 'desc' },
+        });
 
-        const attendance = await AttendanceModel.find({
-            date: { $gte: startOfDay, $lte: endOfDay },
-        })
-            .populate('workerId')
-            .populate('facilityId')
-            .sort({ checkInTime: -1 });
-
-        return NextResponse.json({ attendance });
+        return NextResponse.json({ attendance: attendance.map(a => toMongo(a, { worker: 'workerId', facility: 'facilityId' })) });
     } catch (error) {
         console.error('Get attendance error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

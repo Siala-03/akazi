@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import {
-    WorkerModel,
-    AttendanceModel,
-    SessionModel,
-    BagModel,
-    ExporterModel,
-    RateCardModel,
-} from '@/lib/models';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfDay, getEndOfDay } from '@/lib/utils';
 
@@ -18,22 +10,13 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
-        // Verify models are registered
-        if (!ExporterModel.modelName) {
-            throw new Error('Exporter model not registered');
-        }
-
         const today = new Date();
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
-        // Calculate last 7 days for averages
         const sevenDaysAgo = new Date(today);
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        // Parallel queries for better performance
         const [
             totalWorkers,
             workersCheckedInToday,
@@ -42,139 +25,83 @@ export async function GET(request: NextRequest) {
             bagsToday,
             bagsLast7Days,
             sessionsToday,
-            exportersToday,
             allBagsToday,
         ] = await Promise.all([
-            // 1. Total workers
-            WorkerModel.countDocuments({ status: 'active' }),
-
-            // 2. Workers checked in today
-            AttendanceModel.countDocuments({
-                date: { $gte: startOfDay, $lte: endOfDay },
+            prisma.worker.count({ where: { status: 'active' } }),
+            prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay } } }),
+            prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay }, status: 'checked-out' } }),
+            prisma.session.count({ where: { status: 'active' } }),
+            prisma.bag.count({ where: { date: { gte: startOfDay, lte: endOfDay } } }),
+            prisma.bag.count({ where: { date: { gte: sevenDaysAgo, lte: endOfDay } } }),
+            prisma.session.findMany({
+                where: { date: { gte: startOfDay, lte: endOfDay } },
+                select: { startTime: true, endTime: true, status: true },
             }),
-
-            // 3. Workers checked out today
-            AttendanceModel.countDocuments({
-                date: { $gte: startOfDay, $lte: endOfDay },
-                status: 'checked-out',
+            prisma.bag.findMany({
+                where: { date: { gte: startOfDay, lte: endOfDay } },
+                select: { exporterId: true, weight: true, workers: { select: { id: true } } },
             }),
-
-            // 4. Active sessions count
-            SessionModel.countDocuments({ status: 'active' }),
-
-            // 5. Total bags assigned today
-            BagModel.countDocuments({
-                date: { $gte: startOfDay, $lte: endOfDay },
-            }),
-
-            // 5. Bags in last 7 days (for average)
-            BagModel.countDocuments({
-                date: { $gte: sevenDaysAgo, $lte: endOfDay },
-            }),
-
-            // 6. Sessions today (for hours calculation)
-            SessionModel.find({
-                date: { $gte: startOfDay, $lte: endOfDay },
-            }).select('startTime endTime status'),
-
-            // 7. Unique exporters served today
-            BagModel.distinct('exporterId', {
-                date: { $gte: startOfDay, $lte: endOfDay },
-            }),
-
-            // 8. All bags today with details for cost calculation
-            BagModel.find({
-                date: { $gte: startOfDay, $lte: endOfDay },
-            }).populate('exporterId').select('exporterId weight workers'),
         ]);
 
-        // Calculate total kilograms (bags × 60kg)
         const totalKilograms = bagsToday * 60;
 
-        // Calculate total hours worked (aggregate from sessions)
         let totalHoursWorked = 0;
-        sessionsToday.forEach((session: any) => {
+        for (const session of sessionsToday) {
             if (session.endTime) {
-                const hours = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / (1000 * 60 * 60);
-                totalHoursWorked += hours;
+                totalHoursWorked += (session.endTime.getTime() - session.startTime.getTime()) / (1000 * 60 * 60);
             } else if (session.status === 'active') {
-                const hours = (Date.now() - new Date(session.startTime).getTime()) / (1000 * 60 * 60);
-                totalHoursWorked += hours;
+                totalHoursWorked += (Date.now() - session.startTime.getTime()) / (1000 * 60 * 60);
             }
-        });
+        }
 
-        // Calculate average workers per bag
         let avgWorkersPerBag = 0;
         if (bagsToday > 0) {
-            const totalWorkersAcrossBags = allBagsToday.reduce((sum: number, bag: any) => {
-                return sum + (bag.workers?.length || 0);
-            }, 0);
+            const totalWorkersAcrossBags = allBagsToday.reduce((sum, bag) => sum + (bag.workers?.length || 0), 0);
             avgWorkersPerBag = totalWorkersAcrossBags / bagsToday;
         }
 
-        // Number of exporters served today
-        const exportersServedToday = exportersToday.length;
+        const uniqueExporterIds = [...new Set(allBagsToday.map(b => b.exporterId).filter(Boolean))];
+        const exportersServedToday = uniqueExporterIds.length;
 
-        // Labor cost = number of sessions today × 2,000 FRw per session
         const SESSION_RATE = 2000;
         const totalLaborCostsToday = sessionsToday.length * SESSION_RATE;
 
-        // Calculate costs
-        let projectedCosts = 0;
         let totalCostForExporters = 0;
-
-        // Get active rate cards for exporters
-        const exporterIds = [...new Set(allBagsToday.map((bag: any) => bag.exporterId?._id?.toString()).filter(Boolean))];
-        
-        if (exporterIds.length > 0) {
-            const rateCards = await RateCardModel.find({
-                exporterId: { $in: exporterIds },
-                isActive: true,
-                effectiveFrom: { $lte: today },
-                $or: [
-                    { effectiveTo: null },
-                    { effectiveTo: { $gte: today } }
-                ]
+        if (uniqueExporterIds.length > 0) {
+            const rateCards = await prisma.rateCard.findMany({
+                where: { exporterId: { in: uniqueExporterIds }, isActive: true, effectiveFrom: { lte: today } },
             });
+            const rateMap = new Map(rateCards.map(rc => [rc.exporterId, rc.ratePerBag]));
 
-            // Create a map of exporter -> rate
-            const rateMap = new Map();
-            rateCards.forEach((rc: any) => {
-                rateMap.set(rc.exporterId.toString(), rc.ratePerBag);
-            });
-
-            // Calculate costs per exporter
-            const exporterBagCounts = new Map();
-            allBagsToday.forEach((bag: any) => {
-                const exporterId = bag.exporterId?._id?.toString();
-                if (exporterId) {
-                    exporterBagCounts.set(exporterId, (exporterBagCounts.get(exporterId) || 0) + 1);
+            const exporterBagCounts = new Map<string, number>();
+            for (const bag of allBagsToday) {
+                if (bag.exporterId) {
+                    exporterBagCounts.set(bag.exporterId, (exporterBagCounts.get(bag.exporterId) || 0) + 1);
                 }
-            });
+            }
 
             exporterBagCounts.forEach((bagCount, exporterId) => {
-                const rate = rateMap.get(exporterId) || 0;
-                const cost = bagCount * rate;
-                totalCostForExporters += cost;
+                totalCostForExporters += bagCount * (rateMap.get(exporterId) || 0);
             });
-
-            projectedCosts = totalCostForExporters;
         }
 
-        // Get trend data — 2 aggregations replace 14 sequential queries
         const trendStart = getStartOfDay(new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000));
+
         const [attTrend, bagsTrend] = await Promise.all([
-            AttendanceModel.aggregate([
-                { $match: { date: { $gte: trendStart, $lte: endOfDay } } },
-                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } }, count: { $sum: 1 } } },
-            ]),
-            BagModel.aggregate([
-                { $match: { date: { $gte: trendStart, $lte: endOfDay } } },
-                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } }, count: { $sum: 1 } } },
-            ]),
+            prisma.$queryRaw<{ day: string; count: bigint }[]>`
+                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
+                FROM "Attendance"
+                WHERE date >= ${trendStart} AND date <= ${endOfDay}
+                GROUP BY day`,
+            prisma.$queryRaw<{ day: string; count: bigint }[]>`
+                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
+                FROM "Bag"
+                WHERE date >= ${trendStart} AND date <= ${endOfDay}
+                GROUP BY day`,
         ]);
-        const attMap = new Map(attTrend.map((d: any) => [d._id, d.count]));
-        const bagsMap = new Map(bagsTrend.map((d: any) => [d._id, d.count]));
+
+        const attMap = new Map(attTrend.map(d => [d.day, Number(d.count)]));
+        const bagsMap = new Map(bagsTrend.map(d => [d.day, Number(d.count)]));
 
         const trendData = [];
         for (let i = 6; i >= 0; i--) {
@@ -188,26 +115,23 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        const analytics = {
-            totalWorkers,
-            workersCheckedInToday,
-            workersCheckedOutToday,
-            activeSessions,
-            bagsToday,
-            totalKilograms,
-            totalHoursWorked: Math.round(totalHoursWorked * 10) / 10, // Round to 1 decimal
-            avgWorkersPerBag: Math.round(avgWorkersPerBag * 10) / 10, // Round to 1 decimal
-            exportersServedToday,
-            totalLaborCostsToday, // sessions × 2,000 FRw
-            projectedCosts: Math.round(projectedCosts * 100) / 100, // Round to 2 decimals
-            totalCostForExporters: Math.round(totalCostForExporters * 100) / 100,
-            trends: {
-                attendance: trendData,
-                bags: trendData,
+        return NextResponse.json({
+            analytics: {
+                totalWorkers,
+                workersCheckedInToday,
+                workersCheckedOutToday,
+                activeSessions,
+                bagsToday,
+                totalKilograms,
+                totalHoursWorked: Math.round(totalHoursWorked * 10) / 10,
+                avgWorkersPerBag: Math.round(avgWorkersPerBag * 10) / 10,
+                exportersServedToday,
+                totalLaborCostsToday,
+                projectedCosts: Math.round(totalCostForExporters * 100) / 100,
+                totalCostForExporters: Math.round(totalCostForExporters * 100) / 100,
+                trends: { attendance: trendData, bags: trendData },
             },
-        };
-
-        return NextResponse.json({ analytics });
+        });
     } catch (error) {
         console.error('Get supervisor analytics error:', error);
         return NextResponse.json(

@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import WorkerModel from '@/models/Worker';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { toMongo } from '@/lib/serialize';
 
-// GET - Get single worker
 export async function GET(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -14,27 +13,23 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const { id } = await params;
-        const worker = await WorkerModel.findById(id)
-            .populate('cooperativeId');
+        const worker = await prisma.worker.findUnique({
+            where: { id },
+            include: { cooperative: true },
+        });
 
         if (!worker) {
             return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
         }
 
-        return NextResponse.json({ worker });
+        return NextResponse.json({ worker: toMongo(worker, { cooperative: 'cooperativeId' }) });
     } catch (error) {
         console.error('Get worker error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
 
-// PUT - Update worker
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -45,39 +40,27 @@ export async function PUT(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const body = await request.json();
         const { id } = await params;
 
-        // Don't allow changing workerId or critical audit fields
-        delete body.workerId;
-        delete body.enrollmentDate;
-        delete body.consentTimestamp;
+        // Strip immutable fields
+        const { workerId: _wid, enrollmentDate: _ed, consentTimestamp: _ct, id: _id, ...data } = body;
 
-        const worker = await WorkerModel.findByIdAndUpdate(
-            id,
-            { $set: body },
-            { new: true, runValidators: true }
-        ).populate('cooperativeId');
+        const worker = await prisma.worker.update({
+            where: { id },
+            data,
+            include: { cooperative: true },
+        });
 
-        if (!worker) {
-            return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
-        }
-
-        return NextResponse.json({ worker });
+        return NextResponse.json({ worker: toMongo(worker, { cooperative: 'cooperativeId' }) });
     } catch (error) {
         console.error('Update worker error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
 
-// DELETE - Deactivate worker (soft delete)
 export async function DELETE(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -86,25 +69,15 @@ export async function DELETE(
             return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const { id } = await params;
-        const worker = await WorkerModel.findByIdAndUpdate(
-            id,
-            { $set: { status: 'inactive' } },
-            { new: true }
-        );
+        const worker = await prisma.worker.update({
+            where: { id },
+            data: { status: 'inactive' },
+        });
 
-        if (!worker) {
-            return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
-        }
-
-        return NextResponse.json({ message: 'Worker deactivated successfully', worker });
+        return NextResponse.json({ message: 'Worker deactivated successfully', worker: { ...worker, _id: worker.id } });
     } catch (error) {
         console.error('Delete worker error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

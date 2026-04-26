@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import SessionModel from '@/models/Session';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { toMongo } from '@/lib/serialize';
 
-// PUT - End session
 export async function PUT(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -14,37 +13,26 @@ export async function PUT(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
-        const session = await SessionModel.findById((await params).id);
-
-        if (!session) {
+        const { id } = await params;
+        const existing = await prisma.session.findUnique({ where: { id } });
+        if (!existing) {
             return NextResponse.json({ error: 'Session not found' }, { status: 404 });
         }
-
-        if (session.status !== 'active') {
-            return NextResponse.json(
-                { error: 'Session is not active' },
-                { status: 400 }
-            );
+        if (existing.status !== 'active') {
+            return NextResponse.json({ error: 'Session is not active' }, { status: 400 });
         }
 
-        // End the session
-        session.endTime = new Date();
-        session.status = 'closed' as const;
-        await session.save();
+        const session = await prisma.session.update({
+            where: { id },
+            data: { endTime: new Date(), status: 'closed' },
+            include: { worker: true, exporter: true, facility: true },
+        });
 
-        const populatedSession = await SessionModel.findById(session._id)
-            .populate('workerId')
-            .populate('exporterId')
-            .populate('facilityId');
-
-        return NextResponse.json({ session: populatedSession });
+        return NextResponse.json({
+            session: toMongo(session, { worker: 'workerId', exporter: 'exporterId', facility: 'facilityId' }),
+        });
     } catch (error) {
         console.error('End session error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

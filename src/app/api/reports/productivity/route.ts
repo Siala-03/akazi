@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import BagModel from '@/models/Bag';
-import SessionModel from '@/models/Session';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { toMongo } from '@/lib/serialize';
 
 export async function GET(request: NextRequest) {
     try {
@@ -11,93 +10,72 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const { searchParams } = new URL(request.url);
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
 
-        let query: any = {};
-
-        // Date range filter
+        const where: any = {};
         if (startDate && endDate) {
-            query.date = {
-                $gte: new Date(startDate),
-                $lte: new Date(endDate),
-            };
+            where.date = { gte: new Date(startDate), lte: new Date(endDate) };
         }
 
-        const bags = await BagModel.find(query)
-            .populate('exporterId')
-            .populate('facilityId')
-            .populate('workers.workerId');
+        const [bags, sessions] = await Promise.all([
+            prisma.bag.findMany({
+                where,
+                include: { exporter: true, facility: true, workers: { include: { worker: true } } },
+            }),
+            prisma.session.findMany({
+                where,
+                include: { worker: true, exporter: true },
+            }),
+        ]);
 
-        const sessions = await SessionModel.find(query)
-            .populate('workerId')
-            .populate('exporterId');
-
-        // Calculate productivity metrics
-        const workerProductivity: any = {};
-        bags.forEach((bag: any) => {
-            bag.workers.forEach((worker: any) => {
-                const workerId = worker.workerId._id.toString();
-                if (!workerProductivity[workerId]) {
-                    workerProductivity[workerId] = {
-                        worker: worker.workerId,
-                        bagsProcessed: 0,
-                        totalWeight: 0,
-                    };
+        const workerProductivity: Record<string, any> = {};
+        for (const bag of bags) {
+            for (const bw of bag.workers) {
+                const wid = bw.workerId;
+                if (!workerProductivity[wid]) {
+                    workerProductivity[wid] = { worker: toMongo(bw.worker), bagsProcessed: 0, totalWeight: 0 };
                 }
-                workerProductivity[workerId].bagsProcessed++;
-                workerProductivity[workerId].totalWeight += bag.weight / bag.workers.length;
-            });
-        });
-
-        // Calculate session duration stats
-        const completedSessions = sessions.filter((s: any) => s.status === 'completed' && s.endTime);
-        const avgSessionDuration = completedSessions.length > 0
-            ? completedSessions.reduce((sum: number, s: any) => {
-                const duration = new Date(s.endTime).getTime() - new Date(s.startTime).getTime();
-                return sum + duration;
-            }, 0) / completedSessions.length
-            : 0;
-
-        // Exporter productivity
-        const exporterProductivity: any = {};
-        bags.forEach((bag: any) => {
-            const exporterId = bag.exporterId._id.toString();
-            if (!exporterProductivity[exporterId]) {
-                exporterProductivity[exporterId] = {
-                    exporter: bag.exporterId,
-                    bagsProcessed: 0,
-                    totalWeight: 0,
-                };
+                workerProductivity[wid].bagsProcessed++;
+                workerProductivity[wid].totalWeight += bag.weight / bag.workers.length;
             }
-            exporterProductivity[exporterId].bagsProcessed++;
-            exporterProductivity[exporterId].totalWeight += bag.weight;
-        });
+        }
 
-        // Facility productivity
-        const facilityStats: any = {};
-        bags.forEach((bag: any) => {
-            const facilityId = bag.facilityId._id.toString();
-            if (!facilityStats[facilityId]) {
-                facilityStats[facilityId] = {
-                    facility: bag.facilityId,
-                    bagsProcessed: 0,
-                    totalWeight: 0,
-                };
+        const completedSessions = sessions.filter(s => s.status === 'closed' && s.endTime);
+        const avgSessionDuration =
+            completedSessions.length > 0
+                ? completedSessions.reduce((sum, s) => sum + (s.endTime!.getTime() - s.startTime.getTime()), 0) /
+                  completedSessions.length
+                : 0;
+
+        const exporterProductivity: Record<string, any> = {};
+        for (const bag of bags) {
+            const eid = bag.exporterId;
+            if (!exporterProductivity[eid]) {
+                exporterProductivity[eid] = { exporter: toMongo(bag.exporter), bagsProcessed: 0, totalWeight: 0 };
             }
-            facilityStats[facilityId].bagsProcessed++;
-            facilityStats[facilityId].totalWeight += bag.weight;
-        });
+            exporterProductivity[eid].bagsProcessed++;
+            exporterProductivity[eid].totalWeight += bag.weight;
+        }
+
+        const facilityStats: Record<string, any> = {};
+        for (const bag of bags) {
+            if (!bag.facilityId) continue;
+            const fid = bag.facilityId;
+            if (!facilityStats[fid]) {
+                facilityStats[fid] = { facility: toMongo(bag.facility), bagsProcessed: 0, totalWeight: 0 };
+            }
+            facilityStats[fid].bagsProcessed++;
+            facilityStats[fid].totalWeight += bag.weight;
+        }
 
         return NextResponse.json({
             summary: {
                 totalBags: bags.length,
-                totalWeight: bags.reduce((sum: number, b: any) => sum + b.weight, 0),
+                totalWeight: bags.reduce((sum, b) => sum + b.weight, 0),
                 totalSessions: sessions.length,
-                activeSessions: sessions.filter((s: any) => s.status === 'active').length,
+                activeSessions: sessions.filter(s => s.status === 'active').length,
                 avgSessionDurationMinutes: Math.round(avgSessionDuration / 1000 / 60),
             },
             workerProductivity: Object.values(workerProductivity),
@@ -106,9 +84,6 @@ export async function GET(request: NextRequest) {
         });
     } catch (error) {
         console.error('Productivity report error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

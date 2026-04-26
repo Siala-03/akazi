@@ -1,45 +1,36 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import CooperativeModel from '@/models/Cooperative';
+import prisma from '@/lib/prisma';
+import { toMongo } from '@/lib/serialize';
 
-// POST - Initialize Umucyo Cooperative if it doesn't exist
 export async function POST() {
     try {
-        await dbConnect();
-
-        // Check if Umucyo already exists
-        const existing = await CooperativeModel.findOne({ 
-            $or: [
-                { code: 'UMUCYO' },
-                { name: /umucyo/i }
-            ]
+        const existing = await prisma.cooperative.findFirst({
+            where: { OR: [{ code: 'UMUCYO' }, { name: { contains: 'umucyo', mode: 'insensitive' } }] },
         });
 
         if (existing) {
-            return NextResponse.json({ 
+            return NextResponse.json({
                 message: 'Umucyo Women Cooperative already exists',
-                cooperative: existing 
+                cooperative: toMongo(existing),
             });
         }
 
-        // Create Umucyo Women Cooperative
-        const cooperative = await CooperativeModel.create({
-            name: 'Umucyo Women Cooperative',
-            code: 'UMUCYO',
-            contactPerson: 'Cooperative Manager',
-            phone: '+250788000000',
-            isActive: true,
+        const cooperative = await prisma.cooperative.create({
+            data: {
+                name: 'Umucyo Women Cooperative',
+                code: 'UMUCYO',
+                contactPerson: 'Cooperative Manager',
+                phone: '+250788000000',
+                isActive: true,
+            },
         });
 
-        return NextResponse.json({ 
-            message: 'Umucyo Women Cooperative created successfully',
-            cooperative 
-        }, { status: 201 });
+        return NextResponse.json(
+            { message: 'Umucyo Women Cooperative created successfully', cooperative: toMongo(cooperative) },
+            { status: 201 }
+        );
     } catch (error) {
         console.error('[Init Cooperative] Error:', error);
-        return NextResponse.json(
-            { error: 'Failed to initialize cooperative' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Failed to initialize cooperative' }, { status: 500 });
     }
 }

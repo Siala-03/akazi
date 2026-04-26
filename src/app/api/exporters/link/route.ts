@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import ExporterModel from '@/models/Exporter';
-import UserModel from '@/models/User';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
-// POST - Link current exporter user to an Exporter document by code
 export async function POST(request: NextRequest) {
     try {
         const currentUser = await getCurrentUser();
@@ -12,30 +9,24 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const { exporterCode } = await request.json();
         if (!exporterCode || typeof exporterCode !== 'string') {
             return NextResponse.json({ error: 'Exporter code is required.' }, { status: 400 });
         }
 
-        // Find the exporter by code (case-insensitive)
-        const exporter = await ExporterModel.findOne({
-            exporterCode: exporterCode.trim().toUpperCase(),
-            isActive: true,
+        const exporter = await prisma.exporter.findUnique({
+            where: { exporterCode: exporterCode.trim().toUpperCase() },
         });
 
-        if (!exporter) {
+        if (!exporter || !exporter.isActive) {
             return NextResponse.json(
                 { error: 'No active exporter found with that code. Please double-check and try again.' },
                 { status: 404 }
             );
         }
 
-        // Check if this exporter is already linked to another user
-        const alreadyLinked = await UserModel.findOne({
-            exporterId: exporter._id,
-            _id: { $ne: currentUser.userId },
+        const alreadyLinked = await prisma.user.findFirst({
+            where: { exporterId: exporter.id, id: { not: currentUser.userId } },
         });
 
         if (alreadyLinked) {
@@ -45,16 +36,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Link this user to the exporter
-        await UserModel.findByIdAndUpdate(currentUser.userId, { exporterId: exporter._id });
+        await prisma.user.update({ where: { id: currentUser.userId }, data: { exporterId: exporter.id } });
 
         return NextResponse.json({
             success: true,
-            exporter: {
-                _id: exporter._id,
-                exporterCode: exporter.exporterCode,
-                companyTradingName: exporter.companyTradingName,
-            },
+            exporter: { _id: exporter.id, exporterCode: exporter.exporterCode, companyTradingName: exporter.companyTradingName },
         });
     } catch (error) {
         console.error('Link exporter error:', error);

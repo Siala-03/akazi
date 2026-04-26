@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import FacilityModel from '@/models/Facility';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
-// GET - List all facilities
 export async function GET() {
     try {
         const currentUser = await getCurrentUser();
@@ -11,18 +9,15 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
+        const facilities = await prisma.facility.findMany({
+            where: { isActive: true },
+            select: { id: true, name: true, code: true, location: true },
+            orderBy: { name: 'asc' },
+        });
 
-        const facilities = await FacilityModel.find({ isActive: true })
-            .sort({ name: 1 })
-            .select('_id name code location');
-
-        return NextResponse.json({ facilities });
+        return NextResponse.json({ facilities: facilities.map(f => ({ ...f, _id: f.id })) });
     } catch (error) {
         console.error('[Facilities API] Error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

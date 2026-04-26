@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import BagModel from '@/models/Bag';
-import RateCardModel from '@/models/RateCard';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { toMongo } from '@/lib/serialize';
 
 export async function GET(request: NextRequest) {
     try {
@@ -11,88 +10,73 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const { searchParams } = new URL(request.url);
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
-        const workerId = searchParams.get('workerId');
-        const exporterId = searchParams.get('exporterId');
+        const workerIdParam = searchParams.get('workerId');
+        const exporterIdParam = searchParams.get('exporterId');
 
-        let query: any = {};
-
-        // Date range filter
+        const where: any = {};
         if (startDate && endDate) {
-            query.date = {
-                $gte: new Date(startDate),
-                $lte: new Date(endDate),
-            };
+            where.date = { gte: new Date(startDate), lte: new Date(endDate) };
         }
+        if (workerIdParam) where.workers = { some: { workerId: workerIdParam } };
+        if (exporterIdParam) where.exporterId = exporterIdParam;
 
-        // Worker filter
-        if (workerId) {
-            query['workers.workerId'] = workerId;
-        }
+        const bags = await prisma.bag.findMany({
+            where,
+            include: {
+                exporter: true,
+                facility: true,
+                workers: { include: { worker: true } },
+            },
+            orderBy: { date: 'desc' },
+        });
 
-        // Exporter filter
-        if (exporterId) {
-            query.exporterId = exporterId;
-        }
-
-        const bags = await BagModel.find(query)
-            .populate('exporterId')
-            .populate('facilityId')
-            .populate('workers.workerId')
-            .sort({ date: -1 });
-
-        // Get current rate card
-        const rateCard = await RateCardModel.findOne({ isActive: true })
-            .sort({ effectiveFrom: -1 });
-
+        const rateCard = await prisma.rateCard.findFirst({
+            where: { isActive: true },
+            orderBy: { effectiveFrom: 'desc' },
+        });
         const ratePerBag = rateCard?.ratePerBag || 1000;
 
-        // Calculate worker earnings
-        const workerEarnings: any = {};
-        bags.forEach((bag: any) => {
+        const workerEarnings: Record<string, any> = {};
+        const exporterStats: Record<string, any> = {};
+
+        for (const bag of bags) {
             const workersCount = bag.workers.length;
             const earningPerWorker = ratePerBag / workersCount;
 
-            bag.workers.forEach((worker: any) => {
-                const workerId = worker.workerId._id.toString();
-                if (!workerEarnings[workerId]) {
-                    workerEarnings[workerId] = {
-                        worker: worker.workerId,
-                        bagsContributed: 0,
-                        totalEarnings: 0,
-                    };
+            for (const bw of bag.workers) {
+                const wid = bw.workerId;
+                if (!workerEarnings[wid]) {
+                    workerEarnings[wid] = { worker: toMongo(bw.worker), bagsContributed: 0, totalEarnings: 0 };
                 }
-                workerEarnings[workerId].bagsContributed++;
-                workerEarnings[workerId].totalEarnings += earningPerWorker;
-            });
-        });
-
-        // Calculate exporter stats
-        const exporterStats: any = {};
-        bags.forEach((bag: any) => {
-            const exporterId = bag.exporterId._id.toString();
-            if (!exporterStats[exporterId]) {
-                exporterStats[exporterId] = {
-                    exporter: bag.exporterId,
-                    totalBags: 0,
-                    totalCost: 0,
-                };
+                workerEarnings[wid].bagsContributed++;
+                workerEarnings[wid].totalEarnings += earningPerWorker;
             }
-            exporterStats[exporterId].totalBags++;
-            exporterStats[exporterId].totalCost += ratePerBag;
-        });
 
-        const totalEarnings = bags.length * ratePerBag;
+            const eid = bag.exporterId;
+            if (!exporterStats[eid]) {
+                exporterStats[eid] = { exporter: toMongo(bag.exporter), totalBags: 0, totalCost: 0 };
+            }
+            exporterStats[eid].totalBags++;
+            exporterStats[eid].totalCost += ratePerBag;
+        }
 
         return NextResponse.json({
-            bags,
+            bags: bags.map(b => {
+                const { workers: bws, exporter, facility, ...rest } = b;
+                return {
+                    ...rest,
+                    _id: rest.id,
+                    exporterId: exporter ? toMongo(exporter) : rest.exporterId,
+                    facilityId: facility ? toMongo(facility) : rest.facilityId,
+                    workers: bws.map(bw => ({ _id: bw.id, workerId: toMongo(bw.worker), sessionId: bw.sessionId })),
+                };
+            }),
             summary: {
                 totalBags: bags.length,
-                totalEarnings,
+                totalEarnings: bags.length * ratePerBag,
                 ratePerBag,
                 uniqueWorkers: Object.keys(workerEarnings).length,
                 uniqueExporters: Object.keys(exporterStats).length,
@@ -102,9 +86,6 @@ export async function GET(request: NextRequest) {
         });
     } catch (error) {
         console.error('Earnings report error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

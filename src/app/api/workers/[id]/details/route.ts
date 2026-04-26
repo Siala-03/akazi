@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import SessionModel from '@/models/Session';
-import BagModel from '@/models/Bag';
-import AttendanceModel from '@/models/Attendance';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfMonth, getEndOfMonth } from '@/lib/utils';
 
 export async function GET(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -16,50 +13,42 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const { id: workerId } = await params;
         const DEFAULT_HOURLY_RATE = 50;
 
-        // Get all sessions for this worker
-        const workerSessions = await SessionModel.find({ workerId })
-            .select('startTime endTime status');
+        const workerSessions = await prisma.session.findMany({
+            where: { workerId },
+            select: { startTime: true, endTime: true, status: true },
+        });
 
         let totalHours = 0;
-        workerSessions.forEach((session: any) => {
-            if (session.endTime) {
-                const hours = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / (1000 * 60 * 60);
-                totalHours += hours;
-            } else if (session.status === 'active') {
-                const hours = (Date.now() - new Date(session.startTime).getTime()) / (1000 * 60 * 60);
-                totalHours += hours;
+        for (const s of workerSessions) {
+            if (s.endTime) {
+                totalHours += (s.endTime.getTime() - s.startTime.getTime()) / (1000 * 60 * 60);
+            } else if (s.status === 'active') {
+                totalHours += (Date.now() - s.startTime.getTime()) / (1000 * 60 * 60);
             }
-        });
+        }
 
-        // Get total bags processed by this worker
-        const totalBags = await BagModel.countDocuments({ 'workers.workerId': workerId });
-
-        // Calculate earnings (hours × rate)
+        const totalBags = await prisma.bagWorker.count({ where: { workerId } });
         const earnings = totalHours * DEFAULT_HOURLY_RATE;
 
-        // Get days worked this month
         const today = new Date();
-        const startOfMonth = getStartOfMonth(today);
-        const endOfMonth = getEndOfMonth(today);
-
-        const daysWorkedThisMonth = await AttendanceModel.countDocuments({
-            workerId,
-            date: { $gte: startOfMonth, $lte: endOfMonth }
+        const daysWorkedThisMonth = await prisma.attendance.count({
+            where: {
+                workerId,
+                date: { gte: getStartOfMonth(today), lte: getEndOfMonth(today) },
+            },
         });
 
-        const details = {
-            totalHours: Math.round(totalHours * 10) / 10,
-            totalBags,
-            earnings: Math.round(earnings * 100) / 100,
-            daysWorkedThisMonth
-        };
-
-        return NextResponse.json({ details });
+        return NextResponse.json({
+            details: {
+                totalHours: Math.round(totalHours * 10) / 10,
+                totalBags,
+                earnings: Math.round(earnings * 100) / 100,
+                daysWorkedThisMonth,
+            },
+        });
     } catch (error) {
         console.error('Get worker details error:', error);
         return NextResponse.json(

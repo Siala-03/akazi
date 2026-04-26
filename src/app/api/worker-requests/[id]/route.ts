@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import WorkerRequestModel from '@/models/WorkerRequest';
-import UserModel from '@/models/User';
+import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { toMongo } from '@/lib/serialize';
 
-// GET - Single worker request
 export async function GET(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -15,34 +13,33 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const { id } = await params;
-        const workerRequest = await WorkerRequestModel.findById(id)
-            .populate('exporterId', 'companyTradingName exporterCode phone email contactPerson')
-            .populate('reviewedBy', 'name email');
+        const workerRequest = await prisma.workerRequest.findUnique({
+            where: { id },
+            include: {
+                exporter: { select: { id: true, companyTradingName: true, exporterCode: true, phone: true, email: true, contactPerson: true } },
+                reviewer: { select: { id: true, name: true, email: true } },
+            },
+        });
 
         if (!workerRequest) {
             return NextResponse.json({ error: 'Request not found' }, { status: 404 });
         }
 
-        // Exporters can only see their own requests
         if (currentUser.role === 'exporter') {
-            const dbUser = await UserModel.findById(currentUser.userId).lean();
-            const exporterId = (dbUser as any)?.exporterId?.toString();
-            if (!exporterId || workerRequest.exporterId.toString() !== exporterId) {
+            const dbUser = await prisma.user.findUnique({ where: { id: currentUser.userId } });
+            if (!dbUser?.exporterId || workerRequest.exporterId !== dbUser.exporterId) {
                 return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
             }
         }
 
-        return NextResponse.json({ workerRequest });
+        return NextResponse.json({ workerRequest: toMongo(workerRequest, { exporter: 'exporterId', reviewer: 'reviewedBy' }) });
     } catch (error) {
         console.error('Get worker request error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
 
-// PATCH - Update request status (Admin only) or cancel (Exporter own request)
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -53,10 +50,8 @@ export async function PATCH(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const { id } = await params;
-        const workerRequest = await WorkerRequestModel.findById(id);
+        const workerRequest = await prisma.workerRequest.findUnique({ where: { id } });
         if (!workerRequest) {
             return NextResponse.json({ error: 'Request not found' }, { status: 404 });
         }
@@ -64,48 +59,39 @@ export async function PATCH(
         const body = await request.json();
 
         if (currentUser.role === 'admin') {
-            // Admin can approve, reject, or mark as fulfilled
             const { status, adminNotes } = body;
-
             if (!['approved', 'rejected', 'fulfilled', 'pending'].includes(status)) {
                 return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
             }
 
-            const updated = await WorkerRequestModel.findByIdAndUpdate(
-                id,
-                {
-                    status,
-                    adminNotes: adminNotes || workerRequest.adminNotes,
-                    reviewedBy: currentUser.userId,
-                    reviewedAt: new Date(),
+            const updated = await prisma.workerRequest.update({
+                where: { id },
+                data: { status, adminNotes: adminNotes || workerRequest.adminNotes, reviewedBy: currentUser.userId, reviewedAt: new Date() },
+                include: {
+                    exporter: { select: { id: true, companyTradingName: true, exporterCode: true, phone: true, email: true, contactPerson: true } },
+                    reviewer: { select: { id: true, name: true, email: true } },
                 },
-                { new: true }
-            )
-                .populate('exporterId', 'companyTradingName exporterCode phone email contactPerson')
-                .populate('reviewedBy', 'name email');
+            });
 
-            return NextResponse.json({ workerRequest: updated });
-        } else if (currentUser.role === 'exporter') {
-            // Exporter can only cancel their own pending request
-            const dbUser = await UserModel.findById(currentUser.userId).lean();
-            const exporterId = (dbUser as any)?.exporterId?.toString();
-            if (!exporterId || workerRequest.exporterId.toString() !== exporterId) {
+            return NextResponse.json({ workerRequest: toMongo(updated, { exporter: 'exporterId', reviewer: 'reviewedBy' }) });
+        }
+
+        if (currentUser.role === 'exporter') {
+            const dbUser = await prisma.user.findUnique({ where: { id: currentUser.userId } });
+            if (!dbUser?.exporterId || workerRequest.exporterId !== dbUser.exporterId) {
                 return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
             }
             if (workerRequest.status !== 'pending') {
-                return NextResponse.json(
-                    { error: 'Only pending requests can be cancelled.' },
-                    { status: 400 }
-                );
+                return NextResponse.json({ error: 'Only pending requests can be cancelled.' }, { status: 400 });
             }
 
-            const updated = await WorkerRequestModel.findByIdAndUpdate(
-                id,
-                { status: 'rejected' },
-                { new: true }
-            ).populate('exporterId', 'companyTradingName exporterCode');
+            const updated = await prisma.workerRequest.update({
+                where: { id },
+                data: { status: 'rejected' },
+                include: { exporter: { select: { id: true, companyTradingName: true, exporterCode: true } } },
+            });
 
-            return NextResponse.json({ workerRequest: updated });
+            return NextResponse.json({ workerRequest: toMongo(updated, { exporter: 'exporterId' }) });
         }
 
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -115,9 +101,8 @@ export async function PATCH(
     }
 }
 
-// DELETE - Delete a pending request (Exporter only, own request)
 export async function DELETE(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -126,31 +111,25 @@ export async function DELETE(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await dbConnect();
-
         const { id } = await params;
-        const workerRequest = await WorkerRequestModel.findById(id);
+        const workerRequest = await prisma.workerRequest.findUnique({ where: { id } });
         if (!workerRequest) {
             return NextResponse.json({ error: 'Request not found' }, { status: 404 });
         }
 
         if (currentUser.role === 'exporter') {
-            const dbUser = await UserModel.findById(currentUser.userId).lean();
-            const exporterId = (dbUser as any)?.exporterId?.toString();
-            if (!exporterId || workerRequest.exporterId.toString() !== exporterId) {
+            const dbUser = await prisma.user.findUnique({ where: { id: currentUser.userId } });
+            if (!dbUser?.exporterId || workerRequest.exporterId !== dbUser.exporterId) {
                 return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
             }
             if (workerRequest.status !== 'pending') {
-                return NextResponse.json(
-                    { error: 'Only pending requests can be deleted.' },
-                    { status: 400 }
-                );
+                return NextResponse.json({ error: 'Only pending requests can be deleted.' }, { status: 400 });
             }
         } else if (currentUser.role !== 'admin') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        await WorkerRequestModel.findByIdAndDelete(id);
+        await prisma.workerRequest.delete({ where: { id } });
         return NextResponse.json({ message: 'Request deleted successfully' });
     } catch (error) {
         console.error('Delete worker request error:', error);
