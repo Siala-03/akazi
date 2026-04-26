@@ -1,0 +1,96 @@
+/* Additional text visibility fixes */
+
+/* Ensure all text has proper contrast */
+body, html {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+}
+
+/* Override any dark mode styles */
+* {
+  color: inherit;
+}
+
+/* Specific text colors for better visibility */
+h1, h2, h3, h4, h5, h6 {
+  color: #111827 !important;
+}
+
+p, span, label, div {
+  color: #374151;
+}
+
+/* Input fields - ensure text is always visible */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+select,
+textarea {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Button text visibility */
+button {
+  font-weight: 500;
+}
+
+button.bg-emerald-600,
+button.bg-teal-600,
+button[class*="bg-emerald"],
+button[class*="bg-teal"] {
+  color: #ffffff !important;
+}
+
+button.bg-gray-200 {
+  color: #374151 !important;
+}
+
+/* Link colors */
+a {
+  color: #059669;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #047857;
+  text-decoration: underline;
+}
+
+/* Table text */
+table {
+  color: #111827;
+}
+
+th {
+  color: #111827 !important;
+  font-weight: 600;
+}
+
+td {
+  color: #374151 !important;
+}
+
+/* Card text */
+.bg-white {
+  background-color: #ffffff !important;
+  color: #111827;
+}
+
+/* Ensure dropdown text is visible */
+select option {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+}
+
+/* Toast notifications */
+div[class*="toast"] {
+  color: #111827 !important;
+}

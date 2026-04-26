@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cooperative Setup - Quick Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #059669;
+        }
+        .info {
+            background: #e0f2fe;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        pre {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        h1 { color: #1f2937; }
+        h2 { color: #374151; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🎯 Umucyo Cooperative Setup</h1>
+        <p>This page will help you initialize the Umucyo Women Cooperative.</p>
+        
+        <div class="info">
+            <strong>📋 Status:</strong> <span id="status">Checking...</span>
+        </div>
+
+        <h2>Step 1: Initialize Cooperative</h2>
+        <button onclick="initCooperative()">✓ Initialize Umucyo Cooperative</button>
+        
+        <h2>Step 2: Initialize Facility</h2>
+        <button onclick="initFacility()">🏢 Initialize NAEB Facility</button>
+        
+        <h2>Step 3: Seed All Data (Optional)</h2>
+        <button onclick="seedDatabase()">🌱 Seed Database (Users, Exporters, etc.)</button>
+        
+        <div id="result"></div>
+        
+        <h2>📖 Instructions</h2>
+        <ol>
+            <li>Click "Initialize Umucyo Cooperative" button above</li>
+            <li>Click "Initialize NAEB Facility" button</li>
+            <li>Wait for success messages</li>
+            <li>Go to Supervisor → Operations page</li>
+            <li>Try checking in a worker</li>
+        </ol>
+
+        <div class="info">
+            <strong>💡 Note:</strong> If you want sample data (admin user, exporters, facilities), click "Seed Database" instead.
+        </div>
+    </div>
+
+    <script>
+        async function initCooperative() {
+            const resultDiv = document.getElementById('result');
+            const statusSpan = document.getElementById('status');
+            
+            resultDiv.innerHTML = '<p>⏳ Initializing...</p>';
+            
+            try {
+                const response = await fetch('/api/init-cooperative', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusSpan.textContent = '✅ Cooperative exists!';
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Success!</h3>
+                            <p><strong>${data.message}</strong></p>
+                            <pre>${JSON.stringify(data.cooperative, null, 2)}</pre>
+                            <p><strong>Next step:</strong> Go to <a href="/supervisor/onboarding">Supervisor → Onboarding</a></p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.error || 'Failed to initialize');
+                }
+            } catch (error) {
+                statusSpan.textContent = '❌ Error';
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function initFacility() {
+            const resultDiv = document.getElementById('result');
+            const statusSpan = document.getElementById('status');
+            
+            resultDiv.innerHTML = '<p>⏳ Initializing facility...</p>';
+            
+            try {
+                const response = await fetch('/api/init-facility', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusSpan.textContent = '✅ Facility exists!';
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Success!</h3>
+                            <p><strong>${data.message}</strong></p>
+                            <pre>${JSON.stringify(data.facility, null, 2)}</pre>
+                            <p><strong>Next step:</strong> Go to <a href="/supervisor/operations">Supervisor → Operations</a> and try check-in</p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.error || 'Failed to initialize');
+                }
+            } catch (error) {
+                statusSpan.textContent = '❌ Error';
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function seedDatabase() {
+            const resultDiv = document.getElementById('result');
+            const statusSpan = document.getElementById('status');
+            
+            resultDiv.innerHTML = '<p>⏳ Seeding database (this may take a few seconds)...</p>';
+            
+            try {
+                const response = await fetch('/api/seed', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusSpan.textContent = '✅ Database seeded!';
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Database Seeded Successfully!</h3>
+                            <p>${data.message || 'All sample data created'}</p>
+                            <h4>Test Accounts Created:</h4>
+                            <ul>
+                                <li><strong>Admin:</strong> admin@cwms.rw / admin123</li>
+                                <li><strong>Supervisor:</strong> supervisor@cwms.rw / super123</li>
+                                <li><strong>Exporter:</strong> exporter@cwms.rw / export123</li>
+                            </ul>
+                            <p><strong>Next step:</strong> <a href="/login">Login</a> and go to <a href="/supervisor/onboarding">Onboarding</a></p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.error || data.message || 'Seeding failed');
+                }
+            } catch (error) {
+                statusSpan.textContent = '⚠️ Error or Already Seeded';
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>⚠️ Note</h3>
+                        <p>${error.message}</p>
+                        <p>If database is already seeded, use the "Initialize Umucyo Cooperative" button instead.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Check status on load
+        window.onload = async function() {
+            document.getElementById('status').textContent = 'Ready to initialize';
+        };
+    </script>
+</body>
+</html>

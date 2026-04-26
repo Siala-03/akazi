@@ -1,0 +1,1019 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
+import { 
+  FileText, 
+  Download, 
+  Filter, 
+  Search, 
+  Calendar,
+  ArrowUpDown,
+  Users,
+  Package,
+  DollarSign,
+  Clock,
+  TrendingUp,
+  Eye,
+  FileSpreadsheet,
+  FileDown
+} from 'lucide-react';
+
+interface ExporterReport {
+  exporterId: string;
+  exporterName: string;
+  bagsSorted: number;
+  workersInvolved: number;
+  totalLaborCost: number;
+  avgWorkersPerBag: number;
+  dateRange: string;
+}
+
+interface WorkerReport {
+  workerId: string;
+  workerName: string;
+  daysWorked: number;
+  exportersServed: string[];
+  bagsContributed: number;
+  totalEarnings: number;
+  avgBagsPerDay: number;
+}
+
+interface DailyOperation {
+  date: string;
+  workersOnSite: number;
+  activeSessions: number;
+  bagsCompleted: number;
+  exportersActive: string[];
+  totalLaborCost: number;
+}
+
+interface AuditTrail {
+  date: string;
+  workerId: string;
+  workerName: string;
+  exporterId: string;
+  exporterName: string;
+  bagId: string;
+  sessionId: string;
+  checkInTime: string;
+  checkOutTime: string;
+  status: string;
+}
+
+type TabType = 'exporter' | 'worker' | 'daily' | 'audit';
+
+export default function AdminReportsPage() {
+  const [activeTab, setActiveTab] = useState<TabType>('exporter');
+  const [loading, setLoading] = useState(false);
+  
+  // Filters
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  // Data
+  const [exporterReports, setExporterReports] = useState<ExporterReport[]>([]);
+  const [workerReports, setWorkerReports] = useState<WorkerReport[]>([]);
+  const [dailyOperations, setDailyOperations] = useState<DailyOperation[]>([]);
+  const [auditTrails, setAuditTrails] = useState<AuditTrail[]>([]);
+
+  useEffect(() => {
+    loadReportData();
+  }, [activeTab, startDate, endDate]);
+
+  const loadReportData = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      switch (activeTab) {
+        case 'exporter':
+          await loadExporterReports(params);
+          break;
+        case 'worker':
+          await loadWorkerReports(params);
+          break;
+        case 'daily':
+          await loadDailyOperations(params);
+          break;
+        case 'audit':
+          await loadAuditTrail(params);
+          break;
+      }
+    } catch (error) {
+      console.error('Error loading report data:', error);
+      toast.error('Failed to load report data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadExporterReports = async (params: URLSearchParams) => {
+    try {
+      // Fetch exporters and bags from real API
+      const [exportersRes, bagsRes] = await Promise.all([
+        fetch('/api/exporters'),
+        fetch(`/api/bags?${params.toString()}`)
+      ]);
+
+      const exportersData = await exportersRes.json();
+      const bagsData = await bagsRes.json();
+
+      const exporters = exportersData.exporters || [];
+      const bags = bagsData.bags || [];
+
+      // Calculate report for each exporter
+      const reports: ExporterReport[] = exporters.map((exporter: any) => {
+        // Filter bags for this exporter
+        const exporterBags = bags.filter((bag: any) => 
+          bag.exporterId?._id === exporter._id || bag.exporterId === exporter._id
+        );
+
+        // Calculate unique workers involved
+        const workerIds = new Set();
+        exporterBags.forEach((bag: any) => {
+          bag.workers?.forEach((w: any) => {
+            workerIds.add(w.workerId?._id || w.workerId);
+          });
+        });
+
+        // Calculate average workers per bag
+        const totalWorkers = exporterBags.reduce((sum: number, bag: any) => 
+          sum + (bag.workers?.length || 0), 0
+        );
+        const avgWorkersPerBag = exporterBags.length > 0 
+          ? Number((totalWorkers / exporterBags.length).toFixed(1))
+          : 0;
+
+        // Calculate labor cost (assuming 1500 RWF per bag per worker)
+        const laborCost = totalWorkers * 1500;
+
+        return {
+          exporterId: exporter._id,
+          exporterName: exporter.name,
+          bagsSorted: exporterBags.length,
+          workersInvolved: workerIds.size,
+          totalLaborCost: laborCost,
+          avgWorkersPerBag,
+          dateRange: startDate && endDate 
+            ? `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`
+            : 'All time'
+        };
+      });
+
+      setExporterReports(reports);
+    } catch (error) {
+      console.error('Error loading exporter reports:', error);
+      toast.error('Failed to load exporter reports');
+    }
+  };
+
+  const loadWorkerReports = async (params: URLSearchParams) => {
+    try {
+      // Fetch workers, bags, and attendance from real API
+      const [workersRes, bagsRes, attendanceRes] = await Promise.all([
+        fetch('/api/workers'),
+        fetch(`/api/bags?${params.toString()}`),
+        fetch('/api/attendance/checkin')
+      ]);
+
+      const workersData = await workersRes.json();
+      const bagsData = await bagsRes.json();
+      const attendanceData = await attendanceRes.json();
+
+      const workers = workersData.workers || [];
+      const bags = bagsData.bags || [];
+      const attendance = attendanceData.attendance || [];
+
+      // Calculate report for each worker
+      const reports: WorkerReport[] = workers.map((worker: any) => {
+        // Find all bags this worker participated in
+        const workerBags = bags.filter((bag: any) => 
+          bag.workers?.some((w: any) => 
+            (w.workerId?._id || w.workerId) === worker._id
+          )
+        );
+
+        // Get unique exporters this worker has worked with
+        const exporterIds = new Set();
+        const exporterNames: string[] = [];
+        workerBags.forEach((bag: any) => {
+          const exporterId = bag.exporterId?._id || bag.exporterId;
+          if (!exporterIds.has(exporterId)) {
+            exporterIds.add(exporterId);
+            exporterNames.push(bag.exporterId?.name || 'Unknown');
+          }
+        });
+
+        // Count days worked (unique dates in attendance)
+        const workerAttendance = attendance.filter((att: any) => 
+          (att.workerId?._id || att.workerId) === worker._id
+        );
+        const uniqueDates = new Set(
+          workerAttendance.map((att: any) => 
+            new Date(att.date).toDateString()
+          )
+        );
+
+        // Calculate earnings (1500 RWF per bag)
+        const totalEarnings = workerBags.length * 1500;
+
+        // Calculate average bags per day
+        const avgBagsPerDay = uniqueDates.size > 0 
+          ? Number((workerBags.length / uniqueDates.size).toFixed(1))
+          : 0;
+
+        return {
+          workerId: worker.workerId,
+          workerName: worker.fullName,
+          daysWorked: uniqueDates.size,
+          exportersServed: exporterNames,
+          bagsContributed: workerBags.length,
+          totalEarnings,
+          avgBagsPerDay
+        };
+      });
+
+      // Filter out workers with no activity if date range is set
+      const filteredReports = reports.filter(r => 
+        !startDate || r.bagsContributed > 0
+      );
+
+      setWorkerReports(filteredReports);
+    } catch (error) {
+      console.error('Error loading worker reports:', error);
+      toast.error('Failed to load worker reports');
+    }
+  };
+
+  const loadDailyOperations = async (params: URLSearchParams) => {
+    try {
+      // Fetch data from real APIs
+      const [attendanceRes, sessionsRes, bagsRes, exportersRes] = await Promise.all([
+        fetch('/api/attendance/checkin'),
+        fetch('/api/sessions'),
+        fetch('/api/bags'),
+        fetch('/api/exporters')
+      ]);
+
+      const attendanceData = await attendanceRes.json();
+      const sessionsData = await sessionsRes.json();
+      const bagsData = await bagsRes.json();
+      const exportersData = await exportersRes.json();
+
+      const attendance = attendanceData.attendance || [];
+      const sessions = sessionsData.sessions || [];
+      const allBags = bagsData.bags || [];
+      const exporters = exportersData.exporters || [];
+
+      // Group data by date
+      const dateMap = new Map();
+
+      // Process attendance
+      attendance.forEach((att: any) => {
+        const dateKey = new Date(att.date).toISOString().split('T')[0];
+        if (!dateMap.has(dateKey)) {
+          dateMap.set(dateKey, {
+            date: dateKey,
+            workersOnSite: 0,
+            activeSessions: 0,
+            bagsCompleted: 0,
+            exporterIds: new Set(),
+            totalLaborCost: 0
+          });
+        }
+        if (att.status === 'on-site') {
+          dateMap.get(dateKey).workersOnSite++;
+        }
+      });
+
+      // Process sessions
+      sessions.forEach((session: any) => {
+        const dateKey = new Date(session.date).toISOString().split('T')[0];
+        if (dateMap.has(dateKey)) {
+          dateMap.get(dateKey).activeSessions++;
+          const exporterId = session.exporterId?._id || session.exporterId;
+          dateMap.get(dateKey).exporterIds.add(exporterId);
+        }
+      });
+
+      // Process bags
+      allBags.forEach((bag: any) => {
+        const dateKey = new Date(bag.date).toISOString().split('T')[0];
+        if (dateMap.has(dateKey)) {
+          dateMap.get(dateKey).bagsCompleted++;
+          // Calculate labor cost (workers × 1500 RWF)
+          const workerCount = bag.workers?.length || 0;
+          dateMap.get(dateKey).totalLaborCost += workerCount * 1500;
+        }
+      });
+
+      // Convert map to array and add exporter names
+      const operations: DailyOperation[] = Array.from(dateMap.values())
+        .map((day: any) => {
+          const activeExporterNames = Array.from(day.exporterIds)
+            .map((id: any) => {
+              const exporter = exporters.find((e: any) => e._id === id);
+              return exporter?.name || 'Unknown';
+            });
+
+          return {
+            date: day.date,
+            workersOnSite: day.workersOnSite,
+            activeSessions: day.activeSessions,
+            bagsCompleted: day.bagsCompleted,
+            exportersActive: activeExporterNames,
+            totalLaborCost: day.totalLaborCost
+          };
+        })
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      setDailyOperations(operations);
+    } catch (error) {
+      console.error('Error loading daily operations:', error);
+      toast.error('Failed to load daily operations');
+    }
+  };
+
+  const loadAuditTrail = async (params: URLSearchParams) => {
+    try {
+      // Fetch all related data from real APIs
+      const [bagsRes, attendanceRes, sessionsRes] = await Promise.all([
+        fetch(`/api/bags?${params.toString()}`),
+        fetch('/api/attendance/checkin'),
+        fetch('/api/sessions')
+      ]);
+
+      const bagsData = await bagsRes.json();
+      const attendanceData = await attendanceRes.json();
+      const sessionsData = await sessionsRes.json();
+
+      const bags = bagsData.bags || [];
+      const attendance = attendanceData.attendance || [];
+      const sessions = sessionsData.sessions || [];
+
+      // Build audit trail from bags (each bag entry shows worker-exporter-bag linkage)
+      const trails: AuditTrail[] = [];
+
+      bags.forEach((bag: any) => {
+        // For each worker in the bag, create an audit entry
+        bag.workers?.forEach((bagWorker: any) => {
+          const worker = bagWorker.workerId;
+          const exporter = bag.exporterId;
+          
+          // Find the session for this worker
+          const session = sessions.find((s: any) => 
+            s._id === bagWorker.sessionId || 
+            ((s.workerId?._id || s.workerId) === (worker?._id || worker) &&
+             (s.exporterId?._id || s.exporterId) === (exporter?._id || exporter))
+          );
+
+          // Find attendance record
+          const workerAttendance = attendance.find((att: any) => 
+            att._id === session?.attendanceId ||
+            (att.workerId?._id || att.workerId) === (worker?._id || worker)
+          );
+
+          trails.push({
+            date: new Date(bag.date || bag.createdAt).toISOString().split('T')[0],
+            workerId: worker?.workerId || 'N/A',
+            workerName: worker?.fullName || 'Unknown Worker',
+            exporterId: exporter?._id || 'N/A',
+            exporterName: exporter?.name || 'Unknown Exporter',
+            bagId: bag.bagNumber || bag._id,
+            sessionId: session?._id || 'N/A',
+            checkInTime: workerAttendance?.checkInTime 
+              ? new Date(workerAttendance.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+              : 'N/A',
+            checkOutTime: workerAttendance?.checkOutTime 
+              ? new Date(workerAttendance.checkOutTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+              : session?.status === 'active' ? 'Active' : 'N/A',
+            status: bag.status || 'completed'
+          });
+        });
+      });
+
+      // Sort by date descending
+      trails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      setAuditTrails(trails);
+    } catch (error) {
+      console.error('Error loading audit trail:', error);
+      toast.error('Failed to load audit trail');
+    }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const exportToCSV = () => {
+    let csvContent = '';
+    let filename = '';
+
+    switch (activeTab) {
+      case 'exporter':
+        csvContent = 'Exporter ID,Exporter Name,Bags Sorted,Workers Involved,Total Labor Cost,Avg Workers/Bag\n';
+        exporterReports.forEach(row => {
+          csvContent += `${row.exporterId},${row.exporterName},${row.bagsSorted},${row.workersInvolved},${row.totalLaborCost},${row.avgWorkersPerBag}\n`;
+        });
+        filename = 'exporter-report.csv';
+        break;
+      case 'worker':
+        csvContent = 'Worker ID,Worker Name,Days Worked,Exporters Served,Bags Contributed,Total Earnings,Avg Bags/Day\n';
+        workerReports.forEach(row => {
+          csvContent += `${row.workerId},${row.workerName},${row.daysWorked},"${row.exportersServed.join('; ')}",${row.bagsContributed},${row.totalEarnings},${row.avgBagsPerDay}\n`;
+        });
+        filename = 'worker-report.csv';
+        break;
+      case 'daily':
+        csvContent = 'Date,Workers On Site,Active Sessions,Bags Completed,Exporters Active,Total Labor Cost\n';
+        dailyOperations.forEach(row => {
+          csvContent += `${row.date},${row.workersOnSite},${row.activeSessions},${row.bagsCompleted},"${row.exportersActive.join('; ')}",${row.totalLaborCost}\n`;
+        });
+        filename = 'daily-operations.csv';
+        break;
+      case 'audit':
+        csvContent = 'Date,Worker ID,Worker Name,Exporter ID,Exporter Name,Bag ID,Session ID,Check In,Check Out,Status\n';
+        auditTrails.forEach(row => {
+          csvContent += `${row.date},${row.workerId},${row.workerName},${row.exporterId},${row.exporterName},${row.bagId},${row.sessionId},${row.checkInTime},${row.checkOutTime},${row.status}\n`;
+        });
+        filename = 'audit-trail.csv';
+        break;
+    }
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    toast.success('Report exported to CSV');
+  };
+
+  const exportToPDF = () => {
+    toast('PDF export feature coming soon', { icon: 'ℹ️' });
+  };
+
+  const filteredExporterReports = exporterReports.filter(report =>
+    report.exporterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.exporterId.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredWorkerReports = workerReports.filter(report =>
+    report.workerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.workerId.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredDailyOperations = dailyOperations.filter(op =>
+    op.date.includes(searchTerm)
+  );
+
+  const filteredAuditTrails = auditTrails.filter(trail =>
+    trail.workerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    trail.exporterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    trail.bagId.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <Toaster position="top-right" />
+      
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports & Analytics</h1>
+            <p className="text-gray-600">Comprehensive operational reports and audit trails</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={exportToCSV}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Export CSV
+            </button>
+            <button
+              onClick={exportToPDF}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              <FileDown className="w-4 h-4" />
+              Export PDF
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters Bar */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Calendar className="w-4 h-4 inline mr-1" />
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Calendar className="w-4 h-4 inline mr-1" />
+              End Date
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Search className="w-4 h-4 inline mr-1" />
+              Search
+            </label>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name, ID, or date..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="flex -mb-px">
+            <button
+              onClick={() => setActiveTab('exporter')}
+              className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'exporter'
+                  ? 'border-emerald-500 text-emerald-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Package className="w-4 h-4 inline mr-2" />
+              Exporter Reports
+            </button>
+            <button
+              onClick={() => setActiveTab('worker')}
+              className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'worker'
+                  ? 'border-emerald-500 text-emerald-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Users className="w-4 h-4 inline mr-2" />
+              Worker Reports
+            </button>
+            <button
+              onClick={() => setActiveTab('daily')}
+              className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'daily'
+                  ? 'border-emerald-500 text-emerald-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Clock className="w-4 h-4 inline mr-2" />
+              Daily Operations
+            </button>
+            <button
+              onClick={() => setActiveTab('audit')}
+              className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'audit'
+                  ? 'border-emerald-500 text-emerald-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FileText className="w-4 h-4 inline mr-2" />
+              Audit Trail
+            </button>
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+            </div>
+          ) : (
+            <>
+              {/* Exporter Reports Table */}
+              {activeTab === 'exporter' && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th 
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('exporterId')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Exporter ID
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </th>
+                        <th 
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('exporterName')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Exporter Name
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </th>
+                        <th 
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('bagsSorted')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Bags Sorted
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Workers Involved
+                        </th>
+                        <th 
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('totalLaborCost')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Total Labor Cost (RWF)
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Avg Workers/Bag
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Period
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredExporterReports.map((report) => (
+                        <tr key={report.exporterId} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {report.exporterId}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {report.exporterName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                              {report.bagsSorted.toLocaleString()}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {report.workersInvolved}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                            {report.totalLaborCost.toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {report.avgWorkersPerBag.toFixed(1)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {report.dateRange}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {filteredExporterReports.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      No exporter reports found
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Worker Reports Table */}
+              {activeTab === 'worker' && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                          <div className="flex items-center gap-1">
+                            Worker ID
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Worker Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                          <div className="flex items-center gap-1">
+                            Days Worked
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Exporters Served
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                          <div className="flex items-center gap-1">
+                            Bags Contributed
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                          <div className="flex items-center gap-1">
+                            Total Earnings (RWF)
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Avg Bags/Day
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredWorkerReports.map((report) => (
+                        <tr key={report.workerId} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {report.workerId}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {report.workerName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {report.daysWorked}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            <div className="flex flex-wrap gap-1">
+                              {report.exportersServed.map((exp, idx) => (
+                                <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                  {exp}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                              {report.bagsContributed}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                            {report.totalEarnings.toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {report.avgBagsPerDay.toFixed(1)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {filteredWorkerReports.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      No worker reports found
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Daily Operations Table */}
+              {activeTab === 'daily' && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                          <div className="flex items-center gap-1">
+                            Date
+                            <ArrowUpDown className="w-3 h-3" />
+                          </div>
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Workers On-Site
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Active Sessions
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Bags Completed
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Exporters Active
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total Labor Cost (RWF)
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredDailyOperations.map((op, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {new Date(op.date).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {op.workersOnSite}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              {op.activeSessions}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                              {op.bagsCompleted}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            <div className="flex flex-wrap gap-1">
+                              {op.exportersActive.map((exp, idx) => (
+                                <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                  {exp}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                            {op.totalLaborCost.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {filteredDailyOperations.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      No daily operations found
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Audit Trail Table */}
+              {activeTab === 'audit' && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Worker
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Exporter
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Bag ID
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Session ID
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Check In
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Check Out
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredAuditTrails.map((trail, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {new Date(trail.date).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div>
+                              <div className="font-medium">{trail.workerName}</div>
+                              <div className="text-xs text-gray-500">{trail.workerId}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div>
+                              <div className="font-medium">{trail.exporterName}</div>
+                              <div className="text-xs text-gray-500">{trail.exporterId}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                            {trail.bagId}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                            {trail.sessionId}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {trail.checkInTime}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {trail.checkOutTime}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {trail.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {filteredAuditTrails.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      No audit trail records found
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+          {activeTab === 'exporter' && (
+            <>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Bags</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                      {filteredExporterReports.reduce((sum, r) => sum + r.bagsSorted, 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <Package className="w-8 h-8 text-emerald-500" />
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Workers</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                      {filteredExporterReports.reduce((sum, r) => sum + r.workersInvolved, 0)}
+                    </p>
+                  </div>
+                  <Users className="w-8 h-8 text-blue-500" />
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Labor Cost</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                      {filteredExporterReports.reduce((sum, r) => sum + r.totalLaborCost, 0).toLocaleString()} RWF
+                    </p>
+                  </div>
+                  <DollarSign className="w-8 h-8 text-emerald-500" />
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Active Exporters</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                      {filteredExporterReports.length}
+                    </p>
+                  </div>
+                  <TrendingUp className="w-8 h-8 text-purple-500" />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
