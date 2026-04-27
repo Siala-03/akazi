@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import {
     Shield, Plus, Search, RefreshCw, Power, PowerOff, X,
-    User, Phone, Mail, KeyRound,
+    User, Phone, Mail, KeyRound, Trash2,
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 
@@ -105,6 +105,25 @@ export default function AdminSupervisorsPage() {
             toast.success(data.message || 'Credentials resent successfully');
         } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Failed to resend credentials');
+        }
+    };
+
+    const handleDeleteSupervisor = async (user: SupervisorUser) => {
+        const shouldDelete = window.confirm(`Delete supervisor ${user.name}? This action cannot be undone.`);
+        if (!shouldDelete) return;
+
+        try {
+            const res = await fetch('/api/admin/create-user', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user._id }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to delete supervisor');
+            toast.success('Supervisor deleted successfully');
+            fetchSupervisors();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to delete supervisor');
         }
     };
 
@@ -345,6 +364,20 @@ export default function AdminSupervisorsPage() {
                                                         Activate
                                                     </button>
                                                 )}
+
+                                                <button
+                                                    onClick={() => handleDeleteSupervisor(sup)}
+                                                    title="Delete supervisor"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                                                        bg-rose-50 text-rose-700 border border-rose-200
+                                                        hover:bg-rose-700 hover:text-white hover:border-rose-700
+                                                        dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-700/50
+                                                        dark:hover:bg-rose-700 dark:hover:text-white dark:hover:border-rose-700
+                                                        transition-all duration-200 hover:shadow-md hover:shadow-rose-500/25 active:scale-95"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                    Delete
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>

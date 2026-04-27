@@ -44,25 +44,6 @@ export default function AdminCooperativesPage() {
         }
     };
 
-    const handleInitUmucyo = async () => {
-        try {
-            const res = await fetch('/api/init-cooperative', {
-                method: 'POST',
-            });
-
-            const data = await res.json();
-            
-            if (res.ok) {
-                toast.success(data.message);
-                fetchCooperatives();
-            } else {
-                throw new Error(data.error);
-            }
-        } catch (error) {
-            toast.error('Failed to initialize Umucyo cooperative');
-        }
-    };
-
     const handleAddCooperative = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -169,12 +150,6 @@ export default function AdminCooperativesPage() {
                     </div>
                     <div className="flex gap-2 shrink-0">
                         <button
-                            onClick={handleInitUmucyo}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-medium transition-colors border border-white/30 backdrop-blur-sm"
-                        >
-                            ✓ Init Umucyo
-                        </button>
-                        <button
                             onClick={() => setShowAddForm(true)}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-medium transition-colors border border-white/30 backdrop-blur-sm"
                         >
@@ -195,12 +170,6 @@ export default function AdminCooperativesPage() {
                     <div className="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                         <GitBranch className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                         <p className="text-gray-500 mb-4 font-medium">No cooperatives found</p>
-                        <button
-                            onClick={handleInitUmucyo}
-                            className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-                        >
-                            Initialize Umucyo Women Cooperative
-                        </button>
                     </div>
                 ) : (
                     cooperatives.map((cooperative) => (

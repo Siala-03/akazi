@@ -125,3 +125,33 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
+
+export async function DELETE(request: NextRequest) {
+    try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || currentUser.role !== 'admin') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { userId } = await request.json();
+        if (!userId) {
+            return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        if (user.role === 'admin') {
+            return NextResponse.json({ error: 'Cannot delete admin users' }, { status: 403 });
+        }
+
+        await prisma.user.delete({ where: { id: userId } });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('[Admin Delete User] Error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}

@@ -172,6 +172,7 @@ export default function AdminDashboard() {
             iconBg: 'bg-green-100 dark:bg-green-900/30',
             iconColor: 'text-green-600',
             subColor: 'text-green-600 dark:text-green-400',
+            compactValue: true,
         },
     ];
 
@@ -255,7 +256,7 @@ export default function AdminDashboard() {
                                 )}
                             </div>
                             <p className="text-gray-600 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">{card.label}</p>
-                            <p className="mt-1 text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">{card.value}</p>
+                            <p className={`mt-1 font-bold text-gray-900 dark:text-gray-100 leading-tight ${card.compactValue ? 'text-lg xl:text-xl break-words' : 'text-2xl xl:text-3xl'}`}>{card.value}</p>
                             <p className={`mt-1 text-xs font-medium ${card.subColor}`}>{card.sub}</p>
                         </div>
                     );

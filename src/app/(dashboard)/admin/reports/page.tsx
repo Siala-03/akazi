@@ -340,6 +340,21 @@ export default function AdminReportsPage() {
     }
   };
 
+  const formatSessionId = (exporter: any, dateValue: string | Date) => {
+    const exporterCode = exporter?.exporterCode || exporter?.code || 'UNK';
+    const parsed = new Date(dateValue);
+
+    if (Number.isNaN(parsed.getTime())) {
+      return `${exporterCode}-00000000`;
+    }
+
+    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+    const dd = String(parsed.getDate()).padStart(2, '0');
+    const yyyy = String(parsed.getFullYear());
+
+    return `${exporterCode}-${mm}${dd}${yyyy}`;
+  };
+
   const loadAuditTrail = async (params: URLSearchParams) => {
     try {
       // Fetch all related data from real APIs
@@ -386,7 +401,7 @@ export default function AdminReportsPage() {
             exporterId: exporter?._id || 'N/A',
             exporterName: exporter?.companyTradingName || 'Unknown Exporter',
             bagId: bag.bagNumber || bag._id,
-            sessionId: session?._id || 'N/A',
+            sessionId: formatSessionId(exporter, bag.date || bag.createdAt),
             checkInTime: workerAttendance?.checkInTime 
               ? new Date(workerAttendance.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
               : 'N/A',

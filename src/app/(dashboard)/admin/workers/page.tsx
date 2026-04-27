@@ -371,21 +371,20 @@ export default function AdminWorkersPage() {
                                         </td>
 
                                         {/* Actions */}
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity duration-150">
+                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-1.5 flex-nowrap opacity-70 group-hover:opacity-100 transition-opacity duration-150">
                                                 {/* Edit */}
                                                 <button
                                                     onClick={() => handleEditWorker(worker)}
                                                     title="Edit worker"
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                                                    className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg
                                                         bg-blue-50 text-blue-700 border border-blue-200
                                                         hover:bg-blue-600 hover:text-white hover:border-blue-600
                                                         dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700/50
                                                         dark:hover:bg-blue-600 dark:hover:text-white dark:hover:border-blue-600
                                                         transition-all duration-200 hover:shadow-md hover:shadow-blue-500/25 active:scale-95"
                                                 >
-                                                    <Pencil className="w-3.5 h-3.5" />
-                                                    Edit
+                                                    <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                 </button>
 
                                                 {/* Deactivate / Activate */}
@@ -393,44 +392,41 @@ export default function AdminWorkersPage() {
                                                     <button
                                                         onClick={() => setConfirmWorker(worker)}
                                                         title="Deactivate worker"
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                                                        className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg
                                                             bg-red-50 text-red-700 border border-red-200
                                                             hover:bg-red-600 hover:text-white hover:border-red-600
                                                             dark:bg-red-900/20 dark:text-red-400 dark:border-red-700/50
                                                             dark:hover:bg-red-600 dark:hover:text-white dark:hover:border-red-600
                                                             transition-all duration-200 hover:shadow-md hover:shadow-red-500/25 active:scale-95"
                                                     >
-                                                        <UserX className="w-3.5 h-3.5" />
-                                                        Deactivate
+                                                        <UserX className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                     </button>
                                                 ) : (
                                                     <button
                                                         onClick={() => handleToggleStatus(worker)}
                                                         title="Activate worker"
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                                                        className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg
                                                             bg-emerald-50 text-emerald-700 border border-emerald-200
                                                             hover:bg-emerald-600 hover:text-white hover:border-emerald-600
                                                             dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-700/50
                                                             dark:hover:bg-emerald-600 dark:hover:text-white dark:hover:border-emerald-600
                                                             transition-all duration-200 hover:shadow-md hover:shadow-emerald-500/25 active:scale-95"
                                                     >
-                                                        <UserCheck className="w-3.5 h-3.5" />
-                                                        Activate
+                                                        <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                     </button>
                                                 )}
 
                                                 <button
                                                     onClick={() => setDeleteWorker(worker)}
                                                     title="Delete worker"
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                                                    className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg
                                                         bg-rose-50 text-rose-700 border border-rose-200
                                                         hover:bg-rose-700 hover:text-white hover:border-rose-700
                                                         dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-700/50
                                                         dark:hover:bg-rose-700 dark:hover:text-white dark:hover:border-rose-700
                                                         transition-all duration-200 hover:shadow-md hover:shadow-rose-500/25 active:scale-95"
                                                 >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                    Delete
+                                                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                 </button>
                                             </div>
                                         </td>
