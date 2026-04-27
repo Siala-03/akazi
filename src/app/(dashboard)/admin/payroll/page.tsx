@@ -212,11 +212,11 @@ export default function PayrollPage() {
                             <Icon className={`w-4 h-4 ${accent === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : 'text-teal-600 dark:text-teal-400'}`} />
                         </div>
                         <div>
-                            <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{label}</p>
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">{label}</p>
                             <p className={`mt-1 font-bold text-gray-900 dark:text-gray-100 ${format === 'currency' ? 'text-lg' : 'text-3xl'}`}>
                                 {format === 'currency' ? `FRw ${value.toLocaleString()}` : value.toLocaleString()}
                             </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{sub}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{sub}</p>
                         </div>
                     </div>
                 ))}
@@ -261,17 +261,17 @@ export default function PayrollPage() {
                         <div className="overflow-x-auto">
                             <table className="min-w-full">
                                 <thead>
-                                    <tr className="bg-gray-50/70 dark:bg-gray-800/40">
-                                        <th className="px-6 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest w-10">#</th>
-                                        <th className="px-6 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Worker</th>
-                                        <th className="px-6 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">National ID</th>
-                                        <th className="px-6 py-3 text-center text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Bags</th>
-                                        <th className="px-6 py-3 text-center text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Days</th>
-                                        <th className="px-6 py-3 text-right text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Daily Rate</th>
-                                        <th className="px-6 py-3 text-right text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Total Wage</th>
+                                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">#</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Worker</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">National ID</th>
+                                        <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags</th>
+                                        <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Days</th>
+                                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Daily Rate</th>
+                                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Wage</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
+                                <tbody>
                                     {pageRows.map((worker, i) => (
                                         <tr
                                             key={worker.workerId}
