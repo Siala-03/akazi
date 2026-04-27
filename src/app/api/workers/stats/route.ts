@@ -9,7 +9,7 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const DEFAULT_HOURLY_RATE = 50;
+        const SESSION_RATE = 2000;
 
         const [totalActiveWorkers, totalInactiveWorkers] = await Promise.all([
             prisma.worker.count({ where: { status: 'active' } }),
@@ -20,6 +20,8 @@ export async function GET() {
             where: { status: { in: ['active', 'closed'] } },
             select: { startTime: true, endTime: true, status: true },
         });
+
+        const totalLaborCosts = allSessions.length * SESSION_RATE;
 
         let totalHours = 0;
         for (const s of allSessions) {
@@ -55,7 +57,7 @@ export async function GET() {
             stats: {
                 totalActiveWorkers,
                 totalInactiveWorkers,
-                totalLaborCosts: Math.round(totalHours * DEFAULT_HOURLY_RATE * 100) / 100,
+                totalLaborCosts,
                 avgHoursPerWorker: Math.round(avgHoursPerWorker * 10) / 10,
                 topPerformer,
             },

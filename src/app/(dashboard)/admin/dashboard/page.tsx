@@ -1,11 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
-    TrendingUp, Users, Package, Activity, Building2, ArrowRight,
-    DollarSign, RefreshCw, UserCheck, BarChart3, ClipboardList,
-    Banknote, Wallet, FileSpreadsheet, Shield,
+    FileText,
+    TrendingUp,
+    Users,
+    Package,
+    Activity,
+    Building2,
+    ArrowRight,
+    DollarSign,
+    Weight,
+    RefreshCw,
+    UserCheck,
+    BarChart3,
+    ShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import { ExportButton } from '@/components/export/ExportButton';
@@ -17,7 +27,9 @@ export default function AdminDashboard() {
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-    useEffect(() => { fetchAnalytics(); }, []);
+    useEffect(() => {
+        fetchAnalytics();
+    }, []);
 
     const fetchAnalytics = async () => {
         try {
@@ -26,251 +38,385 @@ export default function AdminDashboard() {
             const data = await res.json();
             setAnalytics(data.analytics);
             setLastUpdated(new Date());
-        } catch (e) { console.error(e); }
-        finally { setLoading(false); }
+        } catch (error) {
+            console.error('Error fetching analytics:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleRefresh = async () => { setRefreshing(true); await fetchAnalytics(); setRefreshing(false); };
-    const fmt = (n: number) => `FRw ${n.toLocaleString()}`;
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await fetchAnalytics();
+        setRefreshing(false);
+    };
 
-    const getExportData = (): ExportData => ({
-        exporterName: 'Admin',
-        exporterCode: 'ADMIN',
-        summary: {
-            totalBags: analytics?.totalBags || 0,
-            totalWeight: analytics?.totalKilograms || 0,
-            totalWorkers: analytics?.totalWorkers || 0,
-            averageWeight: analytics?.totalBags > 0 ? (analytics?.totalKilograms || 0) / analytics.totalBags : 0,
-        },
-    });
-
-    const statCards = [
-        { label: 'Total Workers',       value: analytics?.totalWorkers || 0,           sub: `${analytics?.activeWorkers || 0} active`,          icon: Users,      color: 'text-violet-600',  bg: 'bg-violet-50' },
-        { label: 'Checked In Today',    value: analytics?.workersCheckedInToday || 0,  sub: 'On-site now',                                       icon: UserCheck,  color: 'text-emerald-600', bg: 'bg-emerald-50' },
-        { label: 'Active Sessions',     value: analytics?.activeSessions || 0,         sub: 'Sorting now',                                       icon: Activity,   color: 'text-sky-600',     bg: 'bg-sky-50',    pulse: true },
-        { label: 'Bags Today',          value: analytics?.bagsToday || 0,              sub: `${analytics?.totalKilogramsToday || 0} kg`,         icon: Package,    color: 'text-amber-600',   bg: 'bg-amber-50' },
-        { label: 'Total Exporters',     value: analytics?.totalExporters || 0,         sub: `${analytics?.activeExporters || 0} active`,         icon: Building2,  color: 'text-slate-600',   bg: 'bg-slate-100' },
-        { label: "Today's Labor Cost",  value: fmt(analytics?.dailyCostToExporters || 0), sub: `${analytics?.workerDaysToday || 0} worker-days`, icon: DollarSign, color: 'text-violet-600',  bg: 'bg-violet-50', small: true },
-    ];
+    const getExportData = (): ExportData => {
+        return {
+            exporterName: 'Admin',
+            exporterCode: 'ADMIN',
+            summary: {
+                totalBags: analytics?.totalBags || 0,
+                totalWeight: analytics?.totalKilograms || 0,
+                totalWorkers: analytics?.totalWorkers || 0,
+                averageWeight: analytics?.totalBags > 0 ? (analytics?.totalKilograms || 0) / analytics.totalBags : 0,
+            },
+        };
+    };
 
     const quickActions = [
-        { title: 'Worker Management',   desc: 'Manage worker records',          icon: Users,         href: '/admin/workers',          bg: 'bg-violet-50',  icon_c: 'text-violet-600' },
-        { title: 'Supervisors',         desc: 'Manage supervisors',             icon: Shield,        href: '/admin/supervisors',      bg: 'bg-sky-50',     icon_c: 'text-sky-600' },
-        { title: 'Exporters',           desc: 'Configure exporters & rates',    icon: Building2,     href: '/admin/exporters',        bg: 'bg-slate-100',  icon_c: 'text-slate-600' },
-        { title: 'Weekly Payroll',      desc: 'Generate wage disbursement',     icon: FileSpreadsheet, href: '/admin/payroll',        bg: 'bg-emerald-50', icon_c: 'text-emerald-600' },
-        { title: 'Worker Requests',     desc: 'Review staffing requests',       icon: ClipboardList, href: '/admin/worker-requests',  bg: 'bg-amber-50',   icon_c: 'text-amber-600' },
-        { title: 'Reports',             desc: 'Analytics & exports',            icon: BarChart3,     href: '/admin/reports',          bg: 'bg-violet-50',  icon_c: 'text-violet-600' },
+        {
+            title: 'Comprehensive Reports',
+            description: 'Per exporter, worker, and facility reports',
+            icon: FileText,
+            href: '/admin/reports',
+            color: 'emerald',
+            hoverBorder: 'hover:border-emerald-500',
+            hoverBg: 'hover:bg-emerald-50 dark:hover:bg-emerald-900/20',
+            iconBg: 'bg-emerald-100 dark:bg-emerald-900/30',
+            iconColor: 'text-emerald-600',
+        },
+        {
+            title: 'Worker Management',
+            description: 'View, edit, and manage worker records',
+            icon: Users,
+            href: '/admin/workers',
+            color: 'blue',
+            hoverBorder: 'hover:border-blue-500',
+            hoverBg: 'hover:bg-blue-50 dark:hover:bg-blue-900/20',
+            iconBg: 'bg-blue-100 dark:bg-blue-900/30',
+            iconColor: 'text-blue-600',
+        },
+        {
+            title: 'Exporter Management',
+            description: 'Configure exporters and sorting rates',
+            icon: Building2,
+            href: '/admin/exporters',
+            color: 'purple',
+            hoverBorder: 'hover:border-purple-500',
+            hoverBg: 'hover:bg-purple-50 dark:hover:bg-purple-900/20',
+            iconBg: 'bg-purple-100 dark:bg-purple-900/30',
+            iconColor: 'text-purple-600',
+        },
+        {
+            title: 'Worker Requests',
+            description: 'Review and approve worker requests',
+            icon: ShieldCheck,
+            href: '/admin/worker-requests',
+            color: 'orange',
+            hoverBorder: 'hover:border-orange-500',
+            hoverBg: 'hover:bg-orange-50 dark:hover:bg-orange-900/20',
+            iconBg: 'bg-orange-100 dark:bg-orange-900/30',
+            iconColor: 'text-orange-600',
+        },
+    ];
+
+    const statCards = [
+        {
+            label: 'Total Workers',
+            value: analytics?.totalWorkers || 0,
+            sub: `${analytics?.activeWorkers || 0} active`,
+            icon: Users,
+            border: 'border-l-blue-500',
+            iconBg: 'bg-blue-100 dark:bg-blue-900/30',
+            iconColor: 'text-blue-600',
+            subColor: 'text-blue-600 dark:text-blue-400',
+        },
+        {
+            label: 'Checked In Today',
+            value: analytics?.workersCheckedInToday || 0,
+            sub: 'On-site now',
+            icon: UserCheck,
+            border: 'border-l-emerald-500',
+            iconBg: 'bg-emerald-100 dark:bg-emerald-900/30',
+            iconColor: 'text-emerald-600',
+            subColor: 'text-emerald-600 dark:text-emerald-400',
+        },
+        {
+            label: 'Active Sessions',
+            value: analytics?.activeSessions || 0,
+            sub: 'Sorting now',
+            icon: Activity,
+            border: 'border-l-purple-500',
+            iconBg: 'bg-purple-100 dark:bg-purple-900/30',
+            iconColor: 'text-purple-600',
+            subColor: 'text-purple-600 dark:text-purple-400',
+            pulse: (analytics?.activeSessions || 0) > 0,
+        },
+        {
+            label: 'Bags Today',
+            value: analytics?.bagsToday || 0,
+            sub: `${analytics?.totalKilogramsToday || 0} kg`,
+            icon: Package,
+            border: 'border-l-amber-500',
+            iconBg: 'bg-amber-100 dark:bg-amber-900/30',
+            iconColor: 'text-amber-600',
+            subColor: 'text-amber-600 dark:text-amber-400',
+        },
+        {
+            label: 'Total Exporters',
+            value: analytics?.totalExporters || 0,
+            sub: `${analytics?.activeExporters || 0} active`,
+            icon: Building2,
+            border: 'border-l-indigo-500',
+            iconBg: 'bg-indigo-100 dark:bg-indigo-900/30',
+            iconColor: 'text-indigo-600',
+            subColor: 'text-indigo-600 dark:text-indigo-400',
+        },
+        {
+            label: "Today's Costs",
+            value: `FRw ${(analytics?.totalCostsToday || 0).toLocaleString()}`,
+            sub: `${analytics?.totalHoursWorked || 0} hrs worked`,
+            icon: DollarSign,
+            border: 'border-l-green-500',
+            iconBg: 'bg-green-100 dark:bg-green-900/30',
+            iconColor: 'text-green-600',
+            subColor: 'text-green-600 dark:text-green-400',
+        },
     ];
 
     return (
-        <div className="space-y-6">
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center shrink-0">
-                        <TrendingUp className="w-5 h-5 text-violet-600" />
-                    </div>
+        <div className="space-y-6 sm:space-y-8">
+            {/* Header */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30">
+                <div className="absolute inset-0 opacity-10">
+                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                </div>
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
+                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                            System-wide overview
-                            {lastUpdated && <span className="ml-2 text-slate-400">· updated {lastUpdated.toLocaleTimeString()}</span>}
-                        </p>
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
+                                <TrendingUp className="w-7 h-7 text-white" />
+                            </div>
+                            <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">Admin Dashboard</h1>
+                        </div>
+                        <p className="text-white/90 text-base sm:text-lg ml-15">System-wide overview and operational management</p>
+                        {lastUpdated && (
+                            <p className="text-xs text-white/70 mt-2 ml-15">Last updated: {lastUpdated.toLocaleTimeString()}</p>
+                        )}
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                        <ExportButton data={getExportData()} label="Export Data" variant="header" />
+                        <button
+                            onClick={handleRefresh}
+                            disabled={refreshing}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-xl hover:bg-white/30 font-medium transition-all disabled:opacity-50 shadow-lg"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </button>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <ExportButton data={getExportData()} label="Export" variant="default" />
-                    <button
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </button>
+            </div>
+
+            {/* Quick Stats Banner */}
+            <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700/50 p-4">
+                <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
+                    <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-emerald-600" />
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{analytics?.totalWorkers || 0}</span>
+                        <span className="text-gray-600 dark:text-gray-400">total workers</span>
+                    </div>
+                    <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                    <div className="flex items-center gap-2">
+                        <Package className="w-4 h-4 text-purple-600" />
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{analytics?.totalBags || 0}</span>
+                        <span className="text-gray-600 dark:text-gray-400">bags all time</span>
+                    </div>
+                    <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                    <div className="flex items-center gap-2">
+                        <Weight className="w-4 h-4 text-blue-600" />
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{(analytics?.totalKilograms || 0).toLocaleString()}</span>
+                        <span className="text-gray-600 dark:text-gray-400">kg total</span>
+                    </div>
+                    <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                    <div className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-amber-600" />
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{analytics?.avgBagsPerDay || 0}</span>
+                        <span className="text-gray-600 dark:text-gray-400">avg bags/day</span>
+                    </div>
                 </div>
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-5">
                 {statCards.map((card) => {
                     const Icon = card.icon;
                     return (
-                        <div key={card.label} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className={`w-8 h-8 ${card.bg} dark:bg-slate-700 rounded-lg flex items-center justify-center`}>
-                                    <Icon className={`w-4 h-4 ${card.color}`} />
+                        <div key={card.label} className={`relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 ${card.border} border-t border-r border-b border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:-translate-y-1 transition-all`}>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className={`w-11 h-11 ${card.iconBg} rounded-xl flex items-center justify-center`}>
+                                    <Icon className={`w-6 h-6 ${card.iconColor}`} />
                                 </div>
-                                {card.pulse && (analytics?.activeSessions || 0) > 0 && (
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                {card.pulse && (
+                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                                 )}
                             </div>
-                            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-tight">{card.label}</p>
-                            <p className={`mt-1 font-bold text-slate-900 dark:text-white ${card.small ? 'text-base leading-tight' : 'text-2xl'}`}>
-                                {card.value}
-                            </p>
-                            <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{card.sub}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">{card.label}</p>
+                            <p className="mt-1 text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">{card.value}</p>
+                            <p className={`mt-1 text-xs font-medium ${card.subColor}`}>{card.sub}</p>
                         </div>
                     );
                 })}
             </div>
 
-            {/* Cost Breakdown */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
-                <div className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 bg-violet-50 dark:bg-violet-950/40 rounded-lg flex items-center justify-center">
-                            <Banknote className="w-4 h-4 text-violet-600" />
-                        </div>
-                        <div>
-                            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Cost Breakdown</h2>
-                            <p className="text-xs text-slate-400">FRw 2,000 charged · FRw 1,700 wages · FRw 300 margin</p>
-                        </div>
-                    </div>
-                    <Link href="/admin/payroll" className="text-xs font-medium text-violet-600 hover:text-violet-700 flex items-center gap-1">
-                        Payroll <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {[
-                        { period: 'Today', cost: analytics?.dailyCostToExporters, wages: analytics?.dailyWorkerWages, margin: analytics?.dailyCoopMargin, days: analytics?.workerDaysToday },
-                        { period: 'This Week', cost: analytics?.weeklyCostToExporters, wages: analytics?.weeklyWorkerWages, margin: (analytics?.weeklyCostToExporters||0)-(analytics?.weeklyWorkerWages||0), days: analytics?.workerDaysWeek },
-                        { period: 'Cumulative', cost: analytics?.cumulativeCostToExporters, wages: analytics?.cumulativeWorkerWages, margin: (analytics?.cumulativeCostToExporters||0)-(analytics?.cumulativeWorkerWages||0), days: analytics?.workerDaysCumulative },
-                    ].map(({ period, cost, wages, margin, days }) => (
-                        <div key={period} className="rounded-lg border border-slate-100 dark:border-slate-700 p-4 space-y-2.5">
-                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{period}</p>
-                            <div className="flex justify-between items-center">
-                                <span className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400"><DollarSign className="w-3 h-3 text-emerald-500" />Charged</span>
-                                <span className="text-sm font-bold text-emerald-600">{fmt(cost || 0)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400"><Wallet className="w-3 h-3 text-violet-500" />Wages</span>
-                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{fmt(wages || 0)}</span>
-                            </div>
-                            <div className="flex justify-between items-center pt-1 border-t border-slate-100 dark:border-slate-700">
-                                <span className="text-xs text-slate-500">Margin</span>
-                                <span className="text-sm font-bold text-violet-600">{fmt(margin || 0)}</span>
-                            </div>
-                            <p className="text-[11px] text-slate-400">{days || 0} worker-days</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
             {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="w-7 h-7 bg-violet-50 rounded-lg flex items-center justify-center">
-                            <Users className="w-3.5 h-3.5 text-violet-600" />
-                        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Attendance Trend */}
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 p-6">
+                    <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Attendance</h3>
-                            <p className="text-xs text-slate-400">Last 7 days</p>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Attendance Trend</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Last 7 days</p>
+                        </div>
+                        <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                            <Users className="w-5 h-5 text-emerald-600" />
                         </div>
                     </div>
-                    {loading ? <div className="h-52 flex items-center justify-center"><div className="w-7 h-7 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" /></div> : (
-                        <ResponsiveContainer width="100%" height={200}>
+                    {loading ? (
+                        <div className="h-64 flex items-center justify-center">
+                            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height={250}>
                             <LineChart data={analytics?.trends?.attendance || []}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                <Tooltip contentStyle={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12 }} />
-                                <Line type="monotone" dataKey="workers" stroke="#7c3aed" strokeWidth={2} dot={{ fill: '#7c3aed', r: 3 }} activeDot={{ r: 5 }} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                                <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', color: '#111827' }}
+                                    labelStyle={{ color: '#111827', fontWeight: 600 }}
+                                    itemStyle={{ color: '#374151' }}
+                                />
+                                <Line type="monotone" dataKey="workers" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     )}
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="w-7 h-7 bg-amber-50 rounded-lg flex items-center justify-center">
-                            <Package className="w-3.5 h-3.5 text-amber-600" />
-                        </div>
+                {/* Bags Processed Trend */}
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 p-6">
+                    <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Bags Processed</h3>
-                            <p className="text-xs text-slate-400">Last 7 days</p>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bags Processed</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Last 7 days</p>
+                        </div>
+                        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                            <Package className="w-5 h-5 text-purple-600" />
                         </div>
                     </div>
-                    {loading ? <div className="h-52 flex items-center justify-center"><div className="w-7 h-7 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" /></div> : (
-                        <ResponsiveContainer width="100%" height={200}>
+                    {loading ? (
+                        <div className="h-64 flex items-center justify-center">
+                            <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height={250}>
                             <BarChart data={analytics?.trends?.bags || []}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                <Tooltip contentStyle={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12 }} />
-                                <Bar dataKey="bags" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                                <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', color: '#111827' }}
+                                    labelStyle={{ color: '#111827', fontWeight: 600 }}
+                                    itemStyle={{ color: '#374151' }}
+                                />
+                                <Bar dataKey="bags" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}
                 </div>
             </div>
 
-            {/* Exporter Activity Table */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-slate-400" />
-                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Today's Exporter Activity</h3>
-                        <span className="text-xs text-slate-400">· {analytics?.exporterBreakdown?.length || 0} active</span>
+            {/* Today's Exporter Activity */}
+            <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                            <Building2 className="w-5 h-5 text-indigo-600" />
+                            Today&apos;s Exporter Activity
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                            {analytics?.exporterBreakdown?.length || 0} exporter{(analytics?.exporterBreakdown?.length || 0) !== 1 ? 's' : ''} active today
+                        </p>
                     </div>
-                    <Link href="/admin/exporters" className="text-xs font-medium text-violet-600 hover:text-violet-700 flex items-center gap-1">
+                    <Link href="/admin/exporters" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
                         Manage <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                 </div>
-
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
-                        <div className="w-7 h-7 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : !analytics?.exporterBreakdown?.length ? (
                     <div className="text-center py-12">
-                        <Building2 className="w-10 h-10 mx-auto mb-2 text-slate-200 dark:text-slate-700" />
-                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No activity today</p>
+                        <Building2 className="w-12 h-12 mx-auto mb-3 text-gray-200 dark:text-gray-600" />
+                        <p className="text-gray-500 dark:text-gray-400 font-medium">No exporter activity today</p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Bags recorded today will appear here</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full">
                             <thead>
-                                <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
-                                    <th className="px-5 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Exporter</th>
-                                    <th className="px-5 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Bags</th>
-                                    <th className="px-5 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Worker-Days</th>
-                                    <th className="px-5 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Wages Due</th>
-                                    <th className="px-5 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Charged</th>
+                                <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Exporter</th>
+                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags Today</th>
+                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight (kg)</th>
+                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rate / Bag</th>
+                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost Today</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                {(analytics?.exporterBreakdown || []).map((exp: any) => (
-                                    <tr key={exp.exporterId} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                                        <td className="px-5 py-3.5">
-                                            <p className="text-sm font-semibold text-slate-900 dark:text-white">{exp.name}</p>
-                                            <p className="text-xs text-slate-400 font-mono">{exp.code}</p>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                {(analytics?.exporterBreakdown || []).map((exp: any, i: number) => (
+                                    <tr key={exp.exporterId} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center shrink-0">
+                                                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{i + 1}</span>
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{exp.name}</p>
+                                                    <p className="text-xs text-gray-400 font-mono">{exp.code}</p>
+                                                </div>
+                                            </div>
                                         </td>
-                                        <td className="px-5 py-3.5 text-right">
-                                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{exp.bagsToday}</span>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-bold">
+                                                {exp.bagsToday}
+                                            </span>
                                         </td>
-                                        <td className="px-5 py-3.5 text-right">
-                                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{exp.workerDaysToday ?? 0}</span>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                                {(exp.weightToday || 0).toLocaleString()}
+                                            </span>
                                         </td>
-                                        <td className="px-5 py-3.5 text-right">
-                                            <span className="text-sm text-slate-600 dark:text-slate-400">{exp.workerWagesToday > 0 ? fmt(exp.workerWagesToday) : '—'}</span>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                {exp.ratePerBag > 0 ? `FRw ${exp.ratePerBag.toLocaleString()}` : <span className="text-amber-500 text-xs">No rate set</span>}
+                                            </span>
                                         </td>
-                                        <td className="px-5 py-3.5 text-right">
-                                            <span className={`text-sm font-bold ${exp.costToday > 0 ? 'text-emerald-600' : 'text-slate-300'}`}>
-                                                {exp.costToday > 0 ? fmt(exp.costToday) : '—'}
+                                        <td className="px-6 py-4 text-right">
+                                            <span className={`text-sm font-bold ${exp.costToday > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                                                {exp.costToday > 0 ? `FRw ${exp.costToday.toLocaleString()}` : '—'}
                                             </span>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot className="border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
-                                <tr>
-                                    <td className="px-5 py-3 text-xs font-semibold text-slate-600 dark:text-slate-400">Total</td>
-                                    <td className="px-5 py-3 text-right text-sm font-bold text-slate-800 dark:text-white">{analytics?.bagsToday || 0}</td>
-                                    <td className="px-5 py-3 text-right text-sm font-bold text-slate-800 dark:text-white">{analytics?.workerDaysToday || 0}</td>
-                                    <td className="px-5 py-3 text-right text-sm font-bold text-slate-700 dark:text-slate-300">{fmt(analytics?.dailyWorkerWages || 0)}</td>
-                                    <td className="px-5 py-3 text-right text-sm font-bold text-emerald-600">{fmt(analytics?.dailyCostToExporters || 0)}</td>
+                            <tfoot>
+                                <tr className="bg-gray-50 dark:bg-gray-800/50 border-t-2 border-gray-200 dark:border-gray-700">
+                                    <td className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Total</td>
+                                    <td className="px-6 py-3 text-right text-sm font-bold text-purple-700 dark:text-purple-300">
+                                        {(analytics?.bagsToday || 0)}
+                                    </td>
+                                    <td className="px-6 py-3 text-right text-sm font-bold text-gray-700 dark:text-gray-300">
+                                        {(analytics?.totalKilogramsToday || 0).toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-3 text-right text-sm text-gray-400">—</td>
+                                    <td className="px-6 py-3 text-right text-sm font-bold text-green-600 dark:text-green-400">
+                                        FRw {(analytics?.totalCostsToday || 0).toLocaleString()}
+                                    </td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -279,20 +425,30 @@ export default function AdminDashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div>
-                <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Quick Actions</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 p-6">
+                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                    <Activity className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    Quick Actions
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {quickActions.map((action) => {
                         const Icon = action.icon;
                         return (
-                            <Link key={action.title} href={action.href}
-                                className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-md transition-all"
+                            <Link
+                                key={action.title}
+                                href={action.href}
+                                className={`group p-5 border-2 border-gray-200 dark:border-gray-700 rounded-xl ${action.hoverBorder} ${action.hoverBg} transition-all hover:shadow-md`}
                             >
-                                <div className={`w-9 h-9 ${action.bg} dark:bg-slate-700 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                                    <Icon className={`w-4 h-4 ${action.icon_c}`} />
+                                <div className="flex items-start gap-3">
+                                    <div className={`w-10 h-10 ${action.iconBg} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
+                                        <Icon className={`w-5 h-5 ${action.iconColor}`} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{action.title}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{action.description}</p>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-1 transition-all flex-shrink-0 mt-0.5" />
                                 </div>
-                                <p className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">{action.title}</p>
-                                <p className="text-xs text-slate-400 mt-0.5 leading-tight">{action.desc}</p>
                             </Link>
                         );
                     })}

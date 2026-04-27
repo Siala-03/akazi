@@ -53,7 +53,7 @@ export default function ExporterLayout({ children }: { children: ReactNode }) {
                                 <div className="hidden sm:block">
                                     <span className="text-lg font-bold text-white tracking-wide">Akazi Rwanda Ltd</span>
                                     <div>
-                                        <span className="text-xs font-medium text-white/75">Exporter Portal</span>
+                                        <span className="text-xs font-medium text-white/50">Exporter Portal</span>
                                     </div>
                                 </div>
                             </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { GitBranch, User, Phone, Pencil, Trash2, X, AlertTriangle } from 'lucide-react';
+import { GitBranch, User, Phone } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface Cooperative {
@@ -17,8 +17,6 @@ export default function AdminCooperativesPage() {
     const [cooperatives, setCooperatives] = useState<Cooperative[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
-    const [editCooperative, setEditCooperative] = useState<Cooperative | null>(null);
-    const [deleteCooperative, setDeleteCooperative] = useState<Cooperative | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         code: '',
@@ -41,6 +39,25 @@ export default function AdminCooperativesPage() {
             toast.error('Failed to load cooperatives');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleInitUmucyo = async () => {
+        try {
+            const res = await fetch('/api/init-cooperative', {
+                method: 'POST',
+            });
+
+            const data = await res.json();
+            
+            if (res.ok) {
+                toast.success(data.message);
+                fetchCooperatives();
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (error) {
+            toast.error('Failed to initialize Umucyo cooperative');
         }
     };
 
@@ -72,62 +89,6 @@ export default function AdminCooperativesPage() {
         }
     };
 
-    const handleStartEdit = (cooperative: Cooperative) => {
-        setEditCooperative(cooperative);
-        setFormData({
-            name: cooperative.name,
-            code: cooperative.code,
-            contactPerson: cooperative.contactPerson,
-            phone: cooperative.phone,
-        });
-    };
-
-    const handleUpdateCooperative = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!editCooperative) return;
-
-        try {
-            const res = await fetch(`/api/cooperatives/${editCooperative._id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error || 'Update failed');
-            }
-
-            toast.success('Cooperative updated successfully');
-            setEditCooperative(null);
-            setFormData({ name: '', code: '', contactPerson: '', phone: '' });
-            fetchCooperatives();
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to update cooperative');
-        }
-    };
-
-    const handleDeleteCooperative = async () => {
-        if (!deleteCooperative) return;
-
-        try {
-            const res = await fetch(`/api/cooperatives/${deleteCooperative._id}`, {
-                method: 'DELETE',
-            });
-
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error || 'Delete failed');
-            }
-
-            toast.success('Cooperative deleted successfully');
-            setDeleteCooperative(null);
-            fetchCooperatives();
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to delete cooperative');
-        }
-    };
-
     return (
         <div className="space-y-6">
             <Toaster position="top-right" />
@@ -150,6 +111,12 @@ export default function AdminCooperativesPage() {
                     </div>
                     <div className="flex gap-2 shrink-0">
                         <button
+                            onClick={handleInitUmucyo}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-medium transition-colors border border-white/30 backdrop-blur-sm"
+                        >
+                            ✓ Init Umucyo
+                        </button>
+                        <button
                             onClick={() => setShowAddForm(true)}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-medium transition-colors border border-white/30 backdrop-blur-sm"
                         >
@@ -170,6 +137,12 @@ export default function AdminCooperativesPage() {
                     <div className="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
                         <GitBranch className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                         <p className="text-gray-500 mb-4 font-medium">No cooperatives found</p>
+                        <button
+                            onClick={handleInitUmucyo}
+                            className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                        >
+                            Initialize Umucyo Women Cooperative
+                        </button>
                     </div>
                 ) : (
                     cooperatives.map((cooperative) => (
@@ -205,135 +178,11 @@ export default function AdminCooperativesPage() {
                                 >
                                     {cooperative.isActive ? 'Active' : 'Inactive'}
                                 </span>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => handleStartEdit(cooperative)}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors"
-                                    >
-                                        <Pencil className="w-3.5 h-3.5" />
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => setDeleteCooperative(cooperative)}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-700 hover:text-white hover:border-rose-700 transition-colors"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                        Delete
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     ))
                 )}
             </div>
-
-            {/* Edit Modal */}
-            {editCooperative && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full border border-gray-100">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-2xl font-bold">Edit Cooperative</h2>
-                            <button
-                                onClick={() => {
-                                    setEditCooperative(null);
-                                    setFormData({ name: '', code: '', contactPerson: '', phone: '' });
-                                }}
-                                className="p-2 rounded-lg hover:bg-gray-100"
-                            >
-                                <X className="w-5 h-5 text-gray-500" />
-                            </button>
-                        </div>
-                        <form onSubmit={handleUpdateCooperative} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Cooperative Name</label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
-                                <input
-                                    type="text"
-                                    value={formData.code}
-                                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent uppercase"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
-                                <input
-                                    type="text"
-                                    value={formData.contactPerson}
-                                    onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                                <input
-                                    type="tel"
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                    required
-                                />
-                            </div>
-                            <div className="flex space-x-4 pt-4">
-                                <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors">Save Changes</button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setEditCooperative(null);
-                                        setFormData({ name: '', code: '', contactPerson: '', phone: '' });
-                                    }}
-                                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Delete Modal */}
-            {deleteCooperative && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-100">
-                        <div className="flex flex-col items-center text-center gap-4">
-                            <div className="w-14 h-14 rounded-full bg-rose-100 flex items-center justify-center">
-                                <AlertTriangle className="w-7 h-7 text-rose-600" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900">Delete Cooperative?</h3>
-                                <p className="text-sm text-gray-500 mt-1.5">
-                                    <span className="font-semibold text-gray-700">{deleteCooperative.name}</span> will be marked inactive and hidden from active operations.
-                                </p>
-                            </div>
-                            <div className="flex gap-3 w-full pt-1">
-                                <button
-                                    onClick={() => setDeleteCooperative(null)}
-                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleDeleteCooperative}
-                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 transition-colors"
-                                >
-                                    Yes, Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Add Modal */}
             {showAddForm && (
