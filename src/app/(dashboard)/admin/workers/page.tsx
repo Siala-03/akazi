@@ -38,6 +38,9 @@ const emptyNewWorker = {
     consentWorkRecords: false,
 };
 
+const inputClass = 'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400';
+const labelClass = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5';
+
 export default function AdminWorkersPage() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [cooperatives, setCooperatives] = useState<Cooperative[]>([]);
@@ -45,22 +48,18 @@ export default function AdminWorkersPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
 
-    // Reset to page 1 on filter change
     useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
     const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
     const [editMode, setEditMode] = useState(false);
     const [formData, setFormData] = useState<any>({});
 
-    // New worker registration state
     const [showAddForm, setShowAddForm] = useState(false);
     const [newWorker, setNewWorker] = useState(emptyNewWorker);
     const [submitting, setSubmitting] = useState(false);
 
-    // Confirm toggle modal
     const [confirmWorker, setConfirmWorker] = useState<Worker | null>(null);
     const [deleteWorker, setDeleteWorker] = useState<Worker | null>(null);
 
-    // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
@@ -75,8 +74,7 @@ export default function AdminWorkersPage() {
             const res = await fetch('/api/workers');
             const data = await res.json();
             setWorkers(data.workers || []);
-        } catch (error) {
-            console.error('Error fetching workers:', error);
+        } catch {
             toast.error('Failed to load workers');
         } finally {
             setLoading(false);
@@ -109,16 +107,13 @@ export default function AdminWorkersPage() {
     const handleUpdateWorker = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedWorker) return;
-
         try {
             const res = await fetch(`/api/workers/${selectedWorker._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             });
-
             if (!res.ok) throw new Error('Update failed');
-
             toast.success('Worker updated successfully');
             setEditMode(false);
             setSelectedWorker(null);
@@ -136,9 +131,7 @@ export default function AdminWorkersPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus }),
             });
-
             if (!res.ok) throw new Error('Status update failed');
-
             toast.success(`Worker ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
             setConfirmWorker(null);
             fetchWorkers();
@@ -149,17 +142,10 @@ export default function AdminWorkersPage() {
 
     const handleDeleteWorker = async () => {
         if (!deleteWorker) return;
-
         try {
-            const res = await fetch(`/api/workers/${deleteWorker._id}`, {
-                method: 'DELETE',
-            });
-
+            const res = await fetch(`/api/workers/${deleteWorker._id}`, { method: 'DELETE' });
             const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error || 'Failed to delete worker');
-            }
-
+            if (!res.ok) throw new Error(data.error || 'Failed to delete worker');
             toast.success('Worker deleted successfully');
             setDeleteWorker(null);
             fetchWorkers();
@@ -173,7 +159,6 @@ export default function AdminWorkersPage() {
 
     const handleAddWorker = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!newWorker.consentWorkRecords) {
             toast.error('Worker consent is required');
             return;
@@ -182,23 +167,16 @@ export default function AdminWorkersPage() {
             toast.error('Please select a cooperative');
             return;
         }
-
         setSubmitting(true);
         try {
-            const payload: any = {
-                ...newWorker,
-                photo: '/uploads/placeholder.jpg',
-            };
-
+            const payload: any = { ...newWorker, photo: '/uploads/placeholder.jpg' };
             const res = await fetch('/api/workers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || data.details || 'Registration failed');
-
             toast.success('Worker registered successfully!');
             setShowAddForm(false);
             setNewWorker(emptyNewWorker);
@@ -227,54 +205,45 @@ export default function AdminWorkersPage() {
         <div className="space-y-6">
             <Toaster position="top-right" />
 
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                </div>
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
-                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                                <Users className="w-7 h-7 text-white" />
-                            </div>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">Workers Management</h1>
-                        </div>
-                        <p className="text-white/90 text-base sm:text-lg ml-15">Manage all workers across cooperatives</p>
+            {/* Page Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-violet-100 dark:bg-violet-900/30 rounded-xl flex items-center justify-center shrink-0">
+                        <Users className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                     </div>
-                    <button
-                        onClick={() => { setNewWorker(emptyNewWorker); setShowAddForm(true); }}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-emerald-700 font-semibold rounded-xl hover:bg-emerald-50 transition-colors shadow-sm shrink-0"
-                    >
-                        <UserPlus className="w-5 h-5" /> Register Worker
-                    </button>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Workers</h1>
+                        <p className="text-sm text-slate-500 mt-0.5">Manage all workers across cooperatives</p>
+                    </div>
                 </div>
+                <button
+                    onClick={() => { setNewWorker(emptyNewWorker); setShowAddForm(true); }}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors shrink-0"
+                >
+                    <UserPlus className="w-4 h-4" />
+                    Register Worker
+                </button>
             </div>
 
             {/* Filters */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 sm:p-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Search Workers
-                        </label>
+                        <label className={labelClass}>Search Workers</label>
                         <input
                             type="text"
                             placeholder="Search by name, ID, or phone..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
+                            className={inputClass}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Status Filter
-                        </label>
+                        <label className={labelClass}>Status</label>
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
+                            className={inputClass}
                         >
                             <option value="all">All Workers</option>
                             <option value="active">Active</option>
@@ -284,7 +253,7 @@ export default function AdminWorkersPage() {
                     <div className="flex items-end">
                         <button
                             onClick={fetchWorkers}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-sm font-medium"
                         >
                             <RefreshCw className="w-4 h-4" />
                             Refresh
@@ -294,139 +263,103 @@ export default function AdminWorkersPage() {
             </div>
 
             {/* Workers Table */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                     <div>
-                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Workers Directory</h3>
-                        <p className="text-xs sm:text-sm text-gray-500 mt-1">{filteredWorkers.length} worker{filteredWorkers.length !== 1 ? 's' : ''} found</p>
+                        <h3 className="text-base font-semibold text-slate-900 dark:text-white">Workers Directory</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">{filteredWorkers.length} worker{filteredWorkers.length !== 1 ? 's' : ''} found</p>
                     </div>
                 </div>
+
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
-                        <p>Loading workers...</p>
+                    <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-600 mb-3"></div>
+                        <p className="text-sm">Loading workers...</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
                             <thead>
-                                <tr className="bg-gray-50 dark:bg-[#162032] border-b border-gray-200 dark:border-gray-700">
-                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Worker</th>
-                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
-                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cooperative</th>
-                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                                <tr className="bg-slate-50 dark:bg-slate-800/50">
+                                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Worker</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Cooperative</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white dark:bg-[#1e293b] divide-y divide-gray-100 dark:divide-gray-700/40">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                                 {paginatedWorkers.map((worker) => (
-                                    <tr
-                                        key={worker._id}
-                                        className="group bg-white dark:bg-[#1e293b] transition-all duration-150 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 hover:shadow-[inset_3px_0_0_0_#10b981]"
-                                    >
-                                        {/* Worker */}
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                    <tr key={worker._id} className="group hover:bg-violet-50/40 dark:hover:bg-violet-950/10 transition-colors">
+                                        <td className="px-5 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold shadow-sm
-                                                    bg-gradient-to-br from-emerald-400 to-teal-600 text-white">
+                                                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-bold bg-gradient-to-br from-violet-500 to-violet-700 text-white">
                                                     {getInitials(worker.fullName)}
                                                 </div>
                                                 <div>
-                                                    <div className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{worker.fullName}</div>
-                                                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-normal tracking-wide">{worker.workerId}</div>
+                                                    <div className="text-sm font-semibold text-slate-900 dark:text-white">{worker.fullName}</div>
+                                                    <div className="text-xs text-slate-400 mt-0.5 font-mono">{worker.workerId}</div>
                                                 </div>
                                             </div>
                                         </td>
-
-                                        {/* Contact */}
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
-                                                <Phone className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                        <td className="px-5 py-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300">
+                                                <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                                                 {worker.phone}
                                             </div>
-                                            <div className="text-xs text-gray-400 capitalize mt-0.5 ml-5">{worker.gender}</div>
+                                            <div className="text-xs text-slate-400 capitalize mt-0.5 ml-5">{worker.gender}</div>
                                         </td>
-
-                                        {/* Cooperative */}
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-5 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-1.5">
-                                                <Building2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                                                <span className="text-sm text-gray-700 dark:text-gray-300">{worker.cooperativeId?.name || 'N/A'}</span>
+                                                <Building2 className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                                                <span className="text-sm text-slate-700 dark:text-slate-300">{worker.cooperativeId?.name || 'N/A'}</span>
                                             </div>
                                         </td>
-
-                                        {/* Status */}
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-5 py-4 whitespace-nowrap">
                                             {worker.status === 'active' ? (
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-500 text-white">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-pulse" />
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                                     Active
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500" />
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                                                     Inactive
                                                 </span>
                                             )}
                                         </td>
-
-                                        {/* Actions */}
-                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-1.5 flex-nowrap opacity-70 group-hover:opacity-100 transition-opacity duration-150">
-                                                {/* Edit */}
+                                        <td className="px-5 py-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
                                                 <button
                                                     onClick={() => handleEditWorker(worker)}
                                                     title="Edit worker"
-                                                    className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg
-                                                        bg-blue-50 text-blue-700 border border-blue-200
-                                                        hover:bg-blue-600 hover:text-white hover:border-blue-600
-                                                        dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700/50
-                                                        dark:hover:bg-blue-600 dark:hover:text-white dark:hover:border-blue-600
-                                                        transition-all duration-200 hover:shadow-md hover:shadow-blue-500/25 active:scale-95"
+                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-violet-50 hover:text-violet-600 dark:hover:bg-violet-950/30 dark:hover:text-violet-400 transition-colors"
                                                 >
-                                                    <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                    <Pencil className="w-3.5 h-3.5" />
                                                 </button>
-
-                                                {/* Deactivate / Activate */}
                                                 {worker.status === 'active' ? (
                                                     <button
                                                         onClick={() => setConfirmWorker(worker)}
                                                         title="Deactivate worker"
-                                                        className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg
-                                                            bg-red-50 text-red-700 border border-red-200
-                                                            hover:bg-red-600 hover:text-white hover:border-red-600
-                                                            dark:bg-red-900/20 dark:text-red-400 dark:border-red-700/50
-                                                            dark:hover:bg-red-600 dark:hover:text-white dark:hover:border-red-600
-                                                            transition-all duration-200 hover:shadow-md hover:shadow-red-500/25 active:scale-95"
+                                                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-950/30 dark:hover:text-amber-400 transition-colors"
                                                     >
-                                                        <UserX className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                        <UserX className="w-3.5 h-3.5" />
                                                     </button>
                                                 ) : (
                                                     <button
                                                         onClick={() => handleToggleStatus(worker)}
                                                         title="Activate worker"
-                                                        className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg
-                                                            bg-emerald-50 text-emerald-700 border border-emerald-200
-                                                            hover:bg-emerald-600 hover:text-white hover:border-emerald-600
-                                                            dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-700/50
-                                                            dark:hover:bg-emerald-600 dark:hover:text-white dark:hover:border-emerald-600
-                                                            transition-all duration-200 hover:shadow-md hover:shadow-emerald-500/25 active:scale-95"
+                                                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400 transition-colors"
                                                     >
-                                                        <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                        <UserCheck className="w-3.5 h-3.5" />
                                                     </button>
                                                 )}
-
                                                 <button
                                                     onClick={() => setDeleteWorker(worker)}
                                                     title="Delete worker"
-                                                    className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg
-                                                        bg-rose-50 text-rose-700 border border-rose-200
-                                                        hover:bg-rose-700 hover:text-white hover:border-rose-700
-                                                        dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-700/50
-                                                        dark:hover:bg-rose-700 dark:hover:text-white dark:hover:border-rose-700
-                                                        transition-all duration-200 hover:shadow-md hover:shadow-rose-500/25 active:scale-95"
+                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-colors"
                                                 >
-                                                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                    <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
                                             </div>
                                         </td>
@@ -435,10 +368,10 @@ export default function AdminWorkersPage() {
                             </tbody>
                         </table>
                         {filteredWorkers.length === 0 && (
-                            <div className="p-12 text-center text-gray-500">
-                                <Users className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                                <p className="font-medium">No workers found</p>
-                                <p className="text-sm mt-1">Try adjusting your search or filter criteria</p>
+                            <div className="p-16 text-center">
+                                <Users className="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+                                <p className="text-sm font-medium text-slate-500">No workers found</p>
+                                <p className="text-xs text-slate-400 mt-1">Try adjusting your search or filter criteria</p>
                             </div>
                         )}
                     </div>
@@ -457,38 +390,38 @@ export default function AdminWorkersPage() {
 
             {/* Edit Modal */}
             {editMode && selectedWorker && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Worker</h2>
-                            <button onClick={() => { setEditMode(false); setSelectedWorker(null); }} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <X className="w-5 h-5 text-gray-500" />
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-5">
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Edit Worker</h2>
+                            <button onClick={() => { setEditMode(false); setSelectedWorker(null); }} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                <X className="w-4 h-4 text-slate-500" />
                             </button>
                         </div>
                         <form onSubmit={handleUpdateWorker} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
-                                <input type="text" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" required />
+                                <label className={labelClass}>Full Name</label>
+                                <input type="text" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} className={inputClass} required />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
-                                <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" required />
+                                <label className={labelClass}>Phone</label>
+                                <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className={inputClass} required />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gender</label>
-                                <select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" required>
+                                <label className={labelClass}>Gender</label>
+                                <select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })} className={inputClass} required>
                                     <option value="male">Male</option>
                                     <option value="female">Female</option>
                                     <option value="other">Other</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Primary Role</label>
-                                <input type="text" value={formData.primaryRole} onChange={(e) => setFormData({ ...formData, primaryRole: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" required />
+                                <label className={labelClass}>Primary Role</label>
+                                <input type="text" value={formData.primaryRole} onChange={(e) => setFormData({ ...formData, primaryRole: e.target.value })} className={inputClass} required />
                             </div>
-                            <div className="flex space-x-4 pt-4">
-                                <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors">Save Changes</button>
-                                <button type="button" onClick={() => { setEditMode(false); setSelectedWorker(null); }} className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">Cancel</button>
+                            <div className="flex gap-3 pt-2">
+                                <button type="submit" className="flex-1 bg-violet-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 transition-colors">Save Changes</button>
+                                <button type="button" onClick={() => { setEditMode(false); setSelectedWorker(null); }} className="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -497,30 +430,24 @@ export default function AdminWorkersPage() {
 
             {/* Confirm Deactivate Modal */}
             {confirmWorker && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-700">
                         <div className="flex flex-col items-center text-center gap-4">
-                            <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                                <AlertTriangle className="w-7 h-7 text-red-600 dark:text-red-400" />
+                            <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                                <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Deactivate Worker?</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
-                                    <span className="font-semibold text-gray-700 dark:text-gray-200">{confirmWorker.fullName}</span> will be marked inactive and excluded from daily operations.
+                                <h3 className="text-base font-bold text-slate-900 dark:text-white">Deactivate Worker?</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">
+                                    <span className="font-semibold text-slate-700 dark:text-slate-200">{confirmWorker.fullName}</span> will be marked inactive and excluded from daily operations.
                                 </p>
                             </div>
-                            <div className="flex gap-3 w-full pt-1">
-                                <button
-                                    onClick={() => setConfirmWorker(null)}
-                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                                >
+                            <div className="flex gap-3 w-full">
+                                <button onClick={() => setConfirmWorker(null)} className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                                     Cancel
                                 </button>
-                                <button
-                                    onClick={() => handleToggleStatus(confirmWorker)}
-                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30"
-                                >
-                                    Yes, Deactivate
+                                <button onClick={() => handleToggleStatus(confirmWorker)} className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-colors">
+                                    Deactivate
                                 </button>
                             </div>
                         </div>
@@ -530,30 +457,24 @@ export default function AdminWorkersPage() {
 
             {/* Confirm Delete Modal */}
             {deleteWorker && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-700">
                         <div className="flex flex-col items-center text-center gap-4">
-                            <div className="w-14 h-14 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
-                                <Trash2 className="w-7 h-7 text-rose-600 dark:text-rose-400" />
+                            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Worker?</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
-                                    <span className="font-semibold text-gray-700 dark:text-gray-200">{deleteWorker.fullName}</span> will be permanently removed if no operational records exist.
+                                <h3 className="text-base font-bold text-slate-900 dark:text-white">Delete Worker?</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">
+                                    <span className="font-semibold text-slate-700 dark:text-slate-200">{deleteWorker.fullName}</span> will be permanently removed if no operational records exist.
                                 </p>
                             </div>
-                            <div className="flex gap-3 w-full pt-1">
-                                <button
-                                    onClick={() => setDeleteWorker(null)}
-                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                                >
+                            <div className="flex gap-3 w-full">
+                                <button onClick={() => setDeleteWorker(null)} className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                                     Cancel
                                 </button>
-                                <button
-                                    onClick={handleDeleteWorker}
-                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 transition-colors shadow-lg shadow-rose-500/30"
-                                >
-                                    Yes, Delete
+                                <button onClick={handleDeleteWorker} className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors">
+                                    Delete
                                 </button>
                             </div>
                         </div>
@@ -563,30 +484,30 @@ export default function AdminWorkersPage() {
 
             {/* Register Worker Modal */}
             {showAddForm && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Register New Worker</h2>
-                                <p className="text-sm text-gray-500 mt-0.5">Fill in the worker details below.</p>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Register New Worker</h2>
+                                <p className="text-sm text-slate-500 mt-0.5">Fill in the worker details below.</p>
                             </div>
-                            <button onClick={() => setShowAddForm(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                <X className="w-5 h-5 text-gray-500" />
+                            <button onClick={() => setShowAddForm(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                <X className="w-4 h-4 text-slate-500" />
                             </button>
                         </div>
                         <form onSubmit={handleAddWorker} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Full Name *</label>
-                                <input type="text" required value={newWorker.fullName} onChange={e => setNewWorker({ ...newWorker, fullName: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" placeholder="Enter full name" />
+                                <label className={labelClass}>Full Name *</label>
+                                <input type="text" required value={newWorker.fullName} onChange={e => setNewWorker({ ...newWorker, fullName: e.target.value })} className={inputClass} placeholder="Enter full name" />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Worker ID (National ID)</label>
-                                    <input type="text" value={newWorker.workerId} onChange={e => setNewWorker({ ...newWorker, workerId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" placeholder="Auto-generated if blank" />
+                                    <label className={labelClass}>Worker ID (National ID)</label>
+                                    <input type="text" value={newWorker.workerId} onChange={e => setNewWorker({ ...newWorker, workerId: e.target.value })} className={inputClass} placeholder="Auto-generated if blank" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Gender *</label>
-                                    <select required value={newWorker.gender} onChange={e => setNewWorker({ ...newWorker, gender: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white">
+                                    <label className={labelClass}>Gender *</label>
+                                    <select required value={newWorker.gender} onChange={e => setNewWorker({ ...newWorker, gender: e.target.value })} className={inputClass}>
                                         <option value="male">Male</option>
                                         <option value="female">Female</option>
                                         <option value="other">Other</option>
@@ -595,22 +516,22 @@ export default function AdminWorkersPage() {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Phone *</label>
-                                    <input type="tel" required value={newWorker.phone} onChange={e => setNewWorker({ ...newWorker, phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" placeholder="+250..." />
+                                    <label className={labelClass}>Phone *</label>
+                                    <input type="tel" required value={newWorker.phone} onChange={e => setNewWorker({ ...newWorker, phone: e.target.value })} className={inputClass} placeholder="+250..." />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email <span className="text-gray-400 font-normal">(optional)</span></label>
-                                    <input type="email" value={newWorker.email} onChange={e => setNewWorker({ ...newWorker, email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" placeholder="email@example.com" />
+                                    <label className={labelClass}>Email <span className="text-slate-400 font-normal">(optional)</span></label>
+                                    <input type="email" value={newWorker.email} onChange={e => setNewWorker({ ...newWorker, email: e.target.value })} className={inputClass} placeholder="email@example.com" />
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Primary Role *</label>
-                                    <input type="text" required value={newWorker.primaryRole} onChange={e => setNewWorker({ ...newWorker, primaryRole: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" placeholder="Coffee Sorter" />
+                                    <label className={labelClass}>Primary Role *</label>
+                                    <input type="text" required value={newWorker.primaryRole} onChange={e => setNewWorker({ ...newWorker, primaryRole: e.target.value })} className={inputClass} placeholder="Coffee Sorter" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cooperative *</label>
-                                    <select required value={newWorker.cooperativeId} onChange={e => setNewWorker({ ...newWorker, cooperativeId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white">
+                                    <label className={labelClass}>Cooperative *</label>
+                                    <select required value={newWorker.cooperativeId} onChange={e => setNewWorker({ ...newWorker, cooperativeId: e.target.value })} className={inputClass}>
                                         <option value="">Select cooperative</option>
                                         {cooperatives.map(c => (
                                             <option key={c._id} value={c._id}>{c.name}</option>
@@ -619,14 +540,13 @@ export default function AdminWorkersPage() {
                                 </div>
                             </div>
 
-                            {/* Consent */}
-                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-lg p-3">
-                                <label className="flex items-start gap-2 cursor-pointer">
+                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                                <label className="flex items-start gap-2.5 cursor-pointer">
                                     <input
                                         type="checkbox"
                                         checked={newWorker.consentWorkRecords}
                                         onChange={e => setNewWorker({ ...newWorker, consentWorkRecords: e.target.checked })}
-                                        className="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                        className="mt-0.5 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
                                     />
                                     <span className="text-xs text-amber-800 dark:text-amber-400">
                                         Worker has given consent for work records to be maintained in the system. *
@@ -634,18 +554,18 @@ export default function AdminWorkersPage() {
                                 </label>
                             </div>
 
-                            <div className="flex gap-3 pt-2">
+                            <div className="flex gap-3 pt-1">
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="flex-1 bg-emerald-600 text-white py-2.5 rounded-xl font-semibold hover:bg-emerald-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 bg-violet-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {submitting ? 'Registering...' : 'Register Worker'}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setShowAddForm(false)}
-                                    className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-2.5 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+                                    className="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                                 >
                                     Cancel
                                 </button>

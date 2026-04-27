@@ -16,6 +16,28 @@ interface QrScannerModalProps {
 
 type ScanState = 'scanning' | 'processing' | 'success' | 'error' | 'no-camera';
 
+const safeStopAndClearScanner = async (scanner: any) => {
+    if (!scanner) return;
+
+    try {
+        const stopResult = scanner.stop?.();
+        if (stopResult && typeof stopResult.then === 'function') {
+            await stopResult;
+        }
+    } catch {
+        // Scanner may already be stopped; ignore.
+    }
+
+    try {
+        const clearResult = scanner.clear?.();
+        if (clearResult && typeof clearResult.then === 'function') {
+            await clearResult;
+        }
+    } catch {
+        // Clear can fail if scanner was not initialized; ignore.
+    }
+};
+
 export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProps) {
     const scannerRef = useRef<any>(null);
     const containerId = 'qr-scanner-container';
@@ -23,43 +45,48 @@ export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProp
     const [message, setMessage] = useState('');
     const [lastResult, setLastResult] = useState<CheckInResult | null>(null);
     const isProcessingRef = useRef(false);
+    const isStartingRef = useRef(false);
+
+    const startScannerSession = async () => {
+        if (isStartingRef.current) return;
+        isStartingRef.current = true;
+
+        try {
+            await safeStopAndClearScanner(scannerRef.current);
+
+            const { Html5Qrcode } = await import('html5-qrcode');
+            const html5QrCode = new Html5Qrcode(containerId);
+            scannerRef.current = html5QrCode;
+
+            await html5QrCode.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: { width: 220, height: 220 } },
+                handleScan,
+                undefined
+            );
+        } catch (err: any) {
+            console.error('Camera error:', err);
+            const msg = err?.message || err?.toString() || '';
+            if (msg.includes('NotAllowed') || msg.includes('Permission')) {
+                setScanState('no-camera');
+                setMessage('Camera permission was denied. Please allow camera access in your browser settings and try again.');
+            } else if (msg.includes('NotFound') || msg.includes('DevicesNotFound')) {
+                setScanState('no-camera');
+                setMessage('No camera found on this device.');
+            } else {
+                setScanState('no-camera');
+                setMessage('Could not access camera. Please check permissions and try again.');
+            }
+        } finally {
+            isStartingRef.current = false;
+        }
+    };
 
     useEffect(() => {
-        let html5QrCode: any = null;
-
-        const startScanner = async () => {
-            try {
-                // Dynamic import - browser only
-                const { Html5Qrcode } = await import('html5-qrcode');
-                html5QrCode = new Html5Qrcode(containerId);
-                scannerRef.current = html5QrCode;
-
-                await html5QrCode.start(
-                    { facingMode: 'environment' }, // rear camera
-                    { fps: 10, qrbox: { width: 220, height: 220 } },
-                    handleScan,
-                    undefined // suppress errors during scanning
-                );
-            } catch (err: any) {
-                console.error('Camera error:', err);
-                const msg = err?.message || err?.toString() || '';
-                if (msg.includes('NotAllowed') || msg.includes('Permission')) {
-                    setScanState('no-camera');
-                    setMessage('Camera permission was denied. Please allow camera access in your browser settings and try again.');
-                } else if (msg.includes('NotFound') || msg.includes('DevicesNotFound')) {
-                    setScanState('no-camera');
-                    setMessage('No camera found on this device.');
-                } else {
-                    setScanState('no-camera');
-                    setMessage('Could not access camera. Please check permissions and try again.');
-                }
-            }
-        };
-
-        startScanner();
+        void startScannerSession();
 
         return () => {
-            html5QrCode?.stop().catch(() => {});
+            void safeStopAndClearScanner(scannerRef.current);
         };
     }, []);
 
@@ -81,7 +108,7 @@ export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProp
         }
 
         // Stop the camera while processing
-        await scannerRef.current?.stop().catch(() => {});
+        await safeStopAndClearScanner(scannerRef.current);
         setScanState('processing');
         setMessage('Processing check-in...');
 
@@ -121,21 +148,7 @@ export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProp
         setMessage('');
         setLastResult(null);
         isProcessingRef.current = false;
-
-        try {
-            const { Html5Qrcode } = await import('html5-qrcode');
-            const html5QrCode = new Html5Qrcode(containerId);
-            scannerRef.current = html5QrCode;
-            await html5QrCode.start(
-                { facingMode: 'environment' },
-                { fps: 10, qrbox: { width: 220, height: 220 } },
-                handleScan,
-                undefined
-            );
-        } catch (err) {
-            setScanState('error');
-            setMessage('Could not restart camera.');
-        }
+        await startScannerSession();
     };
 
     return (

@@ -14,6 +14,7 @@ import {
     GitBranch,
     ClipboardList,
     Shield,
+    FileSpreadsheet,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -27,6 +28,7 @@ const navigation = [
     { name: 'Exporters',       href: '/admin/exporters',         icon: Building2 },
     { name: 'Cooperatives',    href: '/admin/cooperatives',      icon: GitBranch },
     { name: 'Worker Requests', href: '/admin/worker-requests',   icon: ClipboardList },
+    { name: 'Payroll',         href: '/admin/payroll',           icon: FileSpreadsheet },
     { name: 'Reports',         href: '/admin/reports',           icon: BarChart3 },
 ];
 
@@ -43,57 +45,62 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     };
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0f172a]">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
             {/* Top Navigation */}
-            <nav className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 dark:from-emerald-700 dark:via-teal-700 dark:to-emerald-800 sticky top-0 z-50 shadow-md">
-                <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16">
-                        <div className="flex items-center gap-4">
+            <nav className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
+                <div className="px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
+                        <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                                className="lg:hidden p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                                className="lg:hidden p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                             >
-                                {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                                {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                             </button>
-                            <div className="flex-shrink-0 flex items-center gap-3">
-                                <div className="w-9 h-9 bg-white/15 rounded-xl flex items-center justify-center">
-                                    <Coffee className="w-5 h-5 text-white" />
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center shadow-sm">
+                                    <Coffee className="w-4 h-4 text-white" />
                                 </div>
                                 <div className="hidden sm:block">
-                                    <span className="text-lg font-bold text-white tracking-wide">Akazi Rwanda Ltd</span>
-                                    <div>
-                                        <span className="text-xs font-medium text-white/75">Admin Portal</span>
-                                    </div>
+                                    <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">Akazi Rwanda</span>
+                                    <div className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Admin Portal</div>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleLogout}
-                                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                <span className="hidden sm:inline">Logout</span>
-                            </button>
-                        </div>
+
+                        <button
+                            onClick={handleLogout}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span className="hidden sm:inline">Sign out</span>
+                        </button>
                     </div>
                 </div>
             </nav>
 
             <div className="flex">
+                {/* Overlay */}
                 {sidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-40 lg:hidden"
+                        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
                         onClick={() => setSidebarOpen(false)}
                     />
                 )}
 
-                <aside className={`fixed lg:sticky top-16 left-0 z-40 w-64 h-[calc(100vh-4rem)] bg-white dark:bg-[#1e293b] border-r border-gray-100 dark:border-gray-700/40 transition-transform duration-300 ease-in-out flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-                    <div className="px-5 pt-6 pb-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Menu</p>
-                    </div>
-
-                    <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+                {/* Sidebar */}
+                <aside className={`
+                    fixed lg:sticky top-16 left-0 z-40 w-60 h-[calc(100vh-4rem)]
+                    bg-white dark:bg-slate-900
+                    border-r border-slate-200 dark:border-slate-800
+                    flex flex-col
+                    transition-transform duration-300 ease-in-out
+                    ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                `}>
+                    <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+                        <p className="px-2 mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                            Navigation
+                        </p>
                         {navigation.map((item) => {
                             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                             const Icon = item.icon;
@@ -102,18 +109,17 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                                     key={item.name}
                                     href={item.href}
                                     onClick={() => setSidebarOpen(false)}
-                                    className={`group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${isActive ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-800 dark:hover:text-gray-200'}`}
+                                    className={`
+                                        flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150
+                                        ${isActive
+                                            ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                                        }
+                                    `}
                                 >
-                                    {isActive && (
-                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-emerald-500 dark:bg-emerald-400 rounded-r-full" />
-                                    )}
-                                    <span className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 transition-all duration-200 ${isActive ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'bg-gray-100 dark:bg-white/5 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/40'}`}>
-                                        <Icon className={`w-4 h-4 transition-colors duration-200 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500 group-hover:text-emerald-500 dark:group-hover:text-emerald-400'}`} />
-                                    </span>
+                                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`} />
                                     <span className="truncate">{item.name}</span>
-                                    {isActive && (
-                                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
-                                    )}
+                                    {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />}
                                 </a>
                             );
                         })}
@@ -122,8 +128,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     <SidebarProfile profileHref="/admin/profile" onSettingsClick={() => setShowSettings(true)} />
                 </aside>
 
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto min-h-[calc(100vh-4rem)] bg-[#f8fafc] dark:bg-[#0f172a]">
-                    <div className="max-w-7xl mx-auto">
+                {/* Main content */}
+                <main className="flex-1 min-h-[calc(100vh-4rem)] overflow-auto">
+                    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                         {children}
                     </div>
                 </main>
