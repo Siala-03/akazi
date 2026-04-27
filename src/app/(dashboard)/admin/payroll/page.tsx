@@ -160,7 +160,6 @@ export default function PayrollPage() {
                     onChange={e => setSelectedWeek(e.target.value)}
                     className="px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-shadow"
                 />
-                <p className="text-xs text-gray-400 dark:text-gray-500 sm:ml-2">Wages disbursed every Friday based on days worked</p>
             </div>
 
             {/* ── Error ── */}
@@ -229,7 +228,7 @@ export default function PayrollPage() {
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between gap-4">
                     <div>
                         <h2 className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">Wage Disbursement List</h2>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                             {loading ? 'Loading…' : `${payroll.length} worker${payroll.length !== 1 ? 's' : ''}${weekLabel ? ` · ${weekLabel}` : ''}`}
                         </p>
                     </div>
@@ -248,13 +247,13 @@ export default function PayrollPage() {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-3">
                         <div className="w-7 h-7 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                        <p className="text-xs text-gray-400">Loading payroll data…</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Loading payroll data…</p>
                     </div>
                 ) : payroll.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-2">
                         <FileSpreadsheet className="w-10 h-10 text-gray-200 dark:text-gray-700" />
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No attendance data for this week</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">Select a different week or verify worker check-ins</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Select a different week or verify worker check-ins</p>
                     </div>
                 ) : (
                     <>
@@ -277,12 +276,12 @@ export default function PayrollPage() {
                                             key={worker.workerId}
                                             className="group hover:bg-emerald-50/30 dark:hover:bg-emerald-900/5 transition-colors"
                                         >
-                                            <td className="px-6 py-3.5 text-xs text-gray-300 dark:text-gray-600 tabular-nums">
+                                            <td className="px-6 py-3.5 text-xs text-gray-500 dark:text-gray-400 tabular-nums">
                                                 {(currentPage - 1) * ITEMS_PER_PAGE + i + 1}
                                             </td>
                                             <td className="px-6 py-3.5">
                                                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight">{worker.fullName}</p>
-                                                <p className="text-[11px] text-gray-400 dark:text-gray-500 font-mono mt-0.5">{worker.workerId}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">{worker.workerId}</p>
                                             </td>
                                             <td className="px-6 py-3.5">
                                                 {worker.nationalId ? (
@@ -298,7 +297,7 @@ export default function PayrollPage() {
                                                 <span className="text-sm font-semibold text-teal-600 dark:text-teal-400 tabular-nums">{worker.numberOfDays}</span>
                                             </td>
                                             <td className="px-6 py-3.5 text-right">
-                                                <span className="text-sm text-gray-400 dark:text-gray-500 tabular-nums">FRw {worker.dailyRate.toLocaleString()}</span>
+                                                <span className="text-sm text-gray-500 dark:text-gray-400 tabular-nums">FRw {worker.dailyRate.toLocaleString()}</span>
                                             </td>
                                             <td className="px-6 py-3.5 text-right">
                                                 <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">FRw {worker.totalWage.toLocaleString()}</span>
@@ -307,24 +306,24 @@ export default function PayrollPage() {
                                     ))}
                                 </tbody>
                                 <tfoot>
-                                    <tr className="border-t border-gray-100 dark:border-gray-700/60 bg-gray-50/70 dark:bg-gray-800/40">
-                                        <td className="px-6 py-3" />
-                                        <td className="px-6 py-3">
-                                            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total — {payroll.length} workers</span>
+                                    <tr className="border-t-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/60">
+                                        <td className="px-6 py-4" />
+                                        <td className="px-6 py-4">
+                                            <span className="text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Total — {payroll.length} workers</span>
                                         </td>
-                                        <td className="px-6 py-3" />
-                                        <td className="px-6 py-3 text-center">
-                                            <span className="text-sm font-bold text-gray-600 dark:text-gray-400 tabular-nums">
+                                        <td className="px-6 py-4" />
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">
                                                 {payroll.reduce((s, w) => s + w.numberOfBags, 0).toLocaleString()}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-3 text-center">
+                                        <td className="px-6 py-4 text-center">
                                             <span className="text-sm font-bold text-teal-600 dark:text-teal-400 tabular-nums">
                                                 {(summary?.totalDays ?? 0).toLocaleString()}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-3" />
-                                        <td className="px-6 py-3 text-right">
+                                        <td className="px-6 py-4" />
+                                        <td className="px-6 py-4 text-right">
                                             <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
                                                 FRw {(summary?.totalWorkerWages ?? 0).toLocaleString()}
                                             </span>
@@ -337,14 +336,14 @@ export default function PayrollPage() {
                         {/* Pagination */}
                         {totalPages > 1 && (
                             <div className="px-6 py-3.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between gap-4">
-                                <p className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
                                     {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, payroll.length)} of {payroll.length}
                                 </p>
                                 <div className="flex items-center gap-1">
                                     <button
                                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                         disabled={currentPage === 1}
-                                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                        className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                     </button>
@@ -368,7 +367,7 @@ export default function PayrollPage() {
                                     <button
                                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                         disabled={currentPage === totalPages}
-                                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                        className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </button>
@@ -385,21 +384,21 @@ export default function PayrollPage() {
                     <div className="px-6 py-3.5 border-b border-gray-100 dark:border-gray-700/60">
                         <h2 className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">Weekly Cost Reconciliation</h2>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700/60">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-200 dark:divide-gray-700">
                         <div className="px-6 py-5">
-                            <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Collected from exporters</p>
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Collected from exporters</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">FRw {summary.totalCostToExporters.toLocaleString()}</p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">FRw 2,000 × {summary.totalDays} days</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">FRw 2,000 × {summary.totalDays} days</p>
                         </div>
                         <div className="px-6 py-5">
-                            <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Disbursed to workers</p>
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Disbursed to workers</p>
                             <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">FRw {summary.totalWorkerWages.toLocaleString()}</p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">FRw 1,700 × {summary.totalDays} days</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">FRw 1,700 × {summary.totalDays} days</p>
                         </div>
                         <div className="px-6 py-5">
-                            <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Cooperative &amp; software</p>
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Cooperative &amp; software</p>
                             <p className="text-xl font-bold text-teal-600 dark:text-teal-400">FRw {summary.cooperativeMargin.toLocaleString()}</p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">FRw 300 × {summary.totalDays} days</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">FRw 300 × {summary.totalDays} days</p>
                         </div>
                     </div>
                 </div>
