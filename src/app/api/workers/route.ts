@@ -99,7 +99,22 @@ export async function POST(request: NextRequest) {
             workerId = generateWorkerId();
         }
 
-        const { workerId: _wid, facilityId: rawFacility, ...rest } = body;
+        const trimmedDateOfBirth = typeof body.dateOfBirth === 'string' ? body.dateOfBirth.trim() : body.dateOfBirth;
+        let parsedDateOfBirth: Date | undefined;
+        if (trimmedDateOfBirth) {
+            const dob = new Date(trimmedDateOfBirth);
+            if (Number.isNaN(dob.getTime())) {
+                return NextResponse.json({ error: 'Invalid date of birth' }, { status: 400 });
+            }
+            parsedDateOfBirth = dob;
+        }
+
+        const normalizedEmail = typeof body.email === 'string' ? body.email.trim() : body.email;
+        const normalizedPreviousWorkType = typeof body.previousWorkType === 'string'
+            ? body.previousWorkType.trim()
+            : body.previousWorkType;
+
+        const { workerId: _wid, facilityId: rawFacility, dateOfBirth: _dob, email: _email, previousWorkType: _pwt, ...rest } = body;
         const facilityId = rawFacility || null;
 
         const worker = await prisma.worker.create({
@@ -107,6 +122,9 @@ export async function POST(request: NextRequest) {
                 ...rest,
                 workerId,
                 facilityId,
+                dateOfBirth: parsedDateOfBirth,
+                email: normalizedEmail || undefined,
+                previousWorkType: normalizedPreviousWorkType || undefined,
                 qrToken: randomUUID(),
                 enrollmentDate: new Date(),
                 consentTimestamp: new Date(),

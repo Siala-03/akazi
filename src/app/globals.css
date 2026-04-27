@@ -138,10 +138,14 @@ body {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card:hover, .bg-white:hover {
+.card:hover {
   background-color: var(--card-bg-hover) !important;
   box-shadow: var(--card-shadow-hover) !important;
   transform: translateY(-2px);
+}
+
+.bg-white:hover {
+  background-color: var(--card-bg-hover) !important;
 }
 
 /* Glassmorphism Cards */

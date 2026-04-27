@@ -9,9 +9,18 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const where = currentUser.role === 'admin' ? {} : { isActive: true };
+
         const cooperatives = await prisma.cooperative.findMany({
-            where: { isActive: true },
-            select: { id: true, name: true, code: true },
+            where,
+            select: {
+                id: true,
+                name: true,
+                code: true,
+                contactPerson: true,
+                phone: true,
+                isActive: true,
+            },
             orderBy: { name: 'asc' },
         });
 

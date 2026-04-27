@@ -62,7 +62,7 @@ export default function SupervisorLayout({ children }: { children: ReactNode }) 
                                         Akazi Rwanda Ltd
                                     </span>
                                     <div className="mt-0">
-                                        <span className="text-xs font-medium text-white/50">Supervisor Portal</span>
+                                        <span className="text-xs font-medium text-white/75">Supervisor Portal</span>
                                     </div>
                                 </div>
                             </div>

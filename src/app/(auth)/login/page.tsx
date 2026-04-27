@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Coffee, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
 function LoginForm() {
@@ -9,10 +10,7 @@ function LoginForm() {
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl') || '/';
 
-    const [formData, setFormData] = useState({
-        email: '',
-        password: '',
-    });
+    const [formData, setFormData] = useState({ email: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -23,7 +21,7 @@ function LoginForm() {
         setLoading(true);
 
         try {
-            const { email, password } = formData; // Destructure email and password from formData
+            const { email, password } = formData;
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -36,18 +34,10 @@ function LoginForm() {
                 throw new Error(data.error || 'Login failed');
             }
 
-            // Show success message
             toast.success('Login successful!');
-
-            // Determine redirect URL - prioritize API response, then callback
             const redirectUrl = data.redirectUrl || callbackUrl;
-            
             console.log('[Login] Redirecting to:', redirectUrl);
-            
-            // Use window.location.href for full page reload to ensure cookie is picked up
-            setTimeout(() => {
-                window.location.href = redirectUrl;
-            }, 500);
+            setTimeout(() => { window.location.href = redirectUrl; }, 500);
         } catch (error) {
             setError(error instanceof Error ? error.message : 'Login failed');
             toast.error(error instanceof Error ? error.message : 'Login failed');
@@ -57,172 +47,141 @@ function LoginForm() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+        <div
+            className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-12"
+            style={{ background: 'linear-gradient(135deg, #064e3b 0%, #065f46 35%, #0f766e 70%, #134e4a 100%)' }}
+        >
             <Toaster position="top-right" />
 
-            <div className="w-full max-w-md">
-                <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
-                    {/* Header */}
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mb-4">
-                            <svg
-                                className="w-8 h-8 text-white"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                                />
-                            </svg>
-                        </div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                            Akazi Rwanda Ltd
-                        </h1>
-                        <p className="text-gray-600">
-                            Worker Management System
-                        </p>
+            {/* Dot grid */}
+            <div
+                className="absolute inset-0 opacity-[0.06]"
+                style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '28px 28px' }}
+            />
+
+            {/* Glow blobs */}
+            <div className="absolute -top-48 -right-48 w-[500px] h-[500px] bg-teal-400/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-48 -left-48 w-[500px] h-[500px] bg-emerald-300/15 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative w-full max-w-[420px]">
+                {/* Brand header */}
+                <div className="text-center mb-8">
+                    <div
+                        className="inline-flex items-center justify-center w-[72px] h-[72px] rounded-2xl mb-5 border border-white/20 shadow-2xl"
+                        style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(10px)' }}
+                    >
+                        <Coffee className="w-9 h-9 text-white" />
                     </div>
+                    <h1 className="text-[28px] font-bold text-white leading-tight tracking-tight">Akazi Rwanda Ltd</h1>
+                    <p className="text-emerald-200/70 mt-2 text-[11px] font-semibold tracking-[0.18em] uppercase">
+                        Worker Management System
+                    </p>
+                </div>
 
-                    {/* Form */}
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label
-                                htmlFor="email"
-                                className="block text-sm font-medium text-gray-700 mb-2"
-                            >
-                                Email Address
-                            </label>
-                            <input
-                                id="email"
-                                type="email"
-                                required
-                                value={formData.email}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, email: e.target.value })
-                                }
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none bg-white text-gray-900"
-                                placeholder="you@example.com"
-                            />
-                        </div>
+                {/* Login card */}
+                <div
+                    className="bg-white rounded-2xl overflow-hidden"
+                    style={{ boxShadow: '0 32px 64px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)' }}
+                >
+                    <div className="px-8 pt-8 pb-7">
+                        <h2 className="text-[18px] font-semibold text-gray-900 mb-1">Welcome back</h2>
+                        <p className="text-sm text-gray-400 mb-6">Sign in to access your dashboard</p>
 
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <label
-                                    htmlFor="password"
-                                    className="block text-sm font-medium text-gray-700"
-                                >
-                                    Password
-                                </label>
-                                <a href="/forgot-password" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
-                                    Forgot password?
-                                </a>
+                        {error && (
+                            <div className="mb-5 px-4 py-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2.5">
+                                <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                                <p className="text-sm text-red-700">{error}</p>
                             </div>
-                            <div className="relative">
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                                    Email Address
+                                </label>
                                 <input
-                                    id="password"
-                                    type={showPassword ? 'text' : 'password'}
+                                    id="email"
+                                    type="email"
                                     required
-                                    value={formData.password}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, password: e.target.value })
-                                    }
-                                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none bg-white text-gray-900"
-                                    placeholder="••••••••"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-all"
+                                    placeholder="you@example.com"
                                 />
+                            </div>
+
+                            <div>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                        Password
+                                    </label>
+                                    <a href="/forgot-password" className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors">
+                                        Forgot password?
+                                    </a>
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        id="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        required
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        className="w-full px-3.5 py-2.5 pr-10 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-all"
+                                        placeholder="••••••••"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword
+                                            ? <EyeOff className="w-4 h-4" />
+                                            : <Eye className="w-4 h-4" />
+                                        }
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="pt-1">
                                 <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                                    tabIndex={-1}
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full py-3 rounded-xl font-semibold text-white text-sm disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:opacity-90 active:scale-[0.99]"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #10b981 0%, #0d9488 100%)',
+                                        boxShadow: '0 4px 20px rgba(16,185,129,0.35)',
+                                    }}
                                 >
-                                    {showPassword ? (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                                        </svg>
-                                    ) : (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    )}
+                                    {loading ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                            </svg>
+                                            Signing in...
+                                        </span>
+                                    ) : 'Sign In'}
                                 </button>
                             </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 px-4 rounded-lg font-medium hover:from-emerald-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02]"
-                        >
-                            {loading ? (
-                                <div className="flex items-center justify-center">
-                                    <svg
-                                        className="animate-spin h-5 w-5 mr-3"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        ></circle>
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        ></path>
-                                    </svg>
-                                    Signing in...
-                                </div>
-                            ) : (
-                                'Sign In'
-                            )}
-                        </button>
-                    </form>
-
-                    {/* Contact Admin */}
-                    <div className="mt-6 text-center">
-                        <p className="text-sm text-gray-500">
-                            Don&apos;t have an account? Contact your system administrator.
-                        </p>
+                        </form>
                     </div>
-                </div>
 
-                {/* Footer Info */}
-                <div className="mt-6 text-center text-xs text-gray-500">
-                    <p>For NAEB Coffee Sorting Facilities</p>
-                    <p className="mt-1">Powered by Iwacu Cooperative</p>
-                </div>
-
-                {/* Info card */}
-                <div className="mt-6 bg-blue-50 border border-blue-100 rounded-lg p-4">
-                    <div className="flex items-start">
-                        <svg
-                            className="w-5 h-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                        >
-                            <path
-                                fillRule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
-                        <div className="text-sm text-blue-800">
-                            <p className="font-medium mb-1">Role-Based Access</p>
-                            <p className="text-blue-700">
-                                Supervisor, Admin, and Exporter users access their respective dashboards after login.
-                            </p>
+                    {/* Card footer */}
+                    <div className="px-8 py-4 bg-gray-50 border-t border-gray-100">
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs text-gray-500">No account? Contact your administrator</p>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-xs text-gray-400 font-medium">Secure login</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <p className="text-center text-[11px] text-white/30 mt-7">
+                    For NAEB Coffee Sorting Facilities · Powered by Iwacu Cooperative
+                </p>
             </div>
         </div>
     );
@@ -231,30 +190,18 @@ function LoginForm() {
 export default function LoginPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+            <div
+                className="min-h-screen flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #064e3b 0%, #065f46 35%, #0f766e 70%, #134e4a 100%)' }}
+            >
                 <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mb-4">
-                        <svg
-                            className="w-8 h-8 text-white animate-spin"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
-                            <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                            ></circle>
-                            <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                        </svg>
+                    <div
+                        className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 border border-white/20"
+                        style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(10px)' }}
+                    >
+                        <Coffee className="w-8 h-8 text-white" />
                     </div>
-                    <p className="text-gray-600">Loading...</p>
+                    <p className="text-emerald-200/70 text-sm">Loading...</p>
                 </div>
             </div>
         }>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, RefreshCw, X, UserPlus, Pencil, UserX, UserCheck, AlertTriangle, Phone, Building2 } from 'lucide-react';
+import { Users, RefreshCw, X, UserPlus, Pencil, UserX, UserCheck, Trash2, AlertTriangle, Phone, Building2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Pagination from '@/components/Pagination';
 
@@ -58,6 +58,7 @@ export default function AdminWorkersPage() {
 
     // Confirm toggle modal
     const [confirmWorker, setConfirmWorker] = useState<Worker | null>(null);
+    const [deleteWorker, setDeleteWorker] = useState<Worker | null>(null);
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -143,6 +144,27 @@ export default function AdminWorkersPage() {
             fetchWorkers();
         } catch {
             toast.error('Failed to update status');
+        }
+    };
+
+    const handleDeleteWorker = async () => {
+        if (!deleteWorker) return;
+
+        try {
+            const res = await fetch(`/api/workers/${deleteWorker._id}`, {
+                method: 'DELETE',
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to delete worker');
+            }
+
+            toast.success('Worker deleted successfully');
+            setDeleteWorker(null);
+            fetchWorkers();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to delete worker');
         }
     };
 
@@ -396,6 +418,20 @@ export default function AdminWorkersPage() {
                                                         Activate
                                                     </button>
                                                 )}
+
+                                                <button
+                                                    onClick={() => setDeleteWorker(worker)}
+                                                    title="Delete worker"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                                                        bg-rose-50 text-rose-700 border border-rose-200
+                                                        hover:bg-rose-700 hover:text-white hover:border-rose-700
+                                                        dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-700/50
+                                                        dark:hover:bg-rose-700 dark:hover:text-white dark:hover:border-rose-700
+                                                        transition-all duration-200 hover:shadow-md hover:shadow-rose-500/25 active:scale-95"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                    Delete
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -489,6 +525,39 @@ export default function AdminWorkersPage() {
                                     className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30"
                                 >
                                     Yes, Deactivate
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Confirm Delete Modal */}
+            {deleteWorker && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex flex-col items-center text-center gap-4">
+                            <div className="w-14 h-14 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+                                <Trash2 className="w-7 h-7 text-rose-600 dark:text-rose-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Worker?</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
+                                    <span className="font-semibold text-gray-700 dark:text-gray-200">{deleteWorker.fullName}</span> will be permanently removed if no operational records exist.
+                                </p>
+                            </div>
+                            <div className="flex gap-3 w-full pt-1">
+                                <button
+                                    onClick={() => setDeleteWorker(null)}
+                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleDeleteWorker}
+                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 transition-colors shadow-lg shadow-rose-500/30"
+                                >
+                                    Yes, Delete
                                 </button>
                             </div>
                         </div>

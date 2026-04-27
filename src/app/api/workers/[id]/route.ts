@@ -70,12 +70,35 @@ export async function DELETE(
         }
 
         const { id } = await params;
-        const worker = await prisma.worker.update({
+
+        const [attendanceCount, sessionCount, earningsCount, bagWorkerCount] = await Promise.all([
+            prisma.attendance.count({ where: { workerId: id } }),
+            prisma.session.count({ where: { workerId: id } }),
+            prisma.earnings.count({ where: { workerId: id } }),
+            prisma.bagWorker.count({ where: { workerId: id } }),
+        ]);
+
+        const totalDependencies = attendanceCount + sessionCount + earningsCount + bagWorkerCount;
+        if (totalDependencies > 0) {
+            return NextResponse.json(
+                {
+                    error: 'Cannot delete worker with operational records. Deactivate the worker instead.',
+                    details: {
+                        attendances: attendanceCount,
+                        sessions: sessionCount,
+                        earnings: earningsCount,
+                        bagAssignments: bagWorkerCount,
+                    },
+                },
+                { status: 400 }
+            );
+        }
+
+        const worker = await prisma.worker.delete({
             where: { id },
-            data: { status: 'inactive' },
         });
 
-        return NextResponse.json({ message: 'Worker deactivated successfully', worker: { ...worker, _id: worker.id } });
+        return NextResponse.json({ message: 'Worker deleted successfully', worker: { ...worker, _id: worker.id } });
     } catch (error) {
         console.error('Delete worker error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
