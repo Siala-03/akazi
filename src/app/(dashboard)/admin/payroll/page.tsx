@@ -108,12 +108,12 @@ export default function PayrollPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700 rounded-2xl p-8 shadow-xl shadow-green-500/30">
+            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30">
                 <div className="absolute inset-0 opacity-10">
                     <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
                 </div>
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-300/20 rounded-full blur-3xl"></div>
+                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-3">
@@ -129,7 +129,7 @@ export default function PayrollPage() {
                         <button
                             onClick={handleExportExcel}
                             disabled={exporting || payroll.length === 0}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-green-700 rounded-xl hover:bg-green-50 font-semibold transition-all disabled:opacity-50 shadow-lg"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-700 rounded-xl hover:bg-emerald-50 font-semibold transition-all disabled:opacity-50 shadow-lg"
                         >
                             <FileSpreadsheet className={`w-4 h-4 ${exporting ? 'animate-pulse' : ''}`} />
                             {exporting ? 'Generating…' : 'Export Excel'}
@@ -156,7 +156,7 @@ export default function PayrollPage() {
                     type="date"
                     value={selectedWeek}
                     onChange={e => setSelectedWeek(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400">Workers are paid cumulatively every Friday based on days worked</p>
             </div>
@@ -213,7 +213,7 @@ export default function PayrollPage() {
                 <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                            <Banknote className="w-5 h-5 text-green-600" />
+                            <Banknote className="w-5 h-5 text-emerald-600" />
                             Wage Disbursement List
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -224,7 +224,7 @@ export default function PayrollPage() {
                         <button
                             onClick={handleExportExcel}
                             disabled={exporting}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                         >
                             <Download className="w-4 h-4" />
                             Download Excel
@@ -234,7 +234,7 @@ export default function PayrollPage() {
 
                 {loading ? (
                     <div className="flex items-center justify-center py-16">
-                        <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : payroll.length === 0 ? (
                     <div className="text-center py-16">
@@ -290,7 +290,7 @@ export default function PayrollPage() {
                                                 <span className="text-sm text-gray-600 dark:text-gray-400">FRw {worker.dailyRate.toLocaleString()}</span>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                                                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                                                     FRw {worker.totalWage.toLocaleString()}
                                                 </span>
                                             </td>
@@ -309,7 +309,7 @@ export default function PayrollPage() {
                                             {summary?.totalDays ?? 0}
                                         </td>
                                         <td className="px-6 py-3 text-right text-sm text-gray-400">—</td>
-                                        <td className="px-6 py-3 text-right text-sm font-bold text-green-600 dark:text-green-400">
+                                        <td className="px-6 py-3 text-right text-sm font-bold text-emerald-600 dark:text-emerald-400">
                                             FRw {(summary?.totalWorkerWages ?? 0).toLocaleString()}
                                         </td>
                                     </tr>
@@ -331,7 +331,7 @@ export default function PayrollPage() {
                                         const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
                                         const page = start + i;
                                         return page <= totalPages ? (
-                                            <button key={page} onClick={() => setCurrentPage(page)} className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${currentPage === page ? 'bg-green-600 text-white shadow' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{page}</button>
+                                            <button key={page} onClick={() => setCurrentPage(page)} className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${currentPage === page ? 'bg-emerald-600 text-white shadow' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{page}</button>
                                         ) : null;
                                     })}
                                     <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
@@ -348,13 +348,13 @@ export default function PayrollPage() {
             {summary && summary.totalDays > 0 && (
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-6">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-green-600" />
+                        <DollarSign className="w-4 h-4 text-emerald-600" />
                         Weekly Cost Reconciliation
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                        <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                             <span className="text-gray-600 dark:text-gray-400">Exporter charges collected</span>
-                            <span className="font-bold text-green-700 dark:text-green-400">{fmt(summary.totalCostToExporters)}</span>
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400">{fmt(summary.totalCostToExporters)}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                             <span className="text-gray-600 dark:text-gray-400">Worker wages to disburse</span>
