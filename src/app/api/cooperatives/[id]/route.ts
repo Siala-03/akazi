@@ -63,28 +63,19 @@ export async function DELETE(
         const { id } = await params;
 
         const workersCount = await prisma.worker.count({
-            where: {
-                cooperativeId: id,
-                status: 'active',
-            },
+            where: { cooperativeId: id },
         });
 
         if (workersCount > 0) {
             return NextResponse.json(
-                { error: 'Cannot delete cooperative with active workers. Deactivate or move workers first.' },
+                { error: 'Cannot delete cooperative with linked workers. Remove or reassign all workers first.' },
                 { status: 400 }
             );
         }
 
-        const cooperative = await prisma.cooperative.update({
-            where: { id },
-            data: { isActive: false },
-        });
+        await prisma.cooperative.delete({ where: { id } });
 
-        return NextResponse.json({
-            message: 'Cooperative deleted successfully',
-            cooperative: { ...cooperative, _id: cooperative.id },
-        });
+        return NextResponse.json({ message: 'Cooperative deleted successfully' });
     } catch (error) {
         console.error('[Cooperative API] Delete error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

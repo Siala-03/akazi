@@ -51,6 +51,10 @@ export default function AdminDashboard() {
         setRefreshing(false);
     };
 
+    const formatCurrency = (amount: number): string => {
+        return `FRw ${amount.toLocaleString()}`;
+    };
+
     const getExportData = (): ExportData => {
         return {
             exporterName: 'Admin',
@@ -165,7 +169,7 @@ export default function AdminDashboard() {
         },
         {
             label: "Today's Costs",
-            value: `FRw ${(analytics?.totalCostsToday || 0).toLocaleString()}`,
+            value: formatCurrency(analytics?.totalCostsToday || 0),
             sub: `${analytics?.totalHoursWorked || 0} hrs worked`,
             icon: DollarSign,
             border: 'border-l-green-500',
@@ -256,7 +260,7 @@ export default function AdminDashboard() {
                                 )}
                             </div>
                             <p className="text-gray-600 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">{card.label}</p>
-                            <p className={`mt-1 font-bold text-gray-900 dark:text-gray-100 leading-tight ${card.compactValue ? 'text-lg xl:text-xl break-words' : 'text-2xl xl:text-3xl'}`}>{card.value}</p>
+                            <p className={`mt-1 font-bold text-gray-900 dark:text-gray-100 leading-tight ${card.compactValue ? 'text-sm xl:text-sm break-all tracking-tight' : 'text-2xl xl:text-3xl'}`}>{card.value}</p>
                             <p className={`mt-1 text-xs font-medium ${card.subColor}`}>{card.sub}</p>
                         </div>
                     );
