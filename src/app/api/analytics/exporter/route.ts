@@ -3,6 +3,9 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfDay, getEndOfDay } from '@/lib/utils';
 
+const EXPORTER_DAILY_RATE = 2000;
+const WORKER_DAILY_WAGE = 1700;
+
 export async function GET(request: NextRequest) {
     try {
         const currentUser = await getCurrentUser();
@@ -14,10 +17,13 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({
                 analytics: {
                     totalBags: 0, workersEngaged: 0, totalWeight: 0, avgBagsPerDay: 0,
-                    bagsToday: 0, totalWeightToday: 0, totalHoursWorked: 0, costToday: 0,
-                    bagsThisWeek: 0, bagsThisMonth: 0, costThisMonth: 0,
-                    ratePerBag: 0, totalCost: 0, projectedMonthlyCost: 0,
-                    hasRateCard: false,
+                    bagsToday: 0, totalWeightToday: 0, totalHoursWorked: 0,
+                    bagsThisWeek: 0, bagsThisMonth: 0,
+                    workerDaysToday: 0, workerDaysWeek: 0, workerDaysCumulative: 0,
+                    dailyCost: 0, weeklyCost: 0, cumulativeCost: 0,
+                    dailyWorkerWages: 0, weeklyWorkerWages: 0, cumulativeWorkerWages: 0,
+                    ratePerWorkerDay: EXPORTER_DAILY_RATE,
+                    workerDailyWage: WORKER_DAILY_WAGE,
                     trends: { bags: [], weight: [] },
                 },
             });
@@ -33,13 +39,22 @@ export async function GET(request: NextRequest) {
 
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
+        // Current week Mon–Fri
+        const dayOfWeek = today.getDay();
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - daysFromMonday);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+
         const [
             bagsToday,
             bagsThisWeek,
             bagsThisMonth,
             totalBags,
             sessionsToday,
-            activeRateCard,
             weightAgg,
             workersEngagedRows,
         ] = await Promise.all([
@@ -51,18 +66,49 @@ export async function GET(request: NextRequest) {
                 where: { exporterId, date: { gte: startOfDay, lte: endOfDay } },
                 select: { startTime: true, endTime: true, status: true },
             }),
-            prisma.rateCard.findFirst({
-                where: { exporterId, isActive: true, effectiveFrom: { lte: today } },
-                orderBy: { effectiveFrom: 'desc' },
-            }),
             prisma.bag.aggregate({ where: { exporterId }, _sum: { weight: true }, _min: { date: true } }),
-            // Count unique workers via BagWorker join table
             prisma.$queryRaw<{ count: bigint }[]>`
                 SELECT COUNT(DISTINCT bw."workerId")::bigint AS count
                 FROM "BagWorker" bw
                 INNER JOIN "Bag" b ON b.id = bw."bagId"
                 WHERE b."exporterId" = ${exporterId}`,
         ]);
+
+        // ── Worker-day cost model (per-exporter) ──────────────────────────────
+        const [workerDaysTodayRows, workerDaysWeekRows, workerDaysCumulativeRows] = await Promise.all([
+            prisma.$queryRaw<{ count: bigint }[]>`
+                SELECT COUNT(*)::bigint AS count FROM (
+                    SELECT DISTINCT "workerId", DATE(date)
+                    FROM "Session"
+                    WHERE "exporterId" = ${exporterId}
+                      AND date >= ${startOfDay} AND date <= ${endOfDay}
+                ) AS sub`,
+            prisma.$queryRaw<{ count: bigint }[]>`
+                SELECT COUNT(*)::bigint AS count FROM (
+                    SELECT DISTINCT "workerId", DATE(date)
+                    FROM "Session"
+                    WHERE "exporterId" = ${exporterId}
+                      AND date >= ${weekStart} AND date <= ${weekEnd}
+                ) AS sub`,
+            prisma.$queryRaw<{ count: bigint }[]>`
+                SELECT COUNT(*)::bigint AS count FROM (
+                    SELECT DISTINCT "workerId", DATE(date)
+                    FROM "Session"
+                    WHERE "exporterId" = ${exporterId}
+                ) AS sub`,
+        ]);
+
+        const workerDaysToday = Number(workerDaysTodayRows[0]?.count ?? 0);
+        const workerDaysWeek = Number(workerDaysWeekRows[0]?.count ?? 0);
+        const workerDaysCumulative = Number(workerDaysCumulativeRows[0]?.count ?? 0);
+
+        const dailyCost = workerDaysToday * EXPORTER_DAILY_RATE;
+        const weeklyCost = workerDaysWeek * EXPORTER_DAILY_RATE;
+        const cumulativeCost = workerDaysCumulative * EXPORTER_DAILY_RATE;
+
+        const dailyWorkerWages = workerDaysToday * WORKER_DAILY_WAGE;
+        const weeklyWorkerWages = workerDaysWeek * WORKER_DAILY_WAGE;
+        const cumulativeWorkerWages = workerDaysCumulative * WORKER_DAILY_WAGE;
 
         const workersEngaged = Number(workersEngagedRows[0]?.count ?? 0);
         const totalWeight = weightAgg._sum.weight ?? 0;
@@ -80,41 +126,6 @@ export async function GET(request: NextRequest) {
         const oldestDate = weightAgg._min.date ?? today;
         const daysSinceStart = Math.max(1, Math.ceil((today.getTime() - oldestDate.getTime()) / (1000 * 60 * 60 * 24)));
         const avgBagsPerDay = totalBags / daysSinceStart;
-
-        const hasRateCard = !!activeRateCard;
-        let ratePerBag = activeRateCard?.ratePerBag ?? 0;
-        let totalCost = 0;
-        let costToday = 0;
-        let costThisMonth = 0;
-
-        if (hasRateCard && ratePerBag > 0) {
-            totalCost = totalBags * ratePerBag;
-            costToday = bagsToday * ratePerBag;
-            costThisMonth = bagsThisMonth * ratePerBag;
-        } else {
-            const [earningsTotal] = await Promise.all([
-                prisma.earnings.aggregate({
-                    where: { exporterId },
-                    _sum: { totalEarnings: true },
-                    _avg: { ratePerBag: true },
-                }),
-            ]);
-            totalCost = earningsTotal._sum.totalEarnings ?? 0;
-            ratePerBag = earningsTotal._avg.ratePerBag ?? 0;
-
-            const [earningsToday, earningsMonth] = await Promise.all([
-                prisma.earnings.aggregate({
-                    where: { exporterId, date: { gte: startOfDay, lte: endOfDay } },
-                    _sum: { totalEarnings: true },
-                }),
-                prisma.earnings.aggregate({
-                    where: { exporterId, date: { gte: monthStart, lte: endOfDay } },
-                    _sum: { totalEarnings: true },
-                }),
-            ]);
-            costToday = earningsToday._sum.totalEarnings ?? 0;
-            costThisMonth = earningsMonth._sum.totalEarnings ?? 0;
-        }
 
         const trendStart = getStartOfDay(new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000));
         const bagsTrendRows = await prisma.$queryRaw<{ day: string; count: bigint }[]>`
@@ -147,16 +158,21 @@ export async function GET(request: NextRequest) {
                 bagsToday,
                 totalWeightToday,
                 totalHoursWorked: Math.round(totalHoursWorked * 10) / 10,
-                costToday: Math.round(costToday * 100) / 100,
                 bagsThisWeek,
                 bagsThisMonth,
-                costThisMonth: Math.round(costThisMonth * 100) / 100,
-                ratePerBag,
-                totalCost: Math.round(totalCost * 100) / 100,
-                projectedMonthlyCost: ratePerBag > 0
-                    ? Math.round((bagsThisMonth / Math.max(today.getDate(), 1)) * 30 * ratePerBag * 100) / 100
-                    : Math.round((costThisMonth / Math.max(today.getDate(), 1)) * 30 * 100) / 100,
-                hasRateCard,
+                // Worker-day cost model
+                workerDaysToday,
+                workerDaysWeek,
+                workerDaysCumulative,
+                dailyCost,
+                weeklyCost,
+                cumulativeCost,
+                dailyWorkerWages,
+                weeklyWorkerWages,
+                cumulativeWorkerWages,
+                ratePerWorkerDay: EXPORTER_DAILY_RATE,
+                workerDailyWage: WORKER_DAILY_WAGE,
+                coopMarginPerDay: EXPORTER_DAILY_RATE - WORKER_DAILY_WAGE,
                 trends: { bags: trendData, weight: trendData },
             },
         });

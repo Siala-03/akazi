@@ -143,6 +143,7 @@ model Worker {
   id                         String       @id @default(cuid())
   workerId                   String       @unique
   fullName                   String
+  nationalId                 String?
   gender                     Gender
   dateOfBirth                DateTime?
   ageRange                   String?

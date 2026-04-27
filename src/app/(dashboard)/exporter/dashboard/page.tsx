@@ -13,7 +13,9 @@ import {
     ChevronLeft,
     ChevronRight,
     RefreshCw,
-    Info
+    Info,
+    Banknote,
+    Wallet
 } from 'lucide-react';
 import { ExportButton } from '@/components/export/ExportButton';
 import { ExportData } from '@/lib/export';
@@ -88,19 +90,17 @@ export default function ExporterDashboard() {
         };
     };
 
+    const fmt = (n: number) => `FRw ${n.toLocaleString()}`;
+
     return (
         <div className="space-y-6">
             {/* Header */}
             <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30">
-                {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-10">
                     <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
                 </div>
-
-                {/* Decorative gradient circles */}
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                 <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
-
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-3">
@@ -110,7 +110,7 @@ export default function ExporterDashboard() {
                             <h1 className="text-4xl font-bold text-white drop-shadow-lg">Exporter Dashboard</h1>
                         </div>
                         <p className="text-white/90 text-lg ml-15">
-                            Coffee export operations & performance overview
+                            Coffee export operations &amp; performance overview
                         </p>
                         {lastUpdated && (
                             <p className="text-xs text-white/70 mt-2 ml-15">
@@ -132,131 +132,139 @@ export default function ExporterDashboard() {
                 </div>
             </div>
 
-
             {/* Main Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                {/* Total Bags */}
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                                <Package className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <TrendingUp className="w-5 h-5 text-emerald-500" />
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                            <Package className="w-6 h-6 text-blue-600" />
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Bags</p>
-                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.totalBags || 0}</p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">All time processed</p>
+                        <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Bags</p>
+                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.totalBags || 0}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">All time processed</p>
                 </div>
 
-                {/* Workers Engaged */}
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-                                <Users className="w-6 h-6 text-purple-600" />
-                            </div>
-                            <BarChart3 className="w-5 h-5 text-purple-500" />
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                            <Users className="w-6 h-6 text-purple-600" />
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Workers Engaged</p>
-                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.workersEngaged || 0}</p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Unique workers</p>
+                        <BarChart3 className="w-5 h-5 text-purple-500" />
                     </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Workers Engaged</p>
+                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.workersEngaged || 0}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Unique workers</p>
                 </div>
 
-                {/* Total Weight */}
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-emerald-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
-                                <Weight className="w-6 h-6 text-emerald-600" />
-                            </div>
-                            <TrendingUp className="w-5 h-5 text-emerald-500" />
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+                            <Weight className="w-6 h-6 text-emerald-600" />
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Weight</p>
-                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.totalWeight?.toLocaleString() || 0}</p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">kg processed</p>
+                        <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Weight</p>
+                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.totalWeight?.toLocaleString() || 0}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">kg processed</p>
                 </div>
 
-                {/* Daily Average */}
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-amber-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
-                                <Clock className="w-6 h-6 text-amber-600" />
-                            </div>
-                            <TrendingUp className="w-5 h-5 text-amber-500" />
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
+                            <Clock className="w-6 h-6 text-amber-600" />
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Average</p>
-                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.avgBagsPerDay?.toFixed(1) || 0}</p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">bags per day</p>
+                        <TrendingUp className="w-5 h-5 text-amber-500" />
                     </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Average</p>
+                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.avgBagsPerDay?.toFixed(1) || 0}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">bags per day</p>
                 </div>
             </div>
 
-            {/* Financial Metrics */}
-            {analytics && !analytics.hasRateCard && analytics.totalCost === 0 && (
-                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Info className="w-5 h-5 text-amber-600" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-amber-800 dark:text-amber-200">No Rate Card Configured</p>
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Contact an administrator to set up a rate card so labor costs can be calculated.</p>
-                    </div>
-                </div>
-            )}
+            {/* Labor Cost Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                {/* Daily Labor Cost */}
+                {/* Daily Cost */}
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-green-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
-                                <DollarSign className="w-6 h-6 text-green-600" />
-                            </div>
-                            <TrendingUp className="w-5 h-5 text-green-500" />
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                            <DollarSign className="w-6 h-6 text-green-600" />
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Labor Cost</p>
-                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">
-                            FRw {(analytics?.costToday || 0).toLocaleString()}
-                        </p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{analytics?.bagsToday || 0} bags today {analytics?.ratePerBag ? `@ FRw ${analytics.ratePerBag.toLocaleString()}/bag` : '(no rate set)'}</p>
+                        <TrendingUp className="w-5 h-5 text-green-500" />
                     </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Labor Cost</p>
+                    <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+                        {fmt(analytics?.dailyCost || 0)}
+                    </p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        {analytics?.workerDaysToday || 0} worker-days @ FRw 2,000/day
+                    </p>
                 </div>
 
-                {/* Monthly Cost */}
+                {/* Weekly Cost */}
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                                <DollarSign className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <Calendar className="w-5 h-5 text-blue-500" />
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                            <DollarSign className="w-6 h-6 text-blue-600" />
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Monthly Cost</p>
-                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">
-                            FRw {(analytics?.costThisMonth || 0).toLocaleString()}
-                        </p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{analytics?.bagsThisMonth || 0} bags this month</p>
+                        <Calendar className="w-5 h-5 text-blue-500" />
                     </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Weekly Cost</p>
+                    <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+                        {fmt(analytics?.weeklyCost || 0)}
+                    </p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        {analytics?.workerDaysWeek || 0} worker-days this week · wages paid Fri
+                    </p>
                 </div>
 
                 {/* Cumulative Cost */}
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-orange-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
-                                <DollarSign className="w-6 h-6 text-orange-600" />
-                            </div>
-                            <BarChart3 className="w-5 h-5 text-orange-500" />
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
+                            <DollarSign className="w-6 h-6 text-orange-600" />
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Cumulative Cost</p>
-                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">
-                            FRw {(analytics?.totalCost || 0).toLocaleString()}
-                        </p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">All time labor charges</p>
+                        <BarChart3 className="w-5 h-5 text-orange-500" />
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Cumulative Cost</p>
+                    <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+                        {fmt(analytics?.cumulativeCost || 0)}
+                    </p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        {analytics?.workerDaysCumulative || 0} total worker-days
+                    </p>
+                </div>
+            </div>
+
+            {/* Pricing Breakdown Info */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Banknote className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">Labor Cost Breakdown</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div className="flex items-center gap-2">
+                                <DollarSign className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+                                <span className="text-blue-700 dark:text-blue-300">
+                                    <strong>FRw 2,000</strong> / worker-day charged to you
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Wallet className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                                <span className="text-blue-700 dark:text-blue-300">
+                                    <strong>FRw 1,700</strong> / day paid to workers (every Friday)
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <BarChart3 className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
+                                <span className="text-blue-700 dark:text-blue-300">
+                                    <strong>FRw 300</strong> / day cooperative ops &amp; software costs
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -285,7 +293,7 @@ export default function ExporterDashboard() {
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                             <span>Bags processed</span>
-                            <span className="font-semibold text-gray-700 dark:text-gray-300">{analytics?.bagsToday > 0 ? 'Active' : 'Pending'}</span>
+                            <span className="font-semibold text-green-600">{fmt(analytics?.dailyCost || 0)}</span>
                         </div>
                     </div>
 
@@ -301,7 +309,7 @@ export default function ExporterDashboard() {
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                             <span>Last 7 days</span>
-                            <span className="font-semibold text-gray-700 dark:text-gray-300">{((analytics?.bagsThisWeek || 0) / 7).toFixed(1)} avg/day</span>
+                            <span className="font-semibold text-green-600">{fmt(analytics?.weeklyCost || 0)}</span>
                         </div>
                     </div>
 
@@ -311,13 +319,13 @@ export default function ExporterDashboard() {
                                 <TrendingUp className="w-5 h-5 text-emerald-600" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">This Month</p>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics?.bagsThisMonth || 0}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">All Time</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics?.totalBags || 0}</p>
                             </div>
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Monthly total</span>
-                            <span className="font-semibold text-gray-700 dark:text-gray-300">{(((analytics?.bagsThisMonth || 0) / new Date().getDate()) * 30).toFixed(0)} projected</span>
+                            <span>Cumulative total</span>
+                            <span className="font-semibold text-green-600">{fmt(analytics?.cumulativeCost || 0)}</span>
                         </div>
                     </div>
                 </div>
@@ -395,62 +403,27 @@ export default function ExporterDashboard() {
                                     ))}
                                 </div>
 
-                                {/* Pagination */}
                                 {totalPages > 1 && (
                                     <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                                         <p className="text-sm text-gray-500 dark:text-gray-400">
                                             Showing <span className="font-semibold text-gray-900 dark:text-gray-100">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span>–<span className="font-semibold text-gray-900 dark:text-gray-100">{Math.min(currentPage * ITEMS_PER_PAGE, bags.length)}</span> of <span className="font-semibold text-gray-900 dark:text-gray-100">{bags.length.toLocaleString()}</span> bags
                                         </p>
                                         <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={() => setCurrentPage(1)}
-                                                disabled={currentPage === 1}
-                                                className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                                title="First page"
-                                            >
-                                                «
-                                            </button>
-                                            <button
-                                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                                disabled={currentPage === 1}
-                                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                            >
+                                            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">«</button>
+                                            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                                                 <ChevronLeft className="w-4 h-4" /> Prev
                                             </button>
-
                                             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                                 const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
                                                 const page = start + i;
                                                 return page <= totalPages ? (
-                                                    <button
-                                                        key={page}
-                                                        onClick={() => setCurrentPage(page)}
-                                                        className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
-                                                            currentPage === page
-                                                                ? 'bg-blue-600 text-white shadow'
-                                                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                                        }`}
-                                                    >
-                                                        {page}
-                                                    </button>
+                                                    <button key={page} onClick={() => setCurrentPage(page)} className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${currentPage === page ? 'bg-blue-600 text-white shadow' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{page}</button>
                                                 ) : null;
                                             })}
-
-                                            <button
-                                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                                disabled={currentPage === totalPages}
-                                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                            >
+                                            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                                                 Next <ChevronRight className="w-4 h-4" />
                                             </button>
-                                            <button
-                                                onClick={() => setCurrentPage(totalPages)}
-                                                disabled={currentPage === totalPages}
-                                                className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                                title="Last page"
-                                            >
-                                                »
-                                            </button>
+                                            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">»</button>
                                         </div>
                                     </div>
                                 )}
@@ -466,9 +439,7 @@ export default function ExporterDashboard() {
                     <div className="w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                         <Info className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                     </div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-                        Read-Only Access
-                    </h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Read-Only Access</h3>
                 </div>
                 <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                     You have view-only access to your processing data. You cannot modify attendance,

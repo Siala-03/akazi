@@ -3,6 +3,9 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfDay, getEndOfDay } from '@/lib/utils';
 
+const EXPORTER_DAILY_RATE = 2000;
+const WORKER_DAILY_WAGE = 1700;
+
 export async function GET(request: NextRequest) {
     try {
         const currentUser = await getCurrentUser();
@@ -19,6 +22,16 @@ export async function GET(request: NextRequest) {
 
         const thirtyDaysAgo = new Date(today);
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        // Current week Mon–Fri
+        const dayOfWeek = today.getDay();
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - daysFromMonday);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
 
         const [
             totalWorkers,
@@ -68,17 +81,60 @@ export async function GET(request: NextRequest) {
         const avgBagsPerDay = bagsLast7Days / 7;
         const avgBagsPerDayLast30 = bagsLast30Days / 30;
 
+        // ── Worker-day cost model ──────────────────────────────────────────────
+        // Count distinct (workerId, date) from Session as "worker-days"
+        const [workerDaysTodayRows, workerDaysWeekRows, workerDaysCumulativeRows] = await Promise.all([
+            prisma.$queryRaw<{ count: bigint }[]>`
+                SELECT COUNT(*)::bigint AS count FROM (
+                    SELECT DISTINCT "workerId", DATE(date)
+                    FROM "Session"
+                    WHERE date >= ${startOfDay} AND date <= ${endOfDay}
+                ) AS sub`,
+            prisma.$queryRaw<{ count: bigint }[]>`
+                SELECT COUNT(*)::bigint AS count FROM (
+                    SELECT DISTINCT "workerId", DATE(date)
+                    FROM "Session"
+                    WHERE date >= ${weekStart} AND date <= ${weekEnd}
+                ) AS sub`,
+            prisma.$queryRaw<{ count: bigint }[]>`
+                SELECT COUNT(*)::bigint AS count FROM (
+                    SELECT DISTINCT "workerId", DATE(date)
+                    FROM "Session"
+                ) AS sub`,
+        ]);
+
+        const workerDaysToday = Number(workerDaysTodayRows[0]?.count ?? 0);
+        const workerDaysWeek = Number(workerDaysWeekRows[0]?.count ?? 0);
+        const workerDaysCumulative = Number(workerDaysCumulativeRows[0]?.count ?? 0);
+
+        const dailyCostToExporters = workerDaysToday * EXPORTER_DAILY_RATE;
+        const dailyWorkerWages = workerDaysToday * WORKER_DAILY_WAGE;
+        const dailyCoopMargin = workerDaysToday * (EXPORTER_DAILY_RATE - WORKER_DAILY_WAGE);
+
+        const weeklyCostToExporters = workerDaysWeek * EXPORTER_DAILY_RATE;
+        const weeklyWorkerWages = workerDaysWeek * WORKER_DAILY_WAGE;
+
+        const cumulativeCostToExporters = workerDaysCumulative * EXPORTER_DAILY_RATE;
+        const cumulativeWorkerWages = workerDaysCumulative * WORKER_DAILY_WAGE;
+
+        // ── Per-exporter breakdown (today) ────────────────────────────────────
         const uniqueExporterIds = [...new Set(allBagsToday.map(b => b.exporterId).filter(Boolean))];
         const exportersServedToday = uniqueExporterIds.length;
 
-        let totalCostsToday = 0;
+        let totalCostsToday = dailyCostToExporters;
         const exporterBreakdown: any[] = [];
 
         if (uniqueExporterIds.length > 0) {
-            const rateCards = await prisma.rateCard.findMany({
-                where: { exporterId: { in: uniqueExporterIds }, isActive: true, effectiveFrom: { lte: today } },
-            });
-            const rateMap = new Map(rateCards.map(rc => [rc.exporterId, rc.ratePerBag]));
+            // Worker-days per exporter today
+            const exporterWorkerDaysRows = await prisma.$queryRaw<{ exporterId: string; worker_days: bigint }[]>`
+                SELECT "exporterId", COUNT(*)::bigint AS worker_days FROM (
+                    SELECT DISTINCT "exporterId", "workerId", DATE(date)
+                    FROM "Session"
+                    WHERE date >= ${startOfDay} AND date <= ${endOfDay}
+                ) AS sub
+                GROUP BY "exporterId"`;
+
+            const exporterWorkerDaysMap = new Map(exporterWorkerDaysRows.map(r => [r.exporterId, Number(r.worker_days)]));
 
             const exporterDataMap = new Map<string, { name: string; code: string; bags: number; weight: number }>();
             for (const bag of allBagsToday) {
@@ -97,17 +153,19 @@ export async function GET(request: NextRequest) {
             }
 
             exporterDataMap.forEach((entry, expId) => {
-                const rate = rateMap.get(expId) || 0;
-                const cost = entry.bags * rate;
-                totalCostsToday += cost;
+                const wDays = exporterWorkerDaysMap.get(expId) ?? 0;
+                const cost = wDays * EXPORTER_DAILY_RATE;
+                const workerWages = wDays * WORKER_DAILY_WAGE;
                 exporterBreakdown.push({
                     exporterId: expId,
                     name: entry.name,
                     code: entry.code,
                     bagsToday: entry.bags,
                     weightToday: entry.weight,
-                    ratePerBag: rate,
-                    costToday: Math.round(cost * 100) / 100,
+                    workerDaysToday: wDays,
+                    costToday: cost,
+                    workerWagesToday: workerWages,
+                    coopMarginToday: cost - workerWages,
                 });
             });
             exporterBreakdown.sort((a, b) => b.bagsToday - a.bagsToday);
@@ -142,11 +200,13 @@ export async function GET(request: NextRequest) {
             const date = new Date(today);
             date.setDate(date.getDate() - i);
             const dateStr = date.toISOString().split('T')[0];
+            const dayWorkers = attMap.get(dateStr) || 0;
             trendData.push({
                 date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                workers: attMap.get(dateStr) || 0,
+                workers: dayWorkers,
                 bags: bagsMap.get(dateStr) || 0,
                 sessions: sessMap.get(dateStr) || 0,
+                cost: dayWorkers * EXPORTER_DAILY_RATE,
             });
         }
 
@@ -165,11 +225,23 @@ export async function GET(request: NextRequest) {
                 totalKilogramsToday,
                 exportersServedToday,
                 totalHoursWorked: Math.round(totalHoursWorked * 10) / 10,
-                totalCostsToday: Math.round(totalCostsToday * 100) / 100,
                 avgBagsPerDay: Math.round(avgBagsPerDay * 10) / 10,
                 avgBagsPerDayLast30: Math.round(avgBagsPerDayLast30 * 10) / 10,
                 bagsLast7Days,
                 bagsLast30Days,
+                // Worker-day cost model
+                workerDaysToday,
+                workerDaysWeek,
+                workerDaysCumulative,
+                dailyCostToExporters,
+                dailyWorkerWages,
+                dailyCoopMargin,
+                weeklyCostToExporters,
+                weeklyWorkerWages,
+                cumulativeCostToExporters,
+                cumulativeWorkerWages,
+                // Legacy (kept for compatibility)
+                totalCostsToday,
                 exporterBreakdown,
                 trends: { attendance: trendData, bags: trendData, sessions: trendData },
             },

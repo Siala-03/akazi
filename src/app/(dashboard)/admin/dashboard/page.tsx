@@ -15,7 +15,10 @@ import {
     RefreshCw,
     UserCheck,
     BarChart3,
-    ShieldCheck
+    ShieldCheck,
+    Banknote,
+    Wallet,
+    ClipboardList
 } from 'lucide-react';
 import Link from 'next/link';
 import { ExportButton } from '@/components/export/ExportButton';
@@ -51,9 +54,7 @@ export default function AdminDashboard() {
         setRefreshing(false);
     };
 
-    const formatCurrency = (amount: number): string => {
-        return `FRw ${amount.toLocaleString()}`;
-    };
+    const fmt = (amount: number): string => `FRw ${amount.toLocaleString()}`;
 
     const getExportData = (): ExportData => {
         return {
@@ -101,6 +102,17 @@ export default function AdminDashboard() {
             hoverBg: 'hover:bg-purple-50 dark:hover:bg-purple-900/20',
             iconBg: 'bg-purple-100 dark:bg-purple-900/30',
             iconColor: 'text-purple-600',
+        },
+        {
+            title: 'Weekly Payroll',
+            description: 'Generate wage disbursement sheet',
+            icon: ClipboardList,
+            href: '/admin/payroll',
+            color: 'green',
+            hoverBorder: 'hover:border-green-500',
+            hoverBg: 'hover:bg-green-50 dark:hover:bg-green-900/20',
+            iconBg: 'bg-green-100 dark:bg-green-900/30',
+            iconColor: 'text-green-600',
         },
         {
             title: 'Worker Requests',
@@ -168,9 +180,9 @@ export default function AdminDashboard() {
             subColor: 'text-indigo-600 dark:text-indigo-400',
         },
         {
-            label: "Today's Costs",
-            value: formatCurrency(analytics?.totalCostsToday || 0),
-            sub: `${analytics?.totalHoursWorked || 0} hrs worked`,
+            label: "Today's Exporter Cost",
+            value: fmt(analytics?.dailyCostToExporters || 0),
+            sub: `${analytics?.workerDaysToday || 0} worker-days`,
             icon: DollarSign,
             border: 'border-l-green-500',
             iconBg: 'bg-green-100 dark:bg-green-900/30',
@@ -265,6 +277,95 @@ export default function AdminDashboard() {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Cost Breakdown */}
+            <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                            <Banknote className="w-5 h-5 text-green-600" />
+                            Cost Breakdown
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">FRw 2,000 / worker-day charged · FRw 1,700 / worker-day wages · FRw 300 cooperative margin</p>
+                    </div>
+                    <Link href="/admin/payroll" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
+                        Payroll <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Today */}
+                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Today</p>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                                <DollarSign className="w-3.5 h-3.5 text-green-500" /> Charged to exporters
+                            </span>
+                            <span className="font-bold text-green-600 dark:text-green-400">{fmt(analytics?.dailyCostToExporters || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                                <Wallet className="w-3.5 h-3.5 text-blue-500" /> Worker wages
+                            </span>
+                            <span className="font-bold text-blue-600 dark:text-blue-400">{fmt(analytics?.dailyWorkerWages || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-2">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                                <BarChart3 className="w-3.5 h-3.5 text-purple-500" /> Coop margin
+                            </span>
+                            <span className="font-bold text-purple-600 dark:text-purple-400">{fmt(analytics?.dailyCoopMargin || 0)}</span>
+                        </div>
+                        <p className="text-xs text-gray-400">{analytics?.workerDaysToday || 0} worker-days</p>
+                    </div>
+
+                    {/* This Week */}
+                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">This Week</p>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                                <DollarSign className="w-3.5 h-3.5 text-green-500" /> Charged to exporters
+                            </span>
+                            <span className="font-bold text-green-600 dark:text-green-400">{fmt(analytics?.weeklyCostToExporters || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                                <Wallet className="w-3.5 h-3.5 text-blue-500" /> Worker wages
+                            </span>
+                            <span className="font-bold text-blue-600 dark:text-blue-400">{fmt(analytics?.weeklyWorkerWages || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-2">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                                <BarChart3 className="w-3.5 h-3.5 text-purple-500" /> Coop margin
+                            </span>
+                            <span className="font-bold text-purple-600 dark:text-purple-400">{fmt((analytics?.weeklyCostToExporters || 0) - (analytics?.weeklyWorkerWages || 0))}</span>
+                        </div>
+                        <p className="text-xs text-gray-400">{analytics?.workerDaysWeek || 0} worker-days · paid Friday</p>
+                    </div>
+
+                    {/* Cumulative */}
+                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Cumulative</p>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                                <DollarSign className="w-3.5 h-3.5 text-green-500" /> Charged to exporters
+                            </span>
+                            <span className="font-bold text-green-600 dark:text-green-400">{fmt(analytics?.cumulativeCostToExporters || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                                <Wallet className="w-3.5 h-3.5 text-blue-500" /> Worker wages
+                            </span>
+                            <span className="font-bold text-blue-600 dark:text-blue-400">{fmt(analytics?.cumulativeWorkerWages || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-2">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                                <BarChart3 className="w-3.5 h-3.5 text-purple-500" /> Coop margin
+                            </span>
+                            <span className="font-bold text-purple-600 dark:text-purple-400">{fmt((analytics?.cumulativeCostToExporters || 0) - (analytics?.cumulativeWorkerWages || 0))}</span>
+                        </div>
+                        <p className="text-xs text-gray-400">{analytics?.workerDaysCumulative || 0} worker-days total</p>
+                    </div>
+                </div>
             </div>
 
             {/* Charts */}
@@ -366,10 +467,10 @@ export default function AdminDashboard() {
                             <thead>
                                 <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Exporter</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags Today</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight (kg)</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rate / Bag</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost Today</th>
+                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags</th>
+                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Worker-Days</th>
+                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Worker Wages</th>
+                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Charged (FRw 2,000/day)</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -393,12 +494,12 @@ export default function AdminDashboard() {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                                {(exp.weightToday || 0).toLocaleString()}
+                                                {exp.workerDaysToday ?? 0}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                                                {exp.ratePerBag > 0 ? `FRw ${exp.ratePerBag.toLocaleString()}` : <span className="text-amber-500 text-xs">No rate set</span>}
+                                            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                                                {exp.workerWagesToday > 0 ? `FRw ${exp.workerWagesToday.toLocaleString()}` : '—'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
@@ -416,11 +517,13 @@ export default function AdminDashboard() {
                                         {(analytics?.bagsToday || 0)}
                                     </td>
                                     <td className="px-6 py-3 text-right text-sm font-bold text-gray-700 dark:text-gray-300">
-                                        {(analytics?.totalKilogramsToday || 0).toLocaleString()}
+                                        {analytics?.workerDaysToday || 0}
                                     </td>
-                                    <td className="px-6 py-3 text-right text-sm text-gray-400">—</td>
+                                    <td className="px-6 py-3 text-right text-sm font-bold text-blue-600 dark:text-blue-400">
+                                        FRw {(analytics?.dailyWorkerWages || 0).toLocaleString()}
+                                    </td>
                                     <td className="px-6 py-3 text-right text-sm font-bold text-green-600 dark:text-green-400">
-                                        FRw {(analytics?.totalCostsToday || 0).toLocaleString()}
+                                        FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}
                                     </td>
                                 </tr>
                             </tfoot>
@@ -435,7 +538,7 @@ export default function AdminDashboard() {
                     <Activity className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     Quick Actions
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     {quickActions.map((action) => {
                         const Icon = action.icon;
                         return (
