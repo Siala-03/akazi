@@ -384,7 +384,7 @@ export default function PayrollPage() {
                     <div className="px-6 py-3.5 border-b border-gray-100 dark:border-gray-700/60">
                         <h2 className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">Weekly Cost Reconciliation</h2>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-200 dark:divide-gray-700">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700/40">
                         <div className="px-6 py-5">
                             <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Collected from exporters</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">FRw {summary.totalCostToExporters.toLocaleString()}</p>
@@ -392,12 +392,12 @@ export default function PayrollPage() {
                         </div>
                         <div className="px-6 py-5">
                             <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Disbursed to workers</p>
-                            <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">FRw {summary.totalWorkerWages.toLocaleString()}</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">FRw {summary.totalWorkerWages.toLocaleString()}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">FRw 1,700 × {summary.totalDays} days</p>
                         </div>
                         <div className="px-6 py-5">
                             <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Cooperative &amp; software</p>
-                            <p className="text-xl font-bold text-teal-600 dark:text-teal-400">FRw {summary.cooperativeMargin.toLocaleString()}</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">FRw {summary.cooperativeMargin.toLocaleString()}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">FRw 300 × {summary.totalDays} days</p>
                         </div>
                     </div>
