@@ -207,7 +207,7 @@ export default function PayrollPage() {
                     },
                 ].map(({ label, value, sub, icon: Icon, format, accent }) => (
                     <div key={label} className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 shadow-sm p-5 flex flex-col gap-3">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${accent === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-teal-50 dark:bg-teal-900/20'}`}>
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${accent === 'emerald' ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : 'bg-teal-50/50 dark:bg-teal-900/10'}`}>
                             <Icon className={`w-4 h-4 ${accent === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : 'text-teal-600 dark:text-teal-400'}`} />
                         </div>
                         <div>
@@ -280,27 +280,27 @@ export default function PayrollPage() {
                                                 {(currentPage - 1) * ITEMS_PER_PAGE + i + 1}
                                             </td>
                                             <td className="px-6 py-3.5">
-                                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight">{worker.fullName}</p>
+                                                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-tight">{worker.fullName}</p>
                                                 <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">{worker.workerId}</p>
                                             </td>
                                             <td className="px-6 py-3.5">
                                                 {worker.nationalId ? (
-                                                    <span className="text-sm font-mono text-gray-600 dark:text-gray-400">{worker.nationalId}</span>
+                                                    <span className="text-sm font-mono text-gray-700 dark:text-gray-200">{worker.nationalId}</span>
                                                 ) : (
                                                     <span className="text-[11px] text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full border border-amber-100 dark:border-amber-800">Not set</span>
                                                 )}
                                             </td>
                                             <td className="px-6 py-3.5 text-center">
-                                                <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 tabular-nums">{worker.numberOfBags}</span>
+                                                <span className="text-sm text-gray-700 dark:text-gray-200 tabular-nums">{worker.numberOfBags}</span>
                                             </td>
                                             <td className="px-6 py-3.5 text-center">
-                                                <span className="text-sm font-semibold text-teal-600 dark:text-teal-400 tabular-nums">{worker.numberOfDays}</span>
+                                                <span className="text-sm text-gray-700 dark:text-gray-200 tabular-nums">{worker.numberOfDays}</span>
                                             </td>
                                             <td className="px-6 py-3.5 text-right">
-                                                <span className="text-sm text-gray-500 dark:text-gray-400 tabular-nums">FRw {worker.dailyRate.toLocaleString()}</span>
+                                                <span className="text-sm text-gray-700 dark:text-gray-200 tabular-nums">FRw {worker.dailyRate.toLocaleString()}</span>
                                             </td>
                                             <td className="px-6 py-3.5 text-right">
-                                                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">FRw {worker.totalWage.toLocaleString()}</span>
+                                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 tabular-nums">FRw {worker.totalWage.toLocaleString()}</span>
                                             </td>
                                         </tr>
                                     ))}
@@ -318,13 +318,13 @@ export default function PayrollPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className="text-sm font-bold text-teal-600 dark:text-teal-400 tabular-nums">
+                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">
                                                 {(summary?.totalDays ?? 0).toLocaleString()}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4" />
                                         <td className="px-6 py-4 text-right">
-                                            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">
                                                 FRw {(summary?.totalWorkerWages ?? 0).toLocaleString()}
                                             </span>
                                         </td>
