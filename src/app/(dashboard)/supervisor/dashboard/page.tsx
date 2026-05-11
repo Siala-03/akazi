@@ -117,68 +117,102 @@ export default function SupervisorDashboard() {
                 </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                {[
-                    {
-                        label: 'Total Workers',
-                        value: analytics?.totalWorkers || 0,
-                        sub: analytics?.totalWorkers > 0 ? 'Active' : 'No workers yet',
-                        icon: Users,
-                        border: 'border-l-emerald-500',
-                        iconBg: 'bg-emerald-50 dark:bg-emerald-900/20',
-                        iconColor: 'text-emerald-600 dark:text-emerald-400',
-                    },
-                    {
-                        label: 'Checked In Today',
-                        value: analytics?.workersCheckedInToday || 0,
-                        sub: analytics?.workersCheckedInToday > 0 ? 'On-site now' : 'Start check-ins',
-                        icon: UserPlus,
-                        border: 'border-l-emerald-500',
-                        iconBg: 'bg-emerald-50 dark:bg-emerald-900/20',
-                        iconColor: 'text-emerald-600 dark:text-emerald-400',
-                    },
-                    {
-                        label: 'Active Sessions',
-                        value: analytics?.activeSessions || 0,
-                        sub: analytics?.activeSessions > 0 ? 'Sorting now' : 'None active',
-                        icon: Activity,
-                        border: 'border-l-violet-500',
-                        iconBg: 'bg-violet-50 dark:bg-violet-900/20',
-                        iconColor: 'text-violet-600 dark:text-violet-400',
-                        pulse: (analytics?.activeSessions || 0) > 0,
-                    },
-                    {
-                        label: 'Bags Processed',
-                        value: analytics?.bagsToday || 0,
-                        sub: "Today's output",
-                        icon: Package,
-                        border: 'border-l-amber-500',
-                        iconBg: 'bg-amber-50 dark:bg-amber-900/20',
-                        iconColor: 'text-amber-600 dark:text-amber-400',
-                    },
-                    {
-                        label: 'Exporters Served',
-                        value: analytics?.exportersServedToday || 0,
-                        sub: 'Today',
-                        icon: Building2,
-                        border: 'border-l-teal-500',
-                        iconBg: 'bg-teal-50 dark:bg-teal-900/20',
-                        iconColor: 'text-teal-600 dark:text-teal-400',
-                    },
-                ].map(({ label, value, sub, icon: Icon, border, iconBg, iconColor, pulse }) => (
-                    <div key={label} className={`bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 ${border} border-t border-r border-b border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow`}>
-                        <div className="flex items-center justify-between mb-3">
-                            <div className={`w-10 h-10 ${iconBg} rounded-lg flex items-center justify-center`}>
-                                <Icon className={`w-5 h-5 ${iconColor}`} />
+            {/* Stats Grid - High-Level Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+                {/* Total Workers */}
+                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
+                    <div className="relative">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                                <Users className="w-6 h-6 text-blue-600" />
                             </div>
-                            {pulse && <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />}
+                            <TrendingUp className="w-5 h-5 text-emerald-500" />
                         </div>
-                        <p className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">{label}</p>
-                        <p className="mt-1.5 text-3xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{value}</p>
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{sub}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Workers</p>
+                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">
+                            {analytics?.totalWorkers || 0}
+                        </p>
+                        {analytics?.totalWorkers > 0 ? (
+                            <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400 font-medium">Active</p>
+                        ) : (
+                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No workers yet</p>
+                        )}
                     </div>
-                ))}
+                </div>
+
+                {/* Workers Checked In Today */}
+                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-emerald-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
+                    <div className="relative">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+                                <UserPlus className="w-6 h-6 text-emerald-600" />
+                            </div>
+                            <TrendingUp className="w-5 h-5 text-emerald-500" />
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Checked In Today</p>
+                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.workersCheckedInToday || 0}</p>
+                        {analytics?.workersCheckedInToday > 0 ? (
+                            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">On-site now</p>
+                        ) : (
+                            <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">Start checking in workers!</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Active Sessions */}
+                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
+                    <div className="relative">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                                <Activity className="w-6 h-6 text-purple-600" />
+                            </div>
+                            {analytics?.activeSessions > 0 && (
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                            )}
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Active Sessions</p>
+                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.activeSessions || 0}</p>
+                        {analytics?.activeSessions > 0 ? (
+                            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Sorting now</p>
+                        ) : (
+                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No active sorting sessions</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Bags Processed Today */}
+                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-amber-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
+                    <div className="relative">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
+                                <Package className="w-6 h-6 text-amber-600" />
+                            </div>
+                            <TrendingUp className="w-5 h-5 text-emerald-500" />
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Bags Processed</p>
+                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.bagsToday || 0}</p>
+                        {analytics?.bagsToday > 0 ? (
+                            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Today's output</p>
+                        ) : (
+                            <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">Ready to record bags!</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Exporters Served Today */}
+                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-teal-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
+                    <div className="relative">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-xl flex items-center justify-center">
+                                <Building2 className="w-6 h-6 text-teal-600" />
+                            </div>
+                            <TrendingUp className="w-5 h-5 text-emerald-500" />
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Exporters Served</p>
+                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.exportersServedToday || 0}</p>
+                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Today</p>
+                    </div>
+                </div>
             </div>
 
             {/* Charts */}
