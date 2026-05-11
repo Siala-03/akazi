@@ -187,12 +187,12 @@ export default function OnboardingPage() {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Full Name *</label>
                             <input type="text" value={formData.fullName} onChange={e => set('fullName', e.target.value)} className={inputClass('fullName')} placeholder="Enter full name" />
-                            {fieldError('fullName') && <p className="mt-1 text-xs text-red-500">{fieldError('fullName')}</p>}
+                            {fieldError('fullName') && <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('fullName')}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Worker ID (National ID)</label>
                             <input type="text" value={formData.workerId} onChange={e => set('workerId', e.target.value)} className={inputClass('workerId')} placeholder="Optional — auto-generated if blank" />
-                            {fieldError('workerId') ? <p className="mt-1 text-xs text-red-500">{fieldError('workerId')}</p> : <p className="mt-1 text-xs text-gray-400">Leave blank to auto-generate</p>}
+                            {fieldError('workerId') ? <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('workerId')}</p> : <p className="mt-1 text-xs text-gray-400">Leave blank to auto-generate</p>}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
@@ -219,7 +219,7 @@ export default function OnboardingPage() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Phone Number *</label>
                                 <input type="tel" value={formData.phone} onChange={e => set('phone', e.target.value)} className={inputClass('phone')} placeholder="+250788000000" />
-                                {fieldError('phone') && <p className="mt-1 text-xs text-red-500">{fieldError('phone')}</p>}
+                                {fieldError('phone') && <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('phone')}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email <span className="text-gray-400 font-normal">(optional)</span></label>
@@ -230,7 +230,7 @@ export default function OnboardingPage() {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Primary Role *</label>
                             <input type="text" value={formData.primaryRole} onChange={e => set('primaryRole', e.target.value)} className={inputClass('primaryRole')} placeholder="Coffee Sorter" />
-                            {fieldError('primaryRole') && <p className="mt-1 text-xs text-red-500">{fieldError('primaryRole')}</p>}
+                            {fieldError('primaryRole') && <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('primaryRole')}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cooperative *</label>
@@ -240,7 +240,7 @@ export default function OnboardingPage() {
                                     <option key={c._id} value={c._id}>{c.name} ({c.code})</option>
                                 ))}
                             </select>
-                            {fieldError('cooperativeId') && <p className="mt-1 text-xs text-red-500">{fieldError('cooperativeId')}</p>}
+                            {fieldError('cooperativeId') && <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('cooperativeId')}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Previous Work Type <span className="text-gray-400 font-normal">(optional)</span></label>
@@ -296,7 +296,7 @@ export default function OnboardingPage() {
                                         Worker consents to storing their work and earnings records in this system. *
                                     </span>
                                 </label>
-                                {fieldError('consentWorkRecords') && <p className="mt-2 text-xs text-red-500 ml-7">{fieldError('consentWorkRecords')}</p>}
+                                {fieldError('consentWorkRecords') && <p className="mt-2 text-xs font-semibold text-red-700 dark:text-red-400 ml-7">{fieldError('consentWorkRecords')}</p>}
                             </div>
                             <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
                                 <label className="flex items-start gap-3 cursor-pointer">
