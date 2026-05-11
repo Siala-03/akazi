@@ -40,7 +40,7 @@ export default function SupervisorLayout({ children }: { children: ReactNode }) 
     };
 
     return (
-        <div className="min-h-screen bg-[#ffffff] dark:bg-[#0f172a]">
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:bg-[#0f172a]">
             {/* Top Navigation */}
             <nav className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 dark:from-emerald-700 dark:via-teal-700 dark:to-emerald-800 sticky top-0 z-50 shadow-md">
                 <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
@@ -153,7 +153,7 @@ export default function SupervisorLayout({ children }: { children: ReactNode }) 
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto min-h-[calc(100vh-4rem)] bg-[#f8fafc] dark:bg-[#0f172a]">
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto min-h-[calc(100vh-4rem)] bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:bg-[#0f172a]">
                     <div className="max-w-7xl mx-auto">
                         <Breadcrumb />
                         {children}
