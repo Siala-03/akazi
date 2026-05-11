@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Users, RefreshCw, X, UserPlus, Pencil, UserX, UserCheck, AlertTriangle, Phone, Building2, Trash2 } from 'lucide-react';
