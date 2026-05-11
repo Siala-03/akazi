@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfDay, getEndOfDay } from '@/lib/utils';
-
-const EXPORTER_DAILY_RATE = 2000;
-const WORKER_DAILY_WAGE = 1700;
+import { getSettings } from '@/lib/settings';
 
 export async function GET(request: NextRequest) {
     try {
@@ -65,6 +63,8 @@ export async function GET(request: NextRequest) {
                 select: { exporterId: true, weight: true, exporter: { select: { id: true, companyTradingName: true, exporterCode: true } } },
             }),
         ]);
+
+        const { exporterDailyRate: EXPORTER_DAILY_RATE, workerDailyWage: WORKER_DAILY_WAGE } = await getSettings();
 
         const totalKilograms = totalBags * 60;
         const totalKilogramsToday = bagsToday * 60;
@@ -240,6 +240,10 @@ export async function GET(request: NextRequest) {
                 weeklyWorkerWages,
                 cumulativeCostToExporters,
                 cumulativeWorkerWages,
+                // Rate config
+                exporterDailyRate: EXPORTER_DAILY_RATE,
+                workerDailyWage: WORKER_DAILY_WAGE,
+                coopMarginPerDay: EXPORTER_DAILY_RATE - WORKER_DAILY_WAGE,
                 // Legacy (kept for compatibility)
                 totalCostsToday,
                 exporterBreakdown,

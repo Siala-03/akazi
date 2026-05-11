@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfDay, getEndOfDay } from '@/lib/utils';
-
-const WORKER_DAILY_WAGE = 1700;
-const EXPORTER_DAILY_RATE = 2000;
+import { getSettings } from '@/lib/settings';
 
 export async function GET(request: NextRequest) {
     try {
@@ -43,6 +41,8 @@ export async function GET(request: NextRequest) {
             WHERE date >= ${weekStart} AND date <= ${weekEnd}
             GROUP BY "workerId"`;
 
+        const { exporterDailyRate: EXPORTER_DAILY_RATE, workerDailyWage: WORKER_DAILY_WAGE } = await getSettings();
+
         if (attendanceRows.length === 0) {
             return NextResponse.json({
                 payroll: [],
@@ -52,6 +52,8 @@ export async function GET(request: NextRequest) {
                     totalWorkerWages: 0,
                     totalCostToExporters: 0,
                     cooperativeMargin: 0,
+                    exporterDailyRate: EXPORTER_DAILY_RATE,
+                    workerDailyWage: WORKER_DAILY_WAGE,
                     weekStart: weekStart.toISOString(),
                     weekEnd: weekEnd.toISOString(),
                 },
@@ -111,6 +113,8 @@ export async function GET(request: NextRequest) {
                 totalWorkerWages,
                 totalCostToExporters,
                 cooperativeMargin,
+                exporterDailyRate: EXPORTER_DAILY_RATE,
+                workerDailyWage: WORKER_DAILY_WAGE,
                 weekStart: weekStart.toISOString(),
                 weekEnd: weekEnd.toISOString(),
             },

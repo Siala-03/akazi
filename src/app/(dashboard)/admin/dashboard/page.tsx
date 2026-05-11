@@ -164,9 +164,9 @@ export default function AdminDashboard() {
             subColor: 'text-indigo-600 dark:text-indigo-400',
         },
         {
-            label: "Today's Costs",
-            value: `FRw ${(analytics?.totalCostsToday || 0).toLocaleString()}`,
-            sub: `${analytics?.totalHoursWorked || 0} hrs worked`,
+            label: "Revenue Today",
+            value: `FRw ${(analytics?.dailyCostToExporters || 0).toLocaleString()}`,
+            sub: `${analytics?.workerDaysToday || 0} worker-days billed`,
             icon: DollarSign,
             border: 'border-l-green-500',
             iconBg: 'bg-green-100 dark:bg-green-900/30',
@@ -260,6 +260,49 @@ export default function AdminDashboard() {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Financial Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Billed to Exporters</p>
+                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                        FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Today · FRw {(analytics?.exporterDailyRate || 2000).toLocaleString()}/worker-day
+                    </p>
+                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
+                        <span className="text-gray-500 dark:text-gray-400">This week</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">FRw {(analytics?.weeklyCostToExporters || 0).toLocaleString()}</span>
+                    </div>
+                </div>
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Worker Wages</p>
+                    <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                        FRw {(analytics?.dailyWorkerWages || 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Today · FRw {(analytics?.workerDailyWage || 1700).toLocaleString()}/worker-day · paid Fri
+                    </p>
+                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
+                        <span className="text-gray-500 dark:text-gray-400">This week</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">FRw {(analytics?.weeklyWorkerWages || 0).toLocaleString()}</span>
+                    </div>
+                </div>
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Cooperative Margin</p>
+                    <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                        FRw {(analytics?.dailyCoopMargin || 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Today · FRw {(analytics?.coopMarginPerDay || 300).toLocaleString()}/worker-day
+                    </p>
+                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
+                        <span className="text-gray-500 dark:text-gray-400">Cumulative</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">FRw {((analytics?.cumulativeCostToExporters || 0) - (analytics?.cumulativeWorkerWages || 0)).toLocaleString()}</span>
+                    </div>
+                </div>
             </div>
 
             {/* Charts */}
@@ -363,8 +406,8 @@ export default function AdminDashboard() {
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Exporter</th>
                                     <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags Today</th>
                                     <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight (kg)</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rate / Bag</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost Today</th>
+                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Worker-Days</th>
+                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Billed Today</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -392,12 +435,12 @@ export default function AdminDashboard() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                                                {exp.ratePerBag > 0 ? `FRw ${exp.ratePerBag.toLocaleString()}` : <span className="text-amber-500 text-xs">No rate set</span>}
+                                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                                {exp.workerDaysToday ?? 0}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <span className={`text-sm font-bold ${exp.costToday > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                                            <span className={`text-sm font-bold ${exp.costToday > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`}>
                                                 {exp.costToday > 0 ? `FRw ${exp.costToday.toLocaleString()}` : '—'}
                                             </span>
                                         </td>
@@ -413,9 +456,11 @@ export default function AdminDashboard() {
                                     <td className="px-6 py-3 text-right text-sm font-bold text-gray-700 dark:text-gray-300">
                                         {(analytics?.totalKilogramsToday || 0).toLocaleString()}
                                     </td>
-                                    <td className="px-6 py-3 text-right text-sm text-gray-400">—</td>
-                                    <td className="px-6 py-3 text-right text-sm font-bold text-green-600 dark:text-green-400">
-                                        FRw {(analytics?.totalCostsToday || 0).toLocaleString()}
+                                    <td className="px-6 py-3 text-right text-sm font-bold text-gray-700 dark:text-gray-300">
+                                        {(analytics?.workerDaysToday || 0)}
+                                    </td>
+                                    <td className="px-6 py-3 text-right text-sm font-bold text-blue-600 dark:text-blue-400">
+                                        FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}
                                     </td>
                                 </tr>
                             </tfoot>

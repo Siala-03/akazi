@@ -343,3 +343,10 @@ model WorkerRequest {
   exporter Exporter @relation("WorkerRequestExporter", fields: [exporterId], references: [id])
   reviewer User?    @relation("WorkerRequestReviewer", fields: [reviewedBy], references: [id])
 }
+
+model Settings {
+  id                String   @id @default("singleton")
+  exporterDailyRate Int      @default(2000)
+  workerDailyWage   Int      @default(1700)
+  updatedAt         DateTime @updatedAt
+}

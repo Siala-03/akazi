@@ -63,9 +63,6 @@ export async function GET(request: NextRequest) {
         const uniqueExporterIds = [...new Set(allBagsToday.map(b => b.exporterId).filter(Boolean))];
         const exportersServedToday = uniqueExporterIds.length;
 
-        const SESSION_RATE = 2000;
-        const totalLaborCostsToday = sessionsToday.length * SESSION_RATE;
-
         let totalCostForExporters = 0;
         if (uniqueExporterIds.length > 0) {
             const rateCards = await prisma.rateCard.findMany({
@@ -126,7 +123,6 @@ export async function GET(request: NextRequest) {
                 totalHoursWorked: Math.round(totalHoursWorked * 10) / 10,
                 avgWorkersPerBag: Math.round(avgWorkersPerBag * 10) / 10,
                 exportersServedToday,
-                totalLaborCostsToday,
                 projectedCosts: Math.round(totalCostForExporters * 100) / 100,
                 totalCostForExporters: Math.round(totalCostForExporters * 100) / 100,
                 trends: { attendance: trendData, bags: trendData },

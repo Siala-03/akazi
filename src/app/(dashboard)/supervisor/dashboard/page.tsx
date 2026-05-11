@@ -14,10 +14,7 @@ import {
     Settings,
     RefreshCw,
     Info,
-    Weight,
-    Building2,
-    Banknote,
-    BarChart3
+    Building2
 } from 'lucide-react';
 
 export default function SupervisorDashboard() {
@@ -202,22 +199,20 @@ export default function SupervisorDashboard() {
                     </div>
                 </div>
 
-                {/* Total Labor Costs Today */}
-                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-gray-400 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
+                {/* Exporters Served Today */}
+                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-teal-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="relative">
                         <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
-                                <Banknote className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                            <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-xl flex items-center justify-center">
+                                <Building2 className="w-6 h-6 text-teal-600" />
                             </div>
-                            <TrendingUp className="w-5 h-5 text-gray-400" />
+                            <TrendingUp className="w-5 h-5 text-emerald-500" />
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Labor Costs Today</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Exporters Served</p>
                         <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">
-                            FRw {analytics?.totalLaborCostsToday?.toLocaleString() || 0}
+                            {analytics?.exportersServedToday || 0}
                         </p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 font-medium">
-                            {analytics?.totalHoursWorked || 0} hrs worked
-                        </p>
+                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 font-medium">Today</p>
                     </div>
                 </div>
             </div>

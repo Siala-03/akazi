@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfDay, getEndOfDay } from '@/lib/utils';
-
-const EXPORTER_DAILY_RATE = 2000;
-const WORKER_DAILY_WAGE = 1700;
+import { getSettings } from '@/lib/settings';
 
 export async function GET(request: NextRequest) {
     try {
@@ -12,6 +10,8 @@ export async function GET(request: NextRequest) {
         if (!currentUser || currentUser.role !== 'exporter') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const { exporterDailyRate: EXPORTER_DAILY_RATE, workerDailyWage: WORKER_DAILY_WAGE } = await getSettings();
 
         if (!currentUser.exporterId) {
             return NextResponse.json({

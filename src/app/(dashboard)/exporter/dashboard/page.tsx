@@ -198,7 +198,7 @@ export default function ExporterDashboard() {
                         {fmt(analytics?.dailyCost || 0)}
                     </p>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        {analytics?.workerDaysToday || 0} worker-days @ FRw 2,000/day
+                        {analytics?.workerDaysToday || 0} worker-days @ FRw {(analytics?.ratePerWorkerDay || 2000).toLocaleString()}/day
                     </p>
                 </div>
 
@@ -245,23 +245,17 @@ export default function ExporterDashboard() {
                     </div>
                     <div className="flex-1">
                         <p className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">Labor Cost Breakdown</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                             <div className="flex items-center gap-2">
                                 <DollarSign className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
                                 <span className="text-blue-700 dark:text-blue-300">
-                                    <strong>FRw 2,000</strong> / worker-day charged to you
+                                    <strong>FRw {(analytics?.ratePerWorkerDay || 2000).toLocaleString()}</strong> / worker-day charged to you
                                 </span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Wallet className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
                                 <span className="text-blue-700 dark:text-blue-300">
-                                    <strong>FRw 1,700</strong> / day paid to workers (every Friday)
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <BarChart3 className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
-                                <span className="text-blue-700 dark:text-blue-300">
-                                    <strong>FRw 300</strong> / day cooperative ops &amp; software costs
+                                    Worker wages disbursed every Friday
                                 </span>
                             </div>
                         </div>

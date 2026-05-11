@@ -6,8 +6,6 @@ import { UserPlus, Users, Phone, Calendar, User, Filter, X, ChevronDown, Search,
 import DataTable, { Column } from '@/components/DataTable';
 import { WorkerQrModal } from '@/components/qr/WorkerQrModal';
 
-const SESSION_RATE = 2000;
-
 interface Worker {
     _id: string;
     workerId: string;
@@ -245,22 +243,6 @@ export default function WorkersPage() {
             )
         },
         {
-            key: 'earnings',
-            label: 'Total Earnings (RWF)',
-            sortable: true,
-            render: (worker) => {
-                const earnings = (worker.weekSessions ?? 0) * SESSION_RATE;
-                return (
-                    <div className="flex items-center gap-2 text-gray-600">
-                        <Banknote className="w-4 h-4 text-gray-400" />
-                        <span className="font-semibold text-gray-700">
-                            {earnings.toLocaleString()}
-                        </span>
-                    </div>
-                );
-            }
-        },
-        {
             key: 'enrollmentDate',
             label: 'Enrolled Date',
             sortable: true,
@@ -462,7 +444,7 @@ export default function WorkersPage() {
             </div>
 
             {/* Stats Cards - Worker Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
@@ -486,20 +468,6 @@ export default function WorkersPage() {
                     <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
                         {workerStats?.totalInactiveWorkers || workers.filter(w => w.status !== 'active').length}
                     </p>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
-                            <Banknote className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                        </div>
-                        <TrendingUp className="w-4 h-4 text-gray-400" />
-                    </div>
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Labor Costs (RWF)</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
-                        {workerStats?.totalLaborCosts?.toLocaleString() || 0}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">All time</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
