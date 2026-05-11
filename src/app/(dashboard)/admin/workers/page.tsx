@@ -1,9 +1,6 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useState, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Users, RefreshCw, X, UserPlus, Pencil, UserX, UserCheck, AlertTriangle, Phone, Building2, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import toast, { Toaster } from 'react-hot-toast';
@@ -44,7 +41,6 @@ const emptyNewWorker = {
 };
 
 export default function AdminWorkersPage() {
-    const searchParams = useSearchParams();
     const initializedFromUrl = useRef(false);
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [cooperatives, setCooperatives] = useState<Cooperative[]>([]);
@@ -55,10 +51,10 @@ export default function AdminWorkersPage() {
     useEffect(() => {
         if (!initializedFromUrl.current) {
             initializedFromUrl.current = true;
-            const q = searchParams.get('q');
+            const q = new URLSearchParams(window.location.search).get('q');
             if (q) setSearchTerm(q);
         }
-    }, [searchParams]);
+    }, []);
 
     // Reset to page 1 on filter change
     useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
