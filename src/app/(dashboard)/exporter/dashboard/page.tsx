@@ -14,8 +14,7 @@ import {
     ChevronRight,
     RefreshCw,
     Info,
-    Banknote,
-    Wallet
+
 } from 'lucide-react';
 import { ExportButton } from '@/components/export/ExportButton';
 import { ExportData } from '@/lib/export';
@@ -234,32 +233,6 @@ export default function ExporterDashboard() {
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                         {analytics?.workerDaysCumulative || 0} total worker-days
                     </p>
-                </div>
-            </div>
-
-            {/* Pricing Breakdown Info */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Banknote className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">Labor Cost Breakdown</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                            <div className="flex items-center gap-2">
-                                <DollarSign className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-                                <span className="text-blue-700 dark:text-blue-300">
-                                    <strong>FRw {(analytics?.ratePerWorkerDay || 2000).toLocaleString()}</strong> / worker-day charged to you
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Wallet className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                                <span className="text-blue-700 dark:text-blue-300">
-                                    Worker wages disbursed every Friday
-                                </span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
