@@ -492,9 +492,42 @@ export default function OperationsPage() {
                 </div>
             </div>
 
-            {/* Tabs */}
+            {/* Tabs with workflow step indicator */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-                <div className="border-b border-gray-200">
+                {/* Step progress bar */}
+                <div className="px-6 pt-5 pb-0">
+                    <div className="flex items-center gap-0">
+                        {[
+                            { id: 'checkin', step: 1, label: 'Check-in', icon: UserCheck, desc: 'Record arrival' },
+                            { id: 'assign', step: 2, label: 'Assign Exporter', icon: Link2, desc: 'Link to session' },
+                            { id: 'bags', step: 3, label: 'Record Bags', icon: Package, desc: 'Log completed bags' },
+                            { id: 'checkout', step: 4, label: 'Check-out', icon: UserX, desc: 'Close session' },
+                        ].map((step, i, arr) => {
+                            const tabOrder = ['checkin', 'assign', 'bags', 'checkout'];
+                            const activeIdx = tabOrder.indexOf(activeTab);
+                            const isActive = activeTab === step.id;
+                            const isDone = tabOrder.indexOf(step.id) < activeIdx;
+                            const Icon = step.icon;
+                            return (
+                                <div key={step.id} className="flex items-center flex-1 min-w-0">
+                                    <button
+                                        onClick={() => setActiveTab(step.id)}
+                                        className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-colors w-full ${isActive ? 'text-emerald-700' : isDone ? 'text-gray-400' : 'text-gray-400 hover:text-gray-600'}`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${isActive ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200' : isDone ? 'bg-gray-200 text-gray-500' : 'bg-gray-100 text-gray-400'}`}>
+                                            {isDone ? '✓' : step.step}
+                                        </div>
+                                        <span className={`text-[11px] font-semibold hidden sm:block truncate max-w-[80px] text-center ${isActive ? 'text-emerald-700' : 'text-gray-500'}`}>{step.label}</span>
+                                    </button>
+                                    {i < arr.length - 1 && (
+                                        <div className={`flex-1 h-0.5 mx-1 rounded-full transition-colors ${tabOrder.indexOf(arr[i + 1].id) <= activeIdx ? 'bg-emerald-300' : 'bg-gray-100'}`} />
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+                <div className="border-b border-gray-200 mt-4">
                     <nav className="flex flex-wrap -mb-px">
                         {[
                             { id: 'checkin', label: 'Check-in', icon: UserCheck },
@@ -510,7 +543,7 @@ export default function OperationsPage() {
                                     className={`
                                         flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-all
                                         ${activeTab === tab.id
-                                            ? 'border-gray-700 text-gray-900 bg-gray-50'
+                                            ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                         }
                                     `}

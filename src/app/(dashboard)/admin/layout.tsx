@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     LayoutDashboard,
@@ -17,6 +18,8 @@ import {
     FileSpreadsheet,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { AdminTopbarExtras } from '@/components/AdminTopbarExtras';
 
 const SettingsModal = dynamic(() => import('@/components/settings/SettingsModal').then(mod => ({ default: mod.SettingsModal })), { ssr: false });
 const SidebarProfile = dynamic(() => import('@/components/wrappers/SidebarProfile').then(mod => ({ default: mod.SidebarProfile })), { ssr: false });
@@ -70,6 +73,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
+                            <AdminTopbarExtras />
                             <button
                                 onClick={handleLogout}
                                 className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-all"
@@ -100,7 +104,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                             const Icon = item.icon;
                             return (
-                                <a
+                                <Link
                                     key={item.name}
                                     href={item.href}
                                     onClick={() => setSidebarOpen(false)}
@@ -116,7 +120,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                                     {isActive && (
                                         <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
                                     )}
-                                </a>
+                                </Link>
                             );
                         })}
                     </nav>
@@ -126,6 +130,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
                 <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto min-h-[calc(100vh-4rem)] bg-[#f8fafc] dark:bg-[#0f172a]">
                     <div className="max-w-7xl mx-auto">
+                        <Breadcrumb />
                         {children}
                     </div>
                 </main>

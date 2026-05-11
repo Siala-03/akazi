@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
     LayoutDashboard, 
@@ -14,6 +15,7 @@ import {
     Coffee
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { Breadcrumb } from '@/components/Breadcrumb';
 
 const SettingsModal = dynamic(() => import('@/components/settings/SettingsModal').then(mod => ({ default: mod.SettingsModal })), { ssr: false });
 const SidebarProfile = dynamic(() => import('@/components/wrappers/SidebarProfile').then(mod => ({ default: mod.SidebarProfile })), { ssr: false });
@@ -108,7 +110,7 @@ export default function SupervisorLayout({ children }: { children: ReactNode }) 
                             const isActive = pathname === item.href;
                             const Icon = item.icon;
                             return (
-                                <a
+                                <Link
                                     key={item.name}
                                     href={item.href}
                                     onClick={() => setSidebarOpen(false)}
@@ -141,7 +143,7 @@ export default function SupervisorLayout({ children }: { children: ReactNode }) 
                                     {isActive && (
                                         <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
                                     )}
-                                </a>
+                                </Link>
                             );
                         })}
                     </nav>
@@ -153,6 +155,7 @@ export default function SupervisorLayout({ children }: { children: ReactNode }) 
                 {/* Main Content */}
                 <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto min-h-[calc(100vh-4rem)] bg-[#f8fafc] dark:bg-[#0f172a]">
                     <div className="max-w-7xl mx-auto">
+                        <Breadcrumb />
                         {children}
                     </div>
                 </main>

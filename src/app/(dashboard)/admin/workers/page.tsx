@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Users, RefreshCw, X, UserPlus, Pencil, UserX, UserCheck, AlertTriangle, Phone, Building2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Pagination from '@/components/Pagination';
+import { SkeletonTable } from '@/components/SkeletonTable';
 
 interface Worker {
     _id: string;
@@ -39,11 +41,21 @@ const emptyNewWorker = {
 };
 
 export default function AdminWorkersPage() {
+    const searchParams = useSearchParams();
+    const initializedFromUrl = useRef(false);
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [cooperatives, setCooperatives] = useState<Cooperative[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+
+    useEffect(() => {
+        if (!initializedFromUrl.current) {
+            initializedFromUrl.current = true;
+            const q = searchParams.get('q');
+            if (q) setSearchTerm(q);
+        }
+    }, [searchParams]);
 
     // Reset to page 1 on filter change
     useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
@@ -280,10 +292,7 @@ export default function AdminWorkersPage() {
                     </div>
                 </div>
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
-                        <p>Loading workers...</p>
-                    </div>
+                    <SkeletonTable rows={8} cols={5} />
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -403,10 +412,26 @@ export default function AdminWorkersPage() {
                             </tbody>
                         </table>
                         {filteredWorkers.length === 0 && (
-                            <div className="p-12 text-center text-gray-500">
-                                <Users className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                                <p className="font-medium">No workers found</p>
-                                <p className="text-sm mt-1">Try adjusting your search or filter criteria</p>
+                            <div className="p-16 text-center">
+                                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                                </div>
+                                <p className="font-semibold text-gray-700 dark:text-gray-300">
+                                    {searchTerm || statusFilter !== 'all' ? 'No workers match your filters' : 'No workers registered yet'}
+                                </p>
+                                <p className="text-sm text-gray-400 mt-1">
+                                    {searchTerm || statusFilter !== 'all'
+                                        ? 'Try clearing the search or changing the status filter'
+                                        : 'Register your first worker using the button above'}
+                                </p>
+                                {(searchTerm || statusFilter !== 'all') && (
+                                    <button
+                                        onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}
+                                        className="mt-4 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                                    >
+                                        Clear filters
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>

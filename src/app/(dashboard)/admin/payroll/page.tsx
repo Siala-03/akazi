@@ -154,12 +154,34 @@ export default function PayrollPage() {
                     <Calendar className="w-4 h-4 text-emerald-500" />
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Week of</span>
                 </div>
-                <input
-                    type="date"
-                    value={selectedWeek}
-                    onChange={e => setSelectedWeek(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-shadow"
-                />
+                <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                        type="date"
+                        value={selectedWeek}
+                        onChange={e => setSelectedWeek(e.target.value)}
+                        className="px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-shadow"
+                    />
+                    {(() => {
+                        const thisWeek = getWeekStart(new Date());
+                        const lastWeek = getWeekStart(new Date(Date.now() - 7 * 86400000));
+                        return (
+                            <>
+                                <button
+                                    onClick={() => setSelectedWeek(thisWeek)}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${selectedWeek === thisWeek ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-emerald-400'}`}
+                                >
+                                    This Week
+                                </button>
+                                <button
+                                    onClick={() => setSelectedWeek(lastWeek)}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${selectedWeek === lastWeek ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-emerald-400'}`}
+                                >
+                                    Last Week
+                                </button>
+                            </>
+                        );
+                    })()}
+                </div>
             </div>
 
             {/* ── Error ── */}
