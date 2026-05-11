@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Users, RefreshCw, X, UserPlus, Pencil, UserX, UserCheck, AlertTriangle, Phone, Building2 } from 'lucide-react';
+import { Users, RefreshCw, X, UserPlus, Pencil, UserX, UserCheck, AlertTriangle, Phone, Building2, Trash2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Pagination from '@/components/Pagination';
 import { SkeletonTable } from '@/components/SkeletonTable';
@@ -70,6 +70,10 @@ export default function AdminWorkersPage() {
 
     // Confirm toggle modal
     const [confirmWorker, setConfirmWorker] = useState<Worker | null>(null);
+
+    // Confirm delete modal
+    const [deleteWorker, setDeleteWorker] = useState<Worker | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -155,6 +159,22 @@ export default function AdminWorkersPage() {
             fetchWorkers();
         } catch {
             toast.error('Failed to update status');
+        }
+    };
+
+    const handleDeleteWorker = async (worker: Worker) => {
+        setDeleting(true);
+        try {
+            const res = await fetch(`/api/workers/${worker._id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Delete failed');
+            toast.success('Worker permanently deleted');
+            setDeleteWorker(null);
+            fetchWorkers();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Delete failed');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -359,52 +379,38 @@ export default function AdminWorkersPage() {
 
                                         {/* Actions */}
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity duration-150">
-                                                {/* Edit */}
+                                            <div className="flex items-center gap-1.5">
                                                 <button
                                                     onClick={() => handleEditWorker(worker)}
                                                     title="Edit worker"
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
-                                                        bg-blue-50 text-blue-700 border border-blue-200
-                                                        hover:bg-blue-600 hover:text-white hover:border-blue-600
-                                                        dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700/50
-                                                        dark:hover:bg-blue-600 dark:hover:text-white dark:hover:border-blue-600
-                                                        transition-all duration-200 hover:shadow-md hover:shadow-blue-500/25 active:scale-95"
+                                                    className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-800/40 transition-colors"
                                                 >
                                                     <Pencil className="w-3.5 h-3.5" />
-                                                    Edit
                                                 </button>
-
-                                                {/* Deactivate / Activate */}
                                                 {worker.status === 'active' ? (
                                                     <button
                                                         onClick={() => setConfirmWorker(worker)}
                                                         title="Deactivate worker"
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
-                                                            bg-red-50 text-red-700 border border-red-200
-                                                            hover:bg-red-600 hover:text-white hover:border-red-600
-                                                            dark:bg-red-900/20 dark:text-red-400 dark:border-red-700/50
-                                                            dark:hover:bg-red-600 dark:hover:text-white dark:hover:border-red-600
-                                                            transition-all duration-200 hover:shadow-md hover:shadow-red-500/25 active:scale-95"
+                                                        className="p-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-800/40 transition-colors"
                                                     >
                                                         <UserX className="w-3.5 h-3.5" />
-                                                        Deactivate
                                                     </button>
                                                 ) : (
                                                     <button
                                                         onClick={() => handleToggleStatus(worker)}
                                                         title="Activate worker"
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
-                                                            bg-emerald-50 text-emerald-700 border border-emerald-200
-                                                            hover:bg-emerald-600 hover:text-white hover:border-emerald-600
-                                                            dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-700/50
-                                                            dark:hover:bg-emerald-600 dark:hover:text-white dark:hover:border-emerald-600
-                                                            transition-all duration-200 hover:shadow-md hover:shadow-emerald-500/25 active:scale-95"
+                                                        className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-800/40 transition-colors"
                                                     >
                                                         <UserCheck className="w-3.5 h-3.5" />
-                                                        Activate
                                                     </button>
                                                 )}
+                                                <button
+                                                    onClick={() => setDeleteWorker(worker)}
+                                                    title="Permanently delete worker"
+                                                    className="p-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 dark:bg-gray-700/40 dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -514,6 +520,44 @@ export default function AdminWorkersPage() {
                                     className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30"
                                 >
                                     Yes, Deactivate
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Permanent Delete Confirmation */}
+            {deleteWorker && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-100 dark:border-gray-700">
+                        <div className="flex flex-col items-center text-center gap-4">
+                            <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                                <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Worker Permanently?</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
+                                    <span className="font-semibold text-gray-700 dark:text-gray-200">{deleteWorker.fullName}</span> will be removed from all records. This cannot be undone.
+                                </p>
+                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-1.5">
+                                    Workers with attendance, session, or payroll history cannot be deleted — deactivate them instead.
+                                </p>
+                            </div>
+                            <div className="flex gap-3 w-full pt-1">
+                                <button
+                                    onClick={() => setDeleteWorker(null)}
+                                    disabled={deleting}
+                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteWorker(deleteWorker)}
+                                    disabled={deleting}
+                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30 disabled:opacity-50"
+                                >
+                                    {deleting ? 'Deleting...' : 'Delete Permanently'}
                                 </button>
                             </div>
                         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { UserPlus, Users, Phone, Calendar, User, Filter, X, ChevronDown, Search, Clock, Package, Banknote, Award, TrendingUp, Eye, BarChart2, QrCode } from 'lucide-react';
 import DataTable, { Column } from '@/components/DataTable';
 import { WorkerQrModal } from '@/components/qr/WorkerQrModal';
@@ -323,13 +324,13 @@ export default function WorkersPage() {
                             Manage and view all registered workers ({workers.length} total)
                         </p>
                     </div>
-                    <a
+                    <Link
                         href="/supervisor/onboarding"
                         className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-medium transition-colors w-full sm:w-auto border border-white/30 backdrop-blur-sm shadow-sm shrink-0"
                     >
                         <UserPlus className="w-4 h-4" />
                         Onboard Worker
-                    </a>
+                    </Link>
                 </div>
             </div>
 

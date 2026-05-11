@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import {
     Shield, Plus, Search, RefreshCw, Power, PowerOff, X,
-    User, Phone, Mail, KeyRound,
+    User, Phone, Mail, KeyRound, Trash2, AlertTriangle,
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 
@@ -34,6 +34,9 @@ export default function AdminSupervisorsPage() {
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
+    const [confirmToggle, setConfirmToggle] = useState<SupervisorUser | null>(null);
+    const [deleteSup, setDeleteSup] = useState<SupervisorUser | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
@@ -105,6 +108,26 @@ export default function AdminSupervisorsPage() {
             toast.success(data.message || 'Credentials resent successfully');
         } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Failed to resend credentials');
+        }
+    };
+
+    const handleDeleteSupervisor = async (user: SupervisorUser) => {
+        setDeleting(true);
+        try {
+            const res = await fetch('/api/admin/create-user', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user._id }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Delete failed');
+            toast.success('Supervisor deleted permanently');
+            setDeleteSup(null);
+            fetchSupervisors();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Delete failed');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -299,52 +322,38 @@ export default function AdminSupervisorsPage() {
 
                                         {/* Actions */}
                                         <td className="px-4 sm:px-6 py-4">
-                                            <div className="flex items-center justify-end gap-2 opacity-70 group-hover:opacity-100 transition-opacity duration-150">
-                                                {/* Reset password */}
+                                            <div className="flex items-center justify-end gap-1.5">
                                                 <button
                                                     onClick={() => handleResendCredentials(sup)}
                                                     title="Reset Password"
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
-                                                        bg-amber-50 text-amber-700 border border-amber-200
-                                                        hover:bg-amber-500 hover:text-white hover:border-amber-500
-                                                        dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-700/50
-                                                        dark:hover:bg-amber-500 dark:hover:text-white dark:hover:border-amber-500
-                                                        transition-all duration-200 hover:shadow-md hover:shadow-amber-500/25 active:scale-95"
+                                                    className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-800/40 transition-colors"
                                                 >
                                                     <KeyRound className="w-3.5 h-3.5" />
-                                                    Reset
                                                 </button>
-
-                                                {/* Toggle status */}
                                                 {sup.isActive ? (
                                                     <button
-                                                        onClick={() => handleToggleStatus(sup)}
+                                                        onClick={() => setConfirmToggle(sup)}
                                                         title="Deactivate"
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
-                                                            bg-red-50 text-red-700 border border-red-200
-                                                            hover:bg-red-600 hover:text-white hover:border-red-600
-                                                            dark:bg-red-900/20 dark:text-red-400 dark:border-red-700/50
-                                                            dark:hover:bg-red-600 dark:hover:text-white dark:hover:border-red-600
-                                                            transition-all duration-200 hover:shadow-md hover:shadow-red-500/25 active:scale-95"
+                                                        className="p-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-800/40 transition-colors"
                                                     >
                                                         <PowerOff className="w-3.5 h-3.5" />
-                                                        Deactivate
                                                     </button>
                                                 ) : (
                                                     <button
                                                         onClick={() => handleToggleStatus(sup)}
                                                         title="Activate"
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
-                                                            bg-emerald-50 text-emerald-700 border border-emerald-200
-                                                            hover:bg-emerald-600 hover:text-white hover:border-emerald-600
-                                                            dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-700/50
-                                                            dark:hover:bg-emerald-600 dark:hover:text-white dark:hover:border-emerald-600
-                                                            transition-all duration-200 hover:shadow-md hover:shadow-emerald-500/25 active:scale-95"
+                                                        className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-800/40 transition-colors"
                                                     >
                                                         <Power className="w-3.5 h-3.5" />
-                                                        Activate
                                                     </button>
                                                 )}
+                                                <button
+                                                    onClick={() => setDeleteSup(sup)}
+                                                    title="Delete supervisor"
+                                                    className="p-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 dark:bg-gray-700/40 dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -364,6 +373,67 @@ export default function AdminSupervisorsPage() {
                     />
                 )}
             </div>
+
+            {/* Confirm Deactivate Modal */}
+            {confirmToggle && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-100 dark:border-gray-700">
+                        <div className="flex flex-col items-center text-center gap-4">
+                            <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                                <AlertTriangle className="w-7 h-7 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Deactivate Supervisor?</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
+                                    <span className="font-semibold text-gray-700 dark:text-gray-200">{confirmToggle.name}</span> will lose access to the supervisor portal.
+                                </p>
+                            </div>
+                            <div className="flex gap-3 w-full pt-1">
+                                <button onClick={() => setConfirmToggle(null)} className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 transition-colors">
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => { handleToggleStatus(confirmToggle); setConfirmToggle(null); }}
+                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30"
+                                >
+                                    Yes, Deactivate
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Permanent Delete Modal */}
+            {deleteSup && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-100 dark:border-gray-700">
+                        <div className="flex flex-col items-center text-center gap-4">
+                            <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                                <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Supervisor Permanently?</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
+                                    <span className="font-semibold text-gray-700 dark:text-gray-200">{deleteSup.name}</span> and their account will be permanently removed. This cannot be undone.
+                                </p>
+                            </div>
+                            <div className="flex gap-3 w-full pt-1">
+                                <button onClick={() => setDeleteSup(null)} disabled={deleting} className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 transition-colors disabled:opacity-50">
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteSupervisor(deleteSup)}
+                                    disabled={deleting}
+                                    className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30 disabled:opacity-50"
+                                >
+                                    {deleting ? 'Deleting...' : 'Delete Permanently'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Add Supervisor Modal */}
             {showAddForm && (
