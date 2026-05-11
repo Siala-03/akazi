@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import { User } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
 
 interface UserProfile {
     id: string;
@@ -142,23 +143,11 @@ export default function ProfilePage() {
         <div className="space-y-6">
             <Toaster position="top-right" />
 
-            {/* Header Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                </div>
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
-                <div className="relative">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                            <User className="w-7 h-7 text-white" />
-                        </div>
-                        <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">My Profile</h1>
-                    </div>
-                    <p className="text-white/90 text-base sm:text-lg ml-15">Manage your account settings and preferences</p>
-                </div>
-            </div>
+            <PageHeader
+                icon={User}
+                title="My Profile"
+                subtitle="Manage your account settings and preferences"
+            />
 
             <div className="max-w-4xl grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Profile Card */}

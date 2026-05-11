@@ -18,6 +18,7 @@ import {
   FileSpreadsheet,
   FileDown
 } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
 
 interface ExporterReport {
   exporterId: string;
@@ -741,41 +742,29 @@ export default function AdminReportsPage() {
       <Toaster position="top-right" />
       
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30 mb-6">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-          </div>
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
-          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                  <TrendingUp className="w-7 h-7 text-white" />
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">Reports &amp; Analytics</h1>
-              </div>
-              <p className="text-white/90 text-base sm:text-lg ml-15">Comprehensive operational reports and audit trails</p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+        <PageHeader
+          icon={TrendingUp}
+          title="Reports & Analytics"
+          subtitle="Comprehensive operational reports and audit trails"
+          action={
+            <div className="flex gap-2">
               <button
                 onClick={exportToCSV}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-medium transition-colors border border-white/30 backdrop-blur-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
                 <FileSpreadsheet className="w-4 h-4" />
                 Export CSV
               </button>
               <button
                 onClick={exportToPDF}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-medium transition-colors border border-white/30 backdrop-blur-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
               >
                 <FileDown className="w-4 h-4" />
                 Export PDF
               </button>
             </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Filters Bar */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">

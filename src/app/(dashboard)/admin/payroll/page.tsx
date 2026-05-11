@@ -13,6 +13,7 @@ import {
     AlertCircle,
     Download,
 } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
 import { exportPayrollToExcel } from '@/lib/export/payrollExport';
 
 interface PayrollWorker {
@@ -109,31 +110,18 @@ export default function PayrollPage() {
     return (
         <div className="space-y-5">
 
-            {/* ── Page header ── */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 px-8 py-7 shadow-lg shadow-emerald-500/20">
-                <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/5 rounded-full" />
-                <div className="absolute -bottom-8 -left-8 w-36 h-36 bg-teal-400/10 rounded-full" />
-
-                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-                    <div className="flex items-center gap-4">
-                        <div className="w-11 h-11 bg-white/15 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20 shrink-0">
-                            <FileSpreadsheet className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-white tracking-tight">Weekly Payroll</h1>
-                            <p className="text-sm text-white/70 mt-0.5">
-                                {weekLabel
-                                    ? <span>{weekLabel} &middot; FRw {(summary?.workerDailyWage || 1700).toLocaleString()} / worker-day</span>
-                                    : 'Loading rates…'}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
+            <PageHeader
+                icon={FileSpreadsheet}
+                title="Weekly Payroll"
+                subtitle={weekLabel
+                    ? `${weekLabel} · FRw ${(summary?.workerDailyWage || 1700).toLocaleString()} / worker-day`
+                    : 'Loading rates…'}
+                action={
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={fetchPayroll}
                             disabled={loading}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm font-medium hover:bg-white/20 transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors disabled:opacity-50"
                         >
                             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                             Refresh
@@ -141,14 +129,14 @@ export default function PayrollPage() {
                         <button
                             onClick={handleExportExcel}
                             disabled={exporting || payroll.length === 0}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-emerald-700 text-sm font-semibold hover:bg-emerald-50 transition-colors disabled:opacity-50 shadow-sm"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-50"
                         >
                             <Download className={`w-3.5 h-3.5 ${exporting ? 'animate-pulse' : ''}`} />
                             {exporting ? 'Generating…' : 'Export Excel'}
                         </button>
                     </div>
-                </div>
-            </div>
+                }
+            />
 
             {/* ── Week picker ── */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm">

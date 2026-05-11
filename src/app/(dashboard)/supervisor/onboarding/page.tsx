@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import { UserPlus, ChevronRight, ChevronLeft, Check, User, Phone, Briefcase, FileCheck } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
 
 const STEPS = [
     { id: 1, label: 'Identity', icon: User, desc: 'Name, ID & gender' },
@@ -145,23 +146,11 @@ export default function OnboardingPage() {
         <div className="max-w-2xl mx-auto">
             <Toaster position="top-right" />
 
-            {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30 mb-8">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                </div>
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl" />
-                <div className="relative flex items-center gap-3">
-                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                        <UserPlus className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-bold text-white drop-shadow-lg">Worker Onboarding</h1>
-                        <p className="text-white/80 text-sm mt-0.5">Target: under 5 minutes · Step {currentStep} of 3</p>
-                    </div>
-                </div>
-            </div>
+            <PageHeader
+                icon={UserPlus}
+                title="Worker Onboarding"
+                subtitle={`Target: under 5 minutes · Step ${currentStep} of 3`}
+            />
 
             {/* Step indicator */}
             <div className="flex items-center gap-0 mb-8">

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
+import { User } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
 
 interface UserProfile {
     id: string;
@@ -141,22 +143,11 @@ export default function ProfilePage() {
         <div className="max-w-4xl mx-auto p-6">
             <Toaster position="top-right" />
 
-            {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30 mb-8">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                </div>
-                
-                {/* Decorative gradient circles */}
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
-                
-                <div className="relative">
-                    <h1 className="text-4xl font-bold text-white drop-shadow-lg mb-3">My Profile</h1>
-                    <p className="text-white/90 text-lg">Manage your account settings and preferences</p>
-                </div>
-            </div>
+            <PageHeader
+                icon={User}
+                title="My Profile"
+                subtitle="Manage your account settings and preferences"
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Profile Card */}

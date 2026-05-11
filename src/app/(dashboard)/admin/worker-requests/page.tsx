@@ -18,6 +18,7 @@ import {
     MessageSquare,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import { PageHeader } from '@/components/PageHeader';
 
 interface WorkerRequest {
     _id: string;
@@ -107,31 +108,19 @@ export default function AdminWorkerRequestsPage() {
         <div className="space-y-6">
             <Toaster position="top-right" />
 
-            {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                </div>
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
-                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                                <ClipboardList className="w-7 h-7 text-white" />
-                            </div>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">Worker Requests</h1>
-                        </div>
-                        <p className="text-white/90 text-base sm:text-lg ml-15">Review and respond to exporter staffing requests</p>
-                    </div>
-                    {stats.pending > 0 && (
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-400/20 border border-amber-300/40 text-white rounded-xl text-sm font-medium backdrop-blur-sm shrink-0">
-                            <Clock className="w-4 h-4" />
-                            {stats.pending} pending review{stats.pending !== 1 ? 's' : ''}
-                        </div>
-                    )}
-                </div>
-            </div>
+            <PageHeader
+                icon={ClipboardList}
+                iconColor="text-amber-600 dark:text-amber-400"
+                iconBg="bg-amber-100 dark:bg-amber-900/30"
+                title="Worker Requests"
+                subtitle="Review and respond to exporter staffing requests"
+                action={stats.pending > 0 ? (
+                    <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium">
+                        <Clock className="w-4 h-4" />
+                        {stats.pending} pending review{stats.pending !== 1 ? 's' : ''}
+                    </span>
+                ) : undefined}
+            />
 
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -154,7 +143,7 @@ export default function AdminWorkerRequestsPage() {
             </div>
 
             {/* Requests Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="card rounded-xl">
                 <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h3 className="text-base sm:text-lg font-semibold text-gray-900">All Requests</h3>

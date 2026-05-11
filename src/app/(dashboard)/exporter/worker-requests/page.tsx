@@ -17,6 +17,7 @@ import {
     CheckSquare
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import { PageHeader } from '@/components/PageHeader';
 
 interface WorkerRequest {
     _id: string;
@@ -156,37 +157,25 @@ export default function ExporterWorkerRequestsPage() {
                 </div>
             )}
 
-            {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                </div>
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
-                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                                <ClipboardList className="w-7 h-7 text-white" />
-                            </div>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">Worker Requests</h1>
-                        </div>
-                        <p className="text-white/90 text-base sm:text-lg ml-15">Submit casual worker staffing requests to the cooperative admin</p>
-                    </div>
+            <PageHeader
+                icon={ClipboardList}
+                title="Worker Requests"
+                subtitle="Submit casual worker staffing requests to the cooperative admin"
+                action={
                     <button
                         onClick={() => setShowForm(true)}
                         disabled={notLinked}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-emerald-700 font-semibold rounded-xl hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm shrink-0"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <Plus className="w-5 h-5" />
+                        <Plus className="w-4 h-4" />
                         New Request
                     </button>
-                </div>
-            </div>
+                }
+            />
 
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-center gap-3">
+                <div className="card rounded-xl p-4 flex items-center gap-3">
                     <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                         <ClipboardList className="w-5 h-5 text-gray-600" />
                     </div>

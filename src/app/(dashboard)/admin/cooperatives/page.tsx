@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { GitBranch, User, Phone } from 'lucide-react';
+import { GitBranch, User, Phone, Plus } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import { PageHeader } from '@/components/PageHeader';
 
 interface Cooperative {
     _id: string;
@@ -93,38 +94,29 @@ export default function AdminCooperativesPage() {
         <div className="space-y-6">
             <Toaster position="top-right" />
 
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                </div>
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
-                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                                <GitBranch className="w-7 h-7 text-white" />
-                            </div>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">Cooperatives Management</h1>
-                        </div>
-                        <p className="text-white/90 text-base sm:text-lg ml-15">Manage worker cooperatives</p>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
+            <PageHeader
+                icon={GitBranch}
+                iconColor="text-indigo-600 dark:text-indigo-400"
+                iconBg="bg-indigo-100 dark:bg-indigo-900/30"
+                title="Cooperatives Management"
+                subtitle="Manage worker cooperatives"
+                action={
+                    <div className="flex gap-2">
                         <button
                             onClick={handleInitUmucyo}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-medium transition-colors border border-white/30 backdrop-blur-sm"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg transition-colors"
                         >
                             ✓ Init Umucyo
                         </button>
                         <button
                             onClick={() => setShowAddForm(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-medium transition-colors border border-white/30 backdrop-blur-sm"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
                         >
-                            <span>+</span> Add Cooperative
+                            <Plus className="w-4 h-4" /> Add Cooperative
                         </button>
                     </div>
-                </div>
-            </div>
+                }
+            />
 
             {/* Cooperatives List */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">

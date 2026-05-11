@@ -20,6 +20,7 @@ import {
     QrCode
 } from 'lucide-react';
 import { QrScannerModal } from '@/components/qr/QrScannerModal';
+import { PageHeader } from '@/components/PageHeader';
 
 interface Worker {
     _id: string;
@@ -356,31 +357,17 @@ export default function OperationsPage() {
                 />
             )}
 
-            {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                </div>
-                {/* Decorative gradient circles */}
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
-                <div className="relative">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                            <Activity className="w-7 h-7 text-white" />
-                        </div>
-                        <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">Daily Operations</h1>
-                    </div>
-                    <p className="text-white/90 text-base sm:text-lg ml-15">
-                        Manage worker check-in, exporter assignments, and bag recording
-                    </p>
-                </div>
-            </div>
+            <PageHeader
+                icon={Activity}
+                iconColor="text-teal-600 dark:text-teal-400"
+                iconBg="bg-teal-100 dark:bg-teal-900/30"
+                title="Daily Operations"
+                subtitle="Manage worker check-in, exporter assignments, and bag recording"
+            />
 
             {/* Operations Metrics */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+                <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
                             <Package className="w-4 h-4 text-gray-600" />
@@ -393,7 +380,7 @@ export default function OperationsPage() {
                     </p>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+                <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
                             <Weight className="w-4 h-4 text-gray-600" />
@@ -407,7 +394,7 @@ export default function OperationsPage() {
                     <p className="text-xs text-gray-400 mt-1">kg today</p>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+                <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
                             <Users className="w-4 h-4 text-gray-600" />
@@ -420,7 +407,7 @@ export default function OperationsPage() {
                     <p className="text-xs text-gray-400 mt-1">per bag</p>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+                <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
                             <Clock className="w-4 h-4 text-gray-600" />
@@ -449,7 +436,7 @@ export default function OperationsPage() {
 
             {/* Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <div className="card rounded-xl p-5">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-600">On-Site Workers</p>
@@ -463,7 +450,7 @@ export default function OperationsPage() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <div className="card rounded-xl p-5">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-600">Active Sessions</p>
@@ -477,7 +464,7 @@ export default function OperationsPage() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <div className="card rounded-xl p-5">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-600">Total Check-ins</p>
@@ -1183,7 +1170,7 @@ export default function OperationsPage() {
 
             {/* Active Sessions - Compact Collapsible Panel */}
             {sessions.length > 0 && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="card rounded-xl overflow-hidden">
                     <button
                         onClick={() => setShowSessions(!showSessions)}
                         className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"

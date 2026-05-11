@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { UserPlus, Users, Phone, Calendar, User, Filter, X, ChevronDown, Search, Clock, Package, Banknote, Award, TrendingUp, Eye, BarChart2, QrCode } from 'lucide-react';
 import DataTable, { Column } from '@/components/DataTable';
 import { WorkerQrModal } from '@/components/qr/WorkerQrModal';
+import { PageHeader } from '@/components/PageHeader';
 
 interface Worker {
     _id: string;
@@ -285,39 +286,23 @@ export default function WorkersPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                </div>
-                {/* Decorative gradient circles */}
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
-                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                                <Users className="w-7 h-7 text-white" />
-                            </div>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">Workers Directory</h1>
-                        </div>
-                        <p className="text-white/90 text-base sm:text-lg ml-15">
-                            Manage and view all registered workers ({workers.length} total)
-                        </p>
-                    </div>
+            <PageHeader
+                icon={Users}
+                title="Workers Directory"
+                subtitle={`Manage and view all registered workers (${workers.length} total)`}
+                action={
                     <Link
                         href="/supervisor/onboarding"
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-medium transition-colors w-full sm:w-auto border border-white/30 backdrop-blur-sm shadow-sm shrink-0"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
                     >
                         <UserPlus className="w-4 h-4" />
                         Onboard Worker
                     </Link>
-                </div>
-            </div>
+                }
+            />
 
             {/* Filter Section */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="card rounded-lg">
                 {/* Filter Toggle Button */}
                 <button
                     onClick={() => setShowFilters(!showFilters)}
@@ -445,7 +430,7 @@ export default function WorkersPage() {
 
             {/* Stats Cards - Worker Metrics */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+                <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
                             <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
@@ -458,7 +443,7 @@ export default function WorkersPage() {
                     </p>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+                <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
                             <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
@@ -470,7 +455,7 @@ export default function WorkersPage() {
                     </p>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+                <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
                             <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
@@ -500,7 +485,7 @@ export default function WorkersPage() {
             </div>
 
             {/* Workers Table - collapsible */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="card rounded-xl overflow-hidden">
                 {/* Table toggle header */}
                 <button
                     onClick={() => setShowTable(!showTable)}

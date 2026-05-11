@@ -6,6 +6,7 @@ import {
     Shield, Plus, Search, RefreshCw, Power, PowerOff, X,
     User, Phone, Mail, KeyRound, Trash2, AlertTriangle,
 } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
 import Pagination from '@/components/Pagination';
 
 interface SupervisorUser {
@@ -155,31 +156,21 @@ export default function AdminSupervisorsPage() {
         <div className="space-y-6">
             <Toaster position="top-right" />
 
-            {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700 dark:from-emerald-600 dark:via-teal-700 dark:to-emerald-800 rounded-2xl p-8 shadow-xl shadow-emerald-500/30">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                </div>
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl"></div>
-                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                                <Shield className="w-7 h-7 text-white" />
-                            </div>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">Supervisors</h1>
-                        </div>
-                        <p className="text-white/90 text-base sm:text-lg ml-15">Manage supervisor accounts and access</p>
-                    </div>
+            <PageHeader
+                icon={Shield}
+                iconColor="text-violet-600 dark:text-violet-400"
+                iconBg="bg-violet-100 dark:bg-violet-900/30"
+                title="Supervisors"
+                subtitle="Manage supervisor accounts and access"
+                action={
                     <button
                         onClick={openAdd}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-emerald-700 font-semibold rounded-xl hover:bg-emerald-50 transition-colors shadow-sm shrink-0"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
                     >
-                        <Plus className="w-5 h-5" /> Add Supervisor
+                        <Plus className="w-4 h-4" /> Add Supervisor
                     </button>
-                </div>
-            </div>
+                }
+            />
 
             {/* Summary cards */}
             <div className="grid grid-cols-3 gap-4">
