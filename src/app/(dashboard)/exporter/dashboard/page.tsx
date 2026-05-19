@@ -260,7 +260,7 @@ export default function ExporterDashboard() {
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                             <span>Bags processed</span>
-                            <span className="font-semibold text-green-600">{fmt(analytics?.dailyCost || 0)}</span>
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.dailyCost || 0)}</span>
                         </div>
                     </div>
 
@@ -276,7 +276,7 @@ export default function ExporterDashboard() {
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                             <span>Last 7 days</span>
-                            <span className="font-semibold text-green-600">{fmt(analytics?.weeklyCost || 0)}</span>
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.weeklyCost || 0)}</span>
                         </div>
                     </div>
 
@@ -292,7 +292,7 @@ export default function ExporterDashboard() {
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                             <span>Cumulative total</span>
-                            <span className="font-semibold text-green-600">{fmt(analytics?.cumulativeCost || 0)}</span>
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.cumulativeCost || 0)}</span>
                         </div>
                     </div>
                 </div>

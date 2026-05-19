@@ -163,16 +163,6 @@ export default function AdminDashboard() {
             iconColor: 'text-indigo-600',
             subColor: 'text-indigo-600 dark:text-indigo-400',
         },
-        {
-            label: "Revenue Today",
-            value: `FRw ${(analytics?.dailyCostToExporters || 0).toLocaleString()}`,
-            sub: `${analytics?.sessionsTodayCount || analytics?.workerDaysToday || 0} sessions billed`,
-            icon: DollarSign,
-            border: 'border-l-green-500',
-            iconBg: '',
-            iconColor: 'text-green-600',
-            subColor: 'text-green-600 dark:text-green-400',
-        },
     ];
 
     return (
@@ -241,7 +231,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5">
                 {statCards.map((card) => {
                     const Icon = card.icon;
                     return (
@@ -263,10 +253,19 @@ export default function AdminDashboard() {
             </div>
 
             {/* Financial Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Revenue Today</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {analytics?.sessionsTodayCount || analytics?.workerDaysToday || 0} sessions billed
+                    </p>
+                </div>
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Billed to Exporters</p>
-                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -279,7 +278,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Worker Wages</p>
-                    <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         FRw {(analytics?.dailyWorkerWages || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -292,7 +291,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Cooperative Margin</p>
-                    <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         FRw {(analytics?.dailyCoopMargin || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">

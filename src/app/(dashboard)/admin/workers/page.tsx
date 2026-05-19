@@ -301,13 +301,14 @@ export default function AdminWorkersPage() {
                     </div>
                 </div>
                 {loading ? (
-                    <SkeletonTable rows={8} cols={5} />
+                    <SkeletonTable rows={8} cols={6} />
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead>
                                 <tr className="bg-gray-50 dark:bg-[#162032] border-b border-gray-200 dark:border-gray-700">
-                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Worker</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Worker ID</th>
                                     <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
                                     <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cooperative</th>
                                     <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
@@ -320,14 +321,14 @@ export default function AdminWorkersPage() {
                                         key={worker._id}
                                         className="group bg-white dark:bg-[#1e293b] transition-all duration-150 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 hover:shadow-[inset_3px_0_0_0_#10b981]"
                                     >
-                                        {/* Worker */}
+                                        {/* Name */}
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-3">
-                                                <div>
-                                                    <div className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{worker.fullName}</div>
-                                                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-normal tracking-wide">{worker.workerId}</div>
-                                                </div>
-                                            </div>
+                                            <div className="text-sm font-semibold text-gray-900 dark:text-white">{worker.fullName}</div>
+                                        </td>
+
+                                        {/* Worker ID */}
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-600 dark:text-gray-400 font-mono">{worker.workerId}</div>
                                         </td>
 
                                         {/* Contact */}

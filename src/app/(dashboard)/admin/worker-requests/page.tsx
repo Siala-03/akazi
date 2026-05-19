@@ -117,7 +117,7 @@ export default function AdminWorkerRequestsPage() {
                 title="Worker Requests"
                 subtitle="Review and respond to exporter staffing requests"
                 action={stats.pending > 0 ? (
-                    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300 text-sm font-semibold whitespace-nowrap shadow-sm">
+                    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300 text-sm font-semibold whitespace-nowrap shadow-sm opacity-60">
                         <Clock className="w-4 h-4" />
                         {stats.pending} pending request{stats.pending !== 1 ? 's' : ''}
                     </span>
