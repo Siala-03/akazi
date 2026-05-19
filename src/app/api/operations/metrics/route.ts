@@ -14,7 +14,7 @@ export async function GET() {
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
-        const [bagsToday, sessionsToday, inProgressBags] = await Promise.all([
+        const [bagsToday, sessionsToday] = await Promise.all([
             prisma.bag.findMany({
                 where: {
                     OR: [
@@ -46,7 +46,6 @@ export async function GET() {
                 where: { date: { gte: startOfDay, lte: endOfDay } },
                 select: { startTime: true, endTime: true, status: true, exporterId: true },
             }),
-            prisma.bag.count({ where: { status: 'in_progress' } }),
         ]);
 
         const totalKilogramsToday = bagsToday.reduce((sum, bag) => sum + (bag.weight || 60), 0);
@@ -71,7 +70,7 @@ export async function GET() {
         return NextResponse.json({
             metrics: {
                 bagsToday: bagsToday.length,
-                inProgressBags,
+                inProgressBags: 0,
                 totalKilogramsToday,
                 avgWorkersPerBag: Math.round(avgWorkersPerBag * 10) / 10,
                 totalHoursToday: Math.round(totalHoursToday * 10) / 10,

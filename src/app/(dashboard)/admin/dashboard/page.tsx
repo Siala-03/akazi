@@ -33,107 +33,19 @@ export default function AdminDashboard() {
     }, []);
 
     const fetchAnalytics = async () => {
-        const today = new Date().toISOString().split('T')[0];
-
-        const getId = (value: any): string => {
-            if (!value) return '';
-            if (typeof value === 'string') return value;
-            return value._id || value.id || '';
-        };
-
-        const preferNonZero = (primary: any, fallback: number) => {
-            const numeric = typeof primary === 'number' ? primary : Number(primary);
-            if (Number.isFinite(numeric) && numeric > 0) return numeric;
-            return fallback;
-        };
-
-        const buildFallbackAnalytics = (workers: any[], exporters: any[], bagsToday: any[], sessionsToday: any[], attendanceToday: any[]) => {
-            const totalWorkers = workers.length;
-            const activeWorkers = workers.filter((w: any) => w.status === 'active').length;
-            const totalExporters = exporters.length;
-            const activeExporters = exporters.filter((e: any) => e.isActive).length;
-            const workersCheckedInToday = attendanceToday.filter((a: any) => a.status === 'on-site').length;
-            const activeSessions = sessionsToday.filter((s: any) => s.status === 'active').length;
-            const bagsTodayCount = bagsToday.length;
-            const totalKilogramsToday = bagsToday.reduce((sum: number, bag: any) => sum + (bag.weight || 60), 0);
-            const exportersServedToday = new Set(
-                sessionsToday.map((s: any) => getId(s.exporterId)).filter(Boolean)
-            ).size;
-
-            return {
-                totalWorkers,
-                activeWorkers,
-                totalExporters,
-                activeExporters,
-                workersCheckedInToday,
-                activeSessions,
-                bagsToday: bagsTodayCount,
-                totalKilogramsToday,
-                exportersServedToday,
-                totalBags: bagsTodayCount,
-                totalKilograms: totalKilogramsToday,
-                avgBagsPerDay: bagsTodayCount,
-            };
-        };
-
         try {
             setLoading(true);
             setLoadError(null);
 
-            const [
-                analyticsRes,
-                workersRes,
-                exportersRes,
-                bagsRes,
-                sessionsRes,
-                attendanceRes,
-            ] = await Promise.all([
-                fetch('/api/analytics/admin'),
-                fetch('/api/workers'),
-                fetch('/api/exporters?all=true'),
-                fetch(`/api/bags?date=${today}`),
-                fetch(`/api/sessions?all=true&startDate=${today}&endDate=${today}`),
-                fetch('/api/attendance/checkin'),
-            ]);
-
-            const workersData = await workersRes.json().catch(() => ({}));
-            const exportersData = await exportersRes.json().catch(() => ({}));
-            const bagsData = await bagsRes.json().catch(() => ({}));
-            const sessionsData = await sessionsRes.json().catch(() => ({}));
-            const attendanceData = await attendanceRes.json().catch(() => ({}));
-
-            const fallbackAnalytics = buildFallbackAnalytics(
-                workersData.workers || [],
-                exportersData.exporters || [],
-                bagsData.bags || [],
-                sessionsData.sessions || [],
-                attendanceData.attendance || []
-            );
+            const analyticsRes = await fetch('/api/analytics/admin');
 
             if (!analyticsRes.ok) {
                 const err = await analyticsRes.json().catch(() => ({}));
-                setAnalytics(fallbackAnalytics);
                 throw new Error(err?.error || `Failed to load analytics (${analyticsRes.status})`);
             }
 
             const data = await analyticsRes.json();
-            const apiAnalytics = data.analytics || {};
-
-            setAnalytics({
-                ...apiAnalytics,
-                totalWorkers: preferNonZero(apiAnalytics.totalWorkers, fallbackAnalytics.totalWorkers),
-                activeWorkers: preferNonZero(apiAnalytics.activeWorkers, fallbackAnalytics.activeWorkers),
-                totalExporters: preferNonZero(apiAnalytics.totalExporters, fallbackAnalytics.totalExporters),
-                activeExporters: preferNonZero(apiAnalytics.activeExporters, fallbackAnalytics.activeExporters),
-                workersCheckedInToday: preferNonZero(apiAnalytics.workersCheckedInToday, fallbackAnalytics.workersCheckedInToday),
-                activeSessions: preferNonZero(apiAnalytics.activeSessions, fallbackAnalytics.activeSessions),
-                bagsToday: preferNonZero(apiAnalytics.bagsToday, fallbackAnalytics.bagsToday),
-                totalKilogramsToday: preferNonZero(apiAnalytics.totalKilogramsToday, fallbackAnalytics.totalKilogramsToday),
-                exportersServedToday: preferNonZero(apiAnalytics.exportersServedToday, fallbackAnalytics.exportersServedToday),
-                totalBags: preferNonZero(apiAnalytics.totalBags, fallbackAnalytics.totalBags),
-                totalKilograms: preferNonZero(apiAnalytics.totalKilograms, fallbackAnalytics.totalKilograms),
-                avgBagsPerDay: preferNonZero(apiAnalytics.avgBagsPerDay, fallbackAnalytics.avgBagsPerDay),
-            });
+            setAnalytics(data.analytics || {});
             setLastUpdated(new Date());
         } catch (error) {
             console.error('Error fetching analytics:', error);

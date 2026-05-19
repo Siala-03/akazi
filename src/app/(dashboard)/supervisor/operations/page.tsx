@@ -157,76 +157,17 @@ export default function OperationsPage() {
     };
 
     const fetchOperationsMetrics = async () => {
-        const today = new Date().toISOString().split('T')[0];
-
-        const computeFallbackMetrics = (bags: any[], sessionsForDay: any[]) => {
-            const bagsToday = bags.length;
-            const totalKilogramsToday = bags.reduce((sum, bag) => sum + (bag.weight || 60), 0);
-            const totalWorkersAcrossBags = bags.reduce((sum, bag) => sum + (bag.workers?.length || 0), 0);
-            const avgWorkersPerBag = bagsToday > 0 ? totalWorkersAcrossBags / bagsToday : 0;
-
-            let totalHoursToday = 0;
-            for (const session of sessionsForDay) {
-                if (session.endTime) {
-                    totalHoursToday += (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / (1000 * 60 * 60);
-                } else if (session.status === 'active') {
-                    totalHoursToday += (Date.now() - new Date(session.startTime).getTime()) / (1000 * 60 * 60);
-                }
-            }
-
-            const exportersServedToday = new Set(
-                sessionsForDay
-                    .map((s) => (typeof s.exporterId === 'string' ? s.exporterId : s.exporterId?._id))
-                    .filter(Boolean)
-            ).size;
-
-            return {
-                bagsToday,
-                totalKilogramsToday,
-                avgWorkersPerBag: Math.round(avgWorkersPerBag * 10) / 10,
-                totalHoursToday: Math.round(totalHoursToday * 10) / 10,
-                exportersServedToday,
-            };
-        };
-
-        const preferNonZero = (primary: any, fallback: number) => {
-            const numeric = typeof primary === 'number' ? primary : Number(primary);
-            if (Number.isFinite(numeric) && numeric > 0) return numeric;
-            return fallback;
-        };
-
         try {
             setMetricsError(null);
-            const [metricsRes, bagsRes, sessionsRes] = await Promise.all([
-                fetch('/api/operations/metrics'),
-                fetch(`/api/bags?date=${today}`),
-                fetch(`/api/sessions?all=true&startDate=${today}&endDate=${today}`),
-            ]);
-
-            const bagsData = await bagsRes.json().catch(() => ({}));
-            const sessionsData = await sessionsRes.json().catch(() => ({}));
-
-            const fallbackMetrics = computeFallbackMetrics(
-                bagsData.bags || [],
-                sessionsData.sessions || []
-            );
+            const metricsRes = await fetch('/api/operations/metrics');
 
             if (!metricsRes.ok) {
-                setOperationsMetrics(fallbackMetrics);
                 const err = await metricsRes.json().catch(() => ({}));
                 throw new Error(err?.error || `Failed to load operations metrics (${metricsRes.status})`);
             }
 
             const data = await metricsRes.json();
-            const apiMetrics = data.metrics || {};
-
-            setOperationsMetrics({
-                bagsToday: preferNonZero(apiMetrics.bagsToday, fallbackMetrics.bagsToday),
-                totalKilogramsToday: preferNonZero(apiMetrics.totalKilogramsToday, fallbackMetrics.totalKilogramsToday),
-                avgWorkersPerBag: preferNonZero(apiMetrics.avgWorkersPerBag, fallbackMetrics.avgWorkersPerBag),
-                totalHoursToday: preferNonZero(apiMetrics.totalHoursToday, fallbackMetrics.totalHoursToday),
-                exportersServedToday: preferNonZero(apiMetrics.exportersServedToday, fallbackMetrics.exportersServedToday),
-            });
+            setOperationsMetrics(data.metrics || {});
         } catch (error) {
             console.error('Error fetching operations metrics:', error);
             setMetricsError(error instanceof Error ? error.message : 'Failed to load operations metrics');

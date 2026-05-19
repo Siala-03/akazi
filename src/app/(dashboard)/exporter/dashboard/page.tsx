@@ -57,40 +57,6 @@ export default function ExporterDashboard() {
     const ITEMS_PER_PAGE = 10;
 
     const fetchData = useCallback(async () => {
-        const getId = (value: any): string => {
-            if (!value) return '';
-            if (typeof value === 'string') return value;
-            return value._id || value.id || '';
-        };
-
-        const preferNonZero = (primary: any, fallback: number) => {
-            const numeric = typeof primary === 'number' ? primary : Number(primary);
-            if (Number.isFinite(numeric) && numeric > 0) return numeric;
-            return fallback;
-        };
-
-        const buildFallbackAnalytics = (bagsForPeriod: any[], sessionsForPeriod: any[]) => {
-            const periodBags = bagsForPeriod.length;
-            const periodWeight = bagsForPeriod.reduce((sum, bag) => sum + (bag.weight || 60), 0);
-            const periodWorkersEngaged = new Set(
-                bagsForPeriod.flatMap((bag) => (bag.workers || []).map((w: any) => getId(w.workerId))).filter(Boolean)
-            ).size;
-
-            const periodSessionsCount = sessionsForPeriod.length;
-            const uniqueDates = new Set(
-                bagsForPeriod.map((bag) => new Date(bag.date).toISOString().split('T')[0])
-            );
-            const periodDays = Math.max(1, uniqueDates.size || 1);
-
-            return {
-                periodBags,
-                periodWeight,
-                periodWorkersEngaged,
-                periodSessionsCount,
-                periodAvgBagsPerDay: periodBags / periodDays,
-            };
-        };
-
         try {
             setLoading(true);
             setLoadError(null);
@@ -116,36 +82,21 @@ export default function ExporterDashboard() {
                 fetch(`/api/analytics/exporter?${params.toString()}`),
             ]);
 
-            const sessionsRes = await fetch(`/api/sessions?all=true&${params.toString()}`);
-
-            const bagsData = await bagsRes.json().catch(() => ({}));
-            const sessionsData = await sessionsRes.json().catch(() => ({}));
-            const myBags = bagsData.bags || [];
-            const fallbackAnalytics = buildFallbackAnalytics(myBags, sessionsData.sessions || []);
-
             if (!bagsRes.ok || !analyticsRes.ok) {
                 const bagErr = !bagsRes.ok ? await bagsRes.json().catch(() => ({})) : null;
                 const analyticsErr = !analyticsRes.ok ? await analyticsRes.json().catch(() => ({})) : null;
-                setBags(myBags);
-                setAnalytics(fallbackAnalytics);
                 throw new Error(
                     analyticsErr?.error || bagErr?.error ||
                     `Failed to load exporter dashboard (${bagsRes.status}/${analyticsRes.status})`
                 );
             }
 
+            const bagsData = await bagsRes.json();
             const analyticsData = await analyticsRes.json();
+            const myBags = bagsData.bags || [];
 
             setBags(myBags);
-            const apiAnalytics = analyticsData.analytics || {};
-            setAnalytics({
-                ...apiAnalytics,
-                periodBags: preferNonZero(apiAnalytics.periodBags, fallbackAnalytics.periodBags),
-                periodWeight: preferNonZero(apiAnalytics.periodWeight, fallbackAnalytics.periodWeight),
-                periodWorkersEngaged: preferNonZero(apiAnalytics.periodWorkersEngaged, fallbackAnalytics.periodWorkersEngaged),
-                periodSessionsCount: preferNonZero(apiAnalytics.periodSessionsCount, fallbackAnalytics.periodSessionsCount),
-                periodAvgBagsPerDay: preferNonZero(apiAnalytics.periodAvgBagsPerDay, fallbackAnalytics.periodAvgBagsPerDay),
-            });
+            setAnalytics(analyticsData.analytics || {});
             setLastUpdated(new Date());
 
             if (myBags.length > 0 && myBags[0].exporterId) {
