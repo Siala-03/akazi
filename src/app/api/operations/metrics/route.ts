@@ -14,9 +14,15 @@ export async function GET() {
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
-        const [bagsToday, sessionsToday, uniqueExporterIds] = await Promise.all([
+        const [bagsToday, sessionsToday, uniqueExporterIds, inProgressBags] = await Promise.all([
             prisma.bag.findMany({
-                where: { date: { gte: startOfDay, lte: endOfDay } },
+                where: {
+                    status: { in: ['completed', 'validated', 'locked'] },
+                    OR: [
+                        { completedAt: { gte: startOfDay, lte: endOfDay } },
+                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                    ],
+                },
                 select: { workers: { select: { id: true } } },
             }),
             prisma.session.findMany({
@@ -24,10 +30,17 @@ export async function GET() {
                 select: { startTime: true, endTime: true, status: true },
             }),
             prisma.bag.findMany({
-                where: { date: { gte: startOfDay, lte: endOfDay } },
+                where: {
+                    status: { in: ['completed', 'validated', 'locked'] },
+                    OR: [
+                        { completedAt: { gte: startOfDay, lte: endOfDay } },
+                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                    ],
+                },
                 select: { exporterId: true },
                 distinct: ['exporterId'],
             }),
+            prisma.bag.count({ where: { status: 'in_progress' } }),
         ]);
 
         const totalKilogramsToday = bagsToday.length * 60;
@@ -50,6 +63,7 @@ export async function GET() {
         return NextResponse.json({
             metrics: {
                 bagsToday: bagsToday.length,
+                inProgressBags,
                 totalKilogramsToday,
                 avgWorkersPerBag: Math.round(avgWorkersPerBag * 10) / 10,
                 totalHoursToday: Math.round(totalHoursToday * 10) / 10,

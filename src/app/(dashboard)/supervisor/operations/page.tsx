@@ -56,6 +56,23 @@ interface Session {
     status: string;
 }
 
+interface Bag {
+    _id: string;
+    bagNumber: string;
+    status: string;
+    startedAt?: string;
+    completedAt?: string;
+    workers: Array<{
+        _id: string;
+        workerId: {
+            _id: string;
+            fullName?: string;
+            workerId?: string;
+        } | string;
+        sessionId: string;
+    }>;
+}
+
 export default function OperationsPage() {
     const [activeTab, setActiveTab] = useState('checkin');
     const [workers, setWorkers] = useState<Worker[]>([]);
@@ -272,18 +289,30 @@ export default function OperationsPage() {
     });
     const [bagWorkerSearch, setBagWorkerSearch] = useState('');
     const [assignedWorkerIds, setAssignedWorkerIds] = useState<string[]>([]);
+    const [inProgressBags, setInProgressBags] = useState<Bag[]>([]);
+    const [selectedBagId, setSelectedBagId] = useState<string>('new');
 
     const fetchAssignedWorkersForExporter = async (exporterId: string) => {
         try {
             const today = new Date().toISOString().split('T')[0];
             const res = await fetch(`/api/bags?exporterId=${exporterId}&date=${today}`);
             const data = await res.json();
-            const ids: string[] = (data.bags || []).flatMap((bag: any) =>
-                bag.workers.map((w: any) => (w.workerId?._id || w.workerId) as string)
+            const ids: string[] = (data.bags || []).flatMap((bag: Bag) =>
+                bag.workers.map((w) => (typeof w.workerId === 'string' ? w.workerId : w.workerId?._id) as string)
             );
             setAssignedWorkerIds([...new Set(ids)]);
         } catch {
             setAssignedWorkerIds([]);
+        }
+    };
+
+    const fetchInProgressBags = async (exporterId: string) => {
+        try {
+            const res = await fetch(`/api/bags?exporterId=${exporterId}&status=in_progress`);
+            const data = await res.json();
+            setInProgressBags(data.bags || []);
+        } catch {
+            setInProgressBags([]);
         }
     };
 
@@ -301,37 +330,87 @@ export default function OperationsPage() {
             toast.error('Please select an exporter');
             return;
         }
-        if (bagFormData.workers.length < 2 || bagFormData.workers.length > 4) {
-            toast.error('Please select 2-4 workers for this bag');
+        if (bagFormData.workers.length < 1 || bagFormData.workers.length > 4) {
+            toast.error('Please select 1-4 workers');
             return;
         }
 
         setLoading(true);
         try {
-            const res = await fetch('/api/bags', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    exporterId: bagFormData.exporterId,
-                    workerIds: bagFormData.workers,
-                    weight: 60, // Locked at 60kg - standard bag weight
-                }),
-            });
+            let res: Response;
+
+            if (selectedBagId === 'new') {
+                if (bagFormData.workers.length < 2) {
+                    throw new Error('A new bag must start with at least 2 workers');
+                }
+                res = await fetch('/api/bags', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        exporterId: bagFormData.exporterId,
+                        workerIds: bagFormData.workers,
+                        weight: 60,
+                    }),
+                });
+            } else {
+                res = await fetch(`/api/bags/${selectedBagId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'add-workers',
+                        workerIds: bagFormData.workers,
+                    }),
+                });
+            }
 
             if (!res.ok) {
                 const data = await res.json();
                 throw new Error(data.error);
             }
 
-            toast.success('Bag recorded successfully!');
-            // Keep exporter selected; clear worker selection and refresh assigned list
+            toast.success(selectedBagId === 'new' ? 'Bag started and workers assigned' : 'Workers reallocated to open bag');
             const currentExporterId = bagFormData.exporterId;
-            setBagFormData(prev => ({ ...prev, workers: [] }));
+            setBagFormData((prev) => ({ ...prev, workers: [] }));
             fetchSessions();
             fetchAttendance();
             fetchAssignedWorkersForExporter(currentExporterId);
+            fetchInProgressBags(currentExporterId);
+            fetchOperationsMetrics();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Failed to assign bag');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCompleteBag = async () => {
+        if (!bagFormData.exporterId || selectedBagId === 'new') {
+            toast.error('Select an in-progress bag to complete');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/bags/${selectedBagId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'complete' }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to complete bag');
+            }
+
+            toast.success('Bag marked as completed');
+            const exporterId = bagFormData.exporterId;
+            setSelectedBagId('new');
+            setBagFormData((prev) => ({ ...prev, workers: [] }));
+            fetchInProgressBags(exporterId);
+            fetchAssignedWorkersForExporter(exporterId);
+            fetchOperationsMetrics();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to complete bag');
         } finally {
             setLoading(false);
         }
@@ -341,6 +420,10 @@ export default function OperationsPage() {
     // Workers available for exporter assignment (on-site and no active session yet)
     const availableForAssignment = onSiteWorkers.filter(
         (a) => !sessions.some((s) => s.workerId._id === a.workerId._id)
+    );
+    const selectedBag = inProgressBags.find((bag) => bag._id === selectedBagId);
+    const selectedBagWorkerIds = new Set(
+        (selectedBag?.workers || []).map((w) => (typeof w.workerId === 'string' ? w.workerId : w.workerId?._id)).filter(Boolean)
     );
 
     return (
@@ -831,10 +914,10 @@ export default function OperationsPage() {
                                 <div>
                                     <h3 className="text-lg font-semibold flex items-center gap-2">
                                         <Package className="w-5 h-5 text-gray-700" />
-                                        Record Completed Bag (60kg)
+                                        Multi-Day Bag Assignment (60kg)
                                     </h3>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        STEP 3: Select 2-4 workers with active session for selected exporter • Locked at 60kg standard
+                                        STEP 3: Start a bag, reallocate workers across days when needed, then complete the bag
                                     </p>
                                 </div>
                                 <div className="text-right">
@@ -855,8 +938,14 @@ export default function OperationsPage() {
                                         const id = e.target.value;
                                         setBagFormData({ exporterId: id, workers: [] });
                                         setBagWorkerSearch('');
-                                        if (id) fetchAssignedWorkersForExporter(id);
-                                        else setAssignedWorkerIds([]);
+                                        setSelectedBagId('new');
+                                        if (id) {
+                                            fetchAssignedWorkersForExporter(id);
+                                            fetchInProgressBags(id);
+                                        } else {
+                                            setAssignedWorkerIds([]);
+                                            setInProgressBags([]);
+                                        }
                                     }}
                                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent bg-white font-medium"
                                 >
@@ -868,9 +957,42 @@ export default function OperationsPage() {
                                     ))}
                                 </select>
                                 {bagFormData.exporterId && (
-                                    <p className="mt-2 text-sm text-gray-600">
-                                        ✓ Showing workers assigned to {exporters.find(e => e._id === bagFormData.exporterId)?.companyTradingName}
-                                    </p>
+                                    <div className="mt-3 space-y-2">
+                                        <p className="text-sm text-gray-600">
+                                            Showing workers assigned to {exporters.find(e => e._id === bagFormData.exporterId)?.companyTradingName}
+                                        </p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-500 mb-1">Bag Mode</label>
+                                                <select
+                                                    value={selectedBagId}
+                                                    onChange={(e) => {
+                                                        setSelectedBagId(e.target.value);
+                                                        setBagFormData((prev) => ({ ...prev, workers: [] }));
+                                                    }}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                                                >
+                                                    <option value="new">Start New Bag</option>
+                                                    {inProgressBags.map((bag) => (
+                                                        <option key={bag._id} value={bag._id}>
+                                                            Continue {bag.bagNumber} ({bag.workers.length} worker session{bag.workers.length !== 1 ? 's' : ''})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            {selectedBagId !== 'new' && (
+                                                <div className="flex items-end">
+                                                    <button
+                                                        onClick={handleCompleteBag}
+                                                        disabled={loading}
+                                                        className="w-full px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 disabled:opacity-50 text-sm font-medium"
+                                                    >
+                                                        Mark Bag Completed
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 )}
                             </div>
 
@@ -890,9 +1012,13 @@ export default function OperationsPage() {
                                                     }`} />
                                                     <span className="text-gray-600">
                                                         <strong>{bagFormData.workers.length}</strong> / 4 selected
-                                                        {bagFormData.workers.length >= 2 && bagFormData.workers.length <= 4
-                                                            ? ' · Ready'
-                                                            : ' · Need 2–4'}
+                                                        {selectedBagId === 'new'
+                                                            ? bagFormData.workers.length >= 2 && bagFormData.workers.length <= 4
+                                                                ? ' · Ready to start new bag'
+                                                                : ' · Need 2–4 for new bag'
+                                                            : bagFormData.workers.length >= 1 && bagFormData.workers.length <= 4
+                                                                ? ' · Ready to add workers'
+                                                                : ' · Select 1–4 workers'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -911,7 +1037,7 @@ export default function OperationsPage() {
                                             {/* Assign Bag button */}
                                             <button
                                                 onClick={handleRecordBag}
-                                                disabled={loading || bagFormData.workers.length < 2 || bagFormData.workers.length > 4}
+                                                disabled={loading || (selectedBagId === 'new' ? bagFormData.workers.length < 2 : bagFormData.workers.length < 1) || bagFormData.workers.length > 4}
                                                 className="flex-shrink-0 px-6 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow flex items-center gap-2"
                                             >
                                                 {loading ? (
@@ -922,7 +1048,7 @@ export default function OperationsPage() {
                                                 ) : (
                                                     <>
                                                         <Package className="w-4 h-4" />
-                                                        Assign Bag
+                                                        {selectedBagId === 'new' ? 'Start Bag' : 'Reallocate Workers'}
                                                     </>
                                                 )}
                                             </button>
@@ -957,6 +1083,7 @@ export default function OperationsPage() {
                                                     const filtered = sessions
                                                         .filter(s => s.exporterId._id === bagFormData.exporterId)
                                                         .filter(s => !assignedWorkerIds.includes(s.workerId._id))
+                                                        .filter(s => !selectedBagWorkerIds.has(s.workerId._id))
                                                         .filter(s => !bagWorkerSearch || s.workerId.fullName.toLowerCase().includes(bagWorkerSearch.toLowerCase()) || s.workerId.workerId.toLowerCase().includes(bagWorkerSearch.toLowerCase()));
 
                                                     if (filtered.length === 0) {

@@ -35,6 +35,7 @@ enum SessionStatus {
 }
 
 enum BagStatus {
+  in_progress
   completed
   validated
   locked
@@ -238,8 +239,10 @@ model Bag {
   exporterId   String
   facilityId   String?
   date         DateTime
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
   weight       Float     @default(60)
-  status       BagStatus @default(completed)
+  status       BagStatus @default(in_progress)
   supervisorId String
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

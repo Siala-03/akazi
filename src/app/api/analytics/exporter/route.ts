@@ -91,6 +91,8 @@ export async function GET(request: NextRequest) {
         weekEnd.setDate(weekStart.getDate() + 6);
         weekEnd.setHours(23, 59, 59, 999);
 
+        const completedStatuses: Array<'completed' | 'validated' | 'locked'> = ['completed', 'validated', 'locked'];
+
         const [
             bagsToday,
             bagsThisWeek,
@@ -103,22 +105,68 @@ export async function GET(request: NextRequest) {
             periodWeightAgg,
             periodWorkersEngagedRows,
         ] = await Promise.all([
-            prisma.bag.count({ where: { exporterId, date: { gte: startOfDay, lte: endOfDay } } }),
-            prisma.bag.count({ where: { exporterId, date: { gte: sevenDaysAgo, lte: endOfDay } } }),
-            prisma.bag.count({ where: { exporterId, date: { gte: monthStart, lte: endOfDay } } }),
-            prisma.bag.count({ where: { exporterId } }),
+            prisma.bag.count({
+                where: {
+                    exporterId,
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: startOfDay, lte: endOfDay } },
+                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                    ],
+                },
+            }),
+            prisma.bag.count({
+                where: {
+                    exporterId,
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: sevenDaysAgo, lte: endOfDay } },
+                        { completedAt: null, date: { gte: sevenDaysAgo, lte: endOfDay } },
+                    ],
+                },
+            }),
+            prisma.bag.count({
+                where: {
+                    exporterId,
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: monthStart, lte: endOfDay } },
+                        { completedAt: null, date: { gte: monthStart, lte: endOfDay } },
+                    ],
+                },
+            }),
+            prisma.bag.count({ where: { exporterId, status: { in: completedStatuses } } }),
             prisma.session.findMany({
                 where: { exporterId, date: { gte: startOfDay, lte: endOfDay } },
                 select: { startTime: true, endTime: true, status: true },
             }),
-            prisma.bag.aggregate({ where: { exporterId }, _sum: { weight: true }, _min: { date: true } }),
+            prisma.bag.aggregate({ where: { exporterId, status: { in: completedStatuses } }, _sum: { weight: true }, _min: { date: true } }),
             prisma.$queryRaw<{ count: bigint }[]>`
                 SELECT COUNT(DISTINCT bw."workerId")::bigint AS count
                 FROM "BagWorker" bw
                 INNER JOIN "Bag" b ON b.id = bw."bagId"
                 WHERE b."exporterId" = ${exporterId}`,
-            prisma.bag.count({ where: { exporterId, date: { gte: rangeStart, lte: rangeEnd } } }),
-            prisma.bag.aggregate({ where: { exporterId, date: { gte: rangeStart, lte: rangeEnd } }, _sum: { weight: true } }),
+            prisma.bag.count({
+                where: {
+                    exporterId,
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: rangeStart, lte: rangeEnd } },
+                        { completedAt: null, date: { gte: rangeStart, lte: rangeEnd } },
+                    ],
+                },
+            }),
+            prisma.bag.aggregate({
+                where: {
+                    exporterId,
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: rangeStart, lte: rangeEnd } },
+                        { completedAt: null, date: { gte: rangeStart, lte: rangeEnd } },
+                    ],
+                },
+                _sum: { weight: true },
+            }),
             prisma.$queryRaw<{ count: bigint }[]>`
                 SELECT COUNT(DISTINCT bw."workerId")::bigint AS count
                 FROM "BagWorker" bw
@@ -186,28 +234,32 @@ export async function GET(request: NextRequest) {
 
         const trendStart = getStartOfDay(new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000));
         const bagsTrendRows = await prisma.$queryRaw<{ day: string; count: bigint }[]>`
-            SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
+            SELECT TO_CHAR(COALESCE("completedAt", date), 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
             FROM "Bag"
-            WHERE "exporterId" = ${exporterId} AND date >= ${trendStart} AND date <= ${endOfDay}
+            WHERE "exporterId" = ${exporterId}
+              AND status IN ('completed', 'validated', 'locked')
+              AND COALESCE("completedAt", date) >= ${trendStart}
+              AND COALESCE("completedAt", date) <= ${endOfDay}
             GROUP BY day`;
 
-        const [dailyBagsRows, dailySessionRows] = await Promise.all([
-            prisma.$queryRaw<{ day: string; bags: bigint; weight: number | null }[]>`
-                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day,
-                       COUNT(*)::bigint AS bags,
-                       COALESCE(SUM(weight), 0)::float AS weight
-                FROM "Bag"
-                WHERE "exporterId" = ${exporterId}
-                    AND date >= ${rangeStart} AND date <= ${rangeEnd}
-                GROUP BY day`,
-            prisma.$queryRaw<{ day: string; sessions: bigint }[]>`
-                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day,
-                       COUNT(*)::bigint AS sessions
-                FROM "Session"
-                WHERE "exporterId" = ${exporterId}
-                    AND date >= ${rangeStart} AND date <= ${rangeEnd}
-                GROUP BY day`,
-        ]);
+        const dailyBagsRows = await prisma.$queryRaw<{ day: string; bags: bigint; weight: number | null }[]>`
+            SELECT TO_CHAR(COALESCE("completedAt", date), 'YYYY-MM-DD') AS day,
+                   COUNT(*)::bigint AS bags,
+                   COALESCE(SUM(weight), 0)::float AS weight
+            FROM "Bag"
+            WHERE "exporterId" = ${exporterId}
+                AND status IN ('completed', 'validated', 'locked')
+                AND COALESCE("completedAt", date) >= ${rangeStart}
+                AND COALESCE("completedAt", date) <= ${rangeEnd}
+            GROUP BY day`;
+
+        const dailySessionRows = await prisma.$queryRaw<{ day: string; sessions: bigint }[]>`
+            SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day,
+                   COUNT(*)::bigint AS sessions
+            FROM "Session"
+            WHERE "exporterId" = ${exporterId}
+                AND date >= ${rangeStart} AND date <= ${rangeEnd}
+            GROUP BY day`;
 
         const bagsTrendMap = new Map(bagsTrendRows.map(d => [d.day, Number(d.count)]));
 

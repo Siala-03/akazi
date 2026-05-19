@@ -35,6 +35,11 @@ export async function POST(request: NextRequest) {
 
         const sessions = await prisma.session.findMany({
             where: { workerId: { in: workerIds }, exporterId, status: 'active' },
+            select: {
+                id: true,
+                workerId: true,
+                facilityId: true,
+            },
         });
 
         if (sessions.length !== workerIds.length) {
@@ -52,11 +57,12 @@ export async function POST(request: NextRequest) {
                 exporterId,
                 facilityId,
                 date: new Date(),
+                startedAt: new Date(),
                 weight: weight || 60,
-                status: 'completed',
+                status: 'in_progress',
                 supervisorId: currentUser.userId,
                 workers: {
-                    create: sessions.map(s => ({ workerId: s.workerId, sessionId: s.id })),
+                    create: sessions.map((s) => ({ workerId: s.workerId, sessionId: s.id })),
                 },
             },
             include: {
@@ -83,6 +89,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const exporterIdParam = searchParams.get('exporterId');
         const date = searchParams.get('date');
+        const status = searchParams.get('status');
 
         const where: any = {};
 
@@ -92,11 +99,23 @@ export async function GET(request: NextRequest) {
             where.exporterId = exporterIdParam;
         }
 
+        if (status) {
+            where.status = status;
+        }
+
         if (date) {
             const targetDate = new Date(date);
-            const start = new Date(targetDate); start.setHours(0, 0, 0, 0);
-            const end = new Date(targetDate); end.setHours(23, 59, 59, 999);
-            where.date = { gte: start, lte: end };
+            const start = new Date(targetDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(targetDate);
+            end.setHours(23, 59, 59, 999);
+            where.workers = {
+                some: {
+                    session: {
+                        date: { gte: start, lte: end },
+                    },
+                },
+            };
         }
 
         const bags = await prisma.bag.findMany({
@@ -106,7 +125,7 @@ export async function GET(request: NextRequest) {
                 facility: true,
                 workers: { include: { worker: true } },
             },
-            orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+            orderBy: [{ createdAt: 'desc' }, { date: 'desc' }],
             take: 200,
         });
 
