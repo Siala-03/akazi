@@ -83,6 +83,12 @@ export default function AdminReportsPage() {
   const [dailyOperations, setDailyOperations] = useState<DailyOperation[]>([]);
   const [auditTrails, setAuditTrails] = useState<AuditTrail[]>([]);
 
+  const getId = (value: any): string => {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    return value._id || value.id || '';
+  };
+
   useEffect(() => {
     loadReportData();
   }, [activeTab, startDate, endDate]);
@@ -136,44 +142,48 @@ export default function AdminReportsPage() {
       const sessions = sessionsData.sessions || [];
       const workerDailyWage = settingsData.settings?.workerDailyWage || 1700;
 
-      const getExporterId = (value: any): string => {
-        if (!value) return '';
-        if (typeof value === 'string') return value;
-        return value._id || value.id || '';
-      };
-
       const exporterById = new Map<string, any>();
       exporters.forEach((exp: any) => {
-        const id = getExporterId(exp);
+        const id = getId(exp);
         if (id) exporterById.set(id, exp);
       });
 
       // Include exporters that appear in bags/sessions even if they are not in the exporters list.
       bags.forEach((bag: any) => {
-        const id = getExporterId(bag.exporterId);
+        const id = getId(bag.exporterId);
         if (id && !exporterById.has(id)) exporterById.set(id, bag.exporterId);
       });
       sessions.forEach((session: any) => {
-        const id = getExporterId(session.exporterId);
+        const id = getId(session.exporterId);
         if (id && !exporterById.has(id)) exporterById.set(id, session.exporterId);
       });
 
       // Calculate report for each exporter
       const reports: ExporterReport[] = Array.from(exporterById.values()).map((exporter: any) => {
-        const exporterIdValue = getExporterId(exporter);
+        const exporterIdValue = getId(exporter);
 
         // Filter bags for this exporter
         const exporterBags = bags.filter((bag: any) => 
-          getExporterId(bag.exporterId) === exporterIdValue
+          getId(bag.exporterId) === exporterIdValue
         );
 
         // Calculate unique workers involved
         const workerIds = new Set();
         exporterBags.forEach((bag: any) => {
           bag.workers?.forEach((w: any) => {
-            workerIds.add(w.workerId?._id || w.workerId);
+            const wid = getId(w.workerId);
+            if (wid) workerIds.add(wid);
           });
         });
+
+        if (workerIds.size === 0) {
+          sessions.forEach((session: any) => {
+            if (getId(session.exporterId) === exporterIdValue) {
+              const wid = getId(session.workerId);
+              if (wid) workerIds.add(wid);
+            }
+          });
+        }
 
         // Calculate average workers per bag
         const totalWorkers = exporterBags.reduce((sum: number, bag: any) => 
@@ -184,7 +194,7 @@ export default function AdminReportsPage() {
           : 0;
 
         const exporterSessions = sessions.filter((session: any) =>
-          getExporterId(session.exporterId) === exporterIdValue
+          getId(session.exporterId) === exporterIdValue
         );
         const laborCost = exporterSessions.length * workerDailyWage;
 
@@ -235,12 +245,26 @@ export default function AdminReportsPage() {
       const sessions = sessionsData.sessions || [];
       const workerDailyWage = settingsData.settings?.workerDailyWage || 1700;
 
+      const exporterNameById = new Map<string, string>();
+      bags.forEach((bag: any) => {
+        const exporterId = getId(bag.exporterId);
+        const name = bag.exporterId?.companyTradingName;
+        if (exporterId && name) exporterNameById.set(exporterId, name);
+      });
+      sessions.forEach((session: any) => {
+        const exporterId = getId(session.exporterId);
+        const name = session.exporterId?.companyTradingName;
+        if (exporterId && name) exporterNameById.set(exporterId, name);
+      });
+
       // Calculate report for each worker
       const reports: WorkerReport[] = workers.map((worker: any) => {
+        const workerIdValue = getId(worker);
+
         // Find all bags this worker participated in
         const workerBags = bags.filter((bag: any) => 
           bag.workers?.some((w: any) => 
-            (w.workerId?._id || w.workerId) === worker._id
+            getId(w.workerId) === workerIdValue
           )
         );
 
@@ -248,26 +272,43 @@ export default function AdminReportsPage() {
         const exporterIds = new Set();
         const exporterNames: string[] = [];
         workerBags.forEach((bag: any) => {
-          const exporterId = bag.exporterId?._id || bag.exporterId;
+          const exporterId = getId(bag.exporterId);
           if (!exporterIds.has(exporterId)) {
             exporterIds.add(exporterId);
             exporterNames.push(bag.exporterId?.companyTradingName || 'Unknown');
           }
         });
 
+        const workerSessions = sessions.filter((session: any) =>
+          getId(session.workerId) === workerIdValue
+        );
+
+        workerSessions.forEach((session: any) => {
+          const exporterId = getId(session.exporterId);
+          if (!exporterId || exporterIds.has(exporterId)) return;
+          exporterIds.add(exporterId);
+          exporterNames.push(
+            session.exporterId?.companyTradingName || exporterNameById.get(exporterId) || 'Unknown'
+          );
+        });
+
         // Count days worked (unique dates in attendance)
         const workerAttendance = attendance.filter((att: any) => 
-          (att.workerId?._id || att.workerId) === worker._id
+          getId(att.workerId) === workerIdValue
         );
-        const uniqueDates = new Set(
+        const attendanceDates = new Set(
           workerAttendance.map((att: any) => 
             new Date(att.date).toDateString()
           )
         );
 
-        const workerSessions = sessions.filter((session: any) =>
-          (session.workerId?._id || session.workerId) === worker._id
+        const sessionDates = new Set(
+          workerSessions.map((session: any) =>
+            new Date(session.date || session.startTime).toDateString()
+          )
         );
+
+        const uniqueDates = new Set([...attendanceDates, ...sessionDates]);
 
         // Calculate earnings from number of sessions × admin-configured daily wage
         const totalEarnings = workerSessions.length * workerDailyWage;
@@ -353,7 +394,7 @@ export default function AdminReportsPage() {
         const dateKey = new Date(session.date).toISOString().split('T')[0];
         const day = ensureDay(dateKey);
         day.activeSessions++;
-        const exporterId = session.exporterId?._id || session.exporterId;
+        const exporterId = getId(session.exporterId);
         if (exporterId) day.exporterIds.add(exporterId);
         day.totalLaborCost += workerDailyWage;
       });
@@ -371,7 +412,7 @@ export default function AdminReportsPage() {
         .map((day: any) => {
           const activeExporterNames = Array.from(day.exporterIds)
             .map((id: any) => {
-              const exporter = exporters.find((e: any) => e._id === id);
+              const exporter = exporters.find((e: any) => getId(e) === id);
               return exporter?.companyTradingName || 'Unknown';
             });
 
@@ -397,9 +438,10 @@ export default function AdminReportsPage() {
     try {
       // Fetch all related data from real APIs
       const dateQuery = params.toString();
+      const attendanceQuery = dateQuery || `startDate=2000-01-01&endDate=${new Date().toISOString().split('T')[0]}`;
       const [bagsRes, attendanceRes, sessionsRes] = await Promise.all([
         fetch(`/api/bags${dateQuery ? `?${dateQuery}` : ''}`),
-        fetch(`/api/attendance/checkin${dateQuery ? `?${dateQuery}` : ''}`),
+        fetch(`/api/attendance/checkin?${attendanceQuery}`),
         fetch(`/api/sessions?all=true&${params.toString()}`)
       ]);
 
@@ -423,14 +465,14 @@ export default function AdminReportsPage() {
           // Find the session for this worker
           const session = sessions.find((s: any) => 
             s._id === bagWorker.sessionId || 
-            ((s.workerId?._id || s.workerId) === (worker?._id || worker) &&
-             (s.exporterId?._id || s.exporterId) === (exporter?._id || exporter))
+            (getId(s.workerId) === getId(worker) &&
+             getId(s.exporterId) === getId(exporter))
           );
 
           // Find attendance record
           const workerAttendance = attendance.find((att: any) => 
             att._id === session?.attendanceId ||
-            (att.workerId?._id || att.workerId) === (worker?._id || worker)
+            getId(att.workerId) === getId(worker)
           );
 
           trails.push({
@@ -457,6 +499,36 @@ export default function AdminReportsPage() {
 
       // Sort by date descending
       trails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      if (trails.length === 0 && sessions.length > 0) {
+        sessions.forEach((session: any) => {
+          const exporter = session.exporterId;
+          const worker = session.workerId;
+          const workerAttendance = attendance.find((att: any) => att._id === session.attendanceId);
+
+          trails.push({
+            date: new Date(session.date || session.startTime).toISOString().split('T')[0],
+            workerId: worker?.workerId || 'N/A',
+            workerName: worker?.fullName || 'Unknown Worker',
+            exporterId: formatExporterIdentifier(exporter),
+            exporterName: exporter?.companyTradingName || 'Unknown Exporter',
+            bagId: 'N/A',
+            sessionId: formatSessionReference(
+              exporter?.companyTradingName,
+              session?.startTime || session?.date
+            ),
+            checkInTime: workerAttendance?.checkInTime
+              ? new Date(workerAttendance.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+              : 'N/A',
+            checkOutTime: workerAttendance?.checkOutTime
+              ? new Date(workerAttendance.checkOutTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+              : session?.status === 'active' ? 'Active' : 'N/A',
+            status: session?.status || 'active',
+          });
+        });
+
+        trails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      }
 
       setAuditTrails(trails);
     } catch (error) {
