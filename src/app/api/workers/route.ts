@@ -18,9 +18,35 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const search = searchParams.get('search');
         const status = searchParams.get('status');
+        const gender = searchParams.get('gender');
+        const dateFrom = searchParams.get('dateFrom');
+        const dateTo = searchParams.get('dateTo');
+        const week = searchParams.get('week');
 
         const where: any = {};
-        if (status) where.status = status;
+        if (status && status !== 'all') where.status = status;
+        if (gender && gender !== 'all') where.gender = gender;
+
+        const enrollmentDateFilter: { gte?: Date; lte?: Date } = {};
+        if (week) {
+            const [weekStart, weekEnd] = week.split('_');
+            if (weekStart) enrollmentDateFilter.gte = new Date(weekStart);
+            if (weekEnd) {
+                const end = new Date(weekEnd);
+                end.setHours(23, 59, 59, 999);
+                enrollmentDateFilter.lte = end;
+            }
+        }
+        if (dateFrom) enrollmentDateFilter.gte = new Date(dateFrom);
+        if (dateTo) {
+            const end = new Date(dateTo);
+            end.setHours(23, 59, 59, 999);
+            enrollmentDateFilter.lte = end;
+        }
+        if (enrollmentDateFilter.gte || enrollmentDateFilter.lte) {
+            where.enrollmentDate = enrollmentDateFilter;
+        }
+
         if (search) {
             where.OR = [
                 { fullName: { contains: search, mode: 'insensitive' } },

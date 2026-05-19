@@ -187,10 +187,14 @@ export default function AdminReportsPage() {
   const loadWorkerReports = async (params: URLSearchParams) => {
     try {
       // Fetch workers, bags, attendance, sessions, and settings from real API
+      const attendanceParams = new URLSearchParams();
+      if (params.get('startDate')) attendanceParams.set('startDate', params.get('startDate')!);
+      if (params.get('endDate')) attendanceParams.set('endDate', params.get('endDate')!);
+      const attendanceQuery = attendanceParams.toString();
       const [workersRes, bagsRes, attendanceRes, sessionsRes, settingsRes] = await Promise.all([
         fetch('/api/workers'),
         fetch(`/api/bags?${params.toString()}`),
-        fetch('/api/attendance/checkin'),
+        fetch(`/api/attendance/checkin${attendanceQuery ? `?${attendanceQuery}` : ''}`),
         fetch(`/api/sessions?all=true&${params.toString()}`),
         fetch('/api/admin/settings')
       ]);
@@ -274,10 +278,11 @@ export default function AdminReportsPage() {
   const loadDailyOperations = async (params: URLSearchParams) => {
     try {
       // Fetch data from real APIs
+      const dateQuery = params.toString();
       const [attendanceRes, sessionsRes, bagsRes, exportersRes, settingsRes] = await Promise.all([
-        fetch('/api/attendance/checkin'),
-        fetch('/api/sessions'),
-        fetch('/api/bags'),
+        fetch(`/api/attendance/checkin${dateQuery ? `?${dateQuery}` : ''}`),
+        fetch(`/api/sessions${dateQuery ? `?${dateQuery}` : ''}`),
+        fetch(`/api/bags${dateQuery ? `?${dateQuery}` : ''}`),
         fetch('/api/exporters'),
         fetch('/api/admin/settings')
       ]);

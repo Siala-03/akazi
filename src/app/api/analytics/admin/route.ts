@@ -45,6 +45,8 @@ export async function GET(request: NextRequest) {
             totalBags,
             sessionsToday,
             allBagsToday,
+            totalWeightAgg,
+            todayWeightAgg,
         ] = await Promise.all([
             prisma.worker.count(),
             prisma.worker.count({ where: { status: 'active' } }),
@@ -62,12 +64,14 @@ export async function GET(request: NextRequest) {
                 where: { date: { gte: startOfDay, lte: endOfDay } },
                 select: { exporterId: true, weight: true, exporter: { select: { id: true, companyTradingName: true, exporterCode: true } } },
             }),
+            prisma.bag.aggregate({ _sum: { weight: true } }),
+            prisma.bag.aggregate({ _sum: { weight: true }, where: { date: { gte: startOfDay, lte: endOfDay } } }),
         ]);
 
         const { exporterDailyRate: EXPORTER_DAILY_RATE, workerDailyWage: WORKER_DAILY_WAGE } = await getSettings();
 
-        const totalKilograms = totalBags * 60;
-        const totalKilogramsToday = bagsToday * 60;
+        const totalKilograms = totalWeightAgg._sum.weight ?? totalBags * 60;
+        const totalKilogramsToday = todayWeightAgg._sum.weight ?? bagsToday * 60;
 
         let totalHoursWorked = 0;
         for (const session of sessionsToday) {

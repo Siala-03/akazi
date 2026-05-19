@@ -76,7 +76,7 @@ export default function ExporterDashboard() {
             }
 
             const [bagsRes, analyticsRes] = await Promise.all([
-                fetch('/api/bags'),
+                fetch(`/api/bags?${params.toString()}`),
                 fetch(`/api/analytics/exporter?${params.toString()}`),
             ]);
 
@@ -166,10 +166,10 @@ export default function ExporterDashboard() {
             exporterCode: exporterInfo.code,
             bags: exportBags,
             summary: {
-                totalBags: analytics?.totalBags || 0,
-                totalWeight: analytics?.totalWeight || 0,
-                totalWorkers: analytics?.workersEngaged || 0,
-                averageWeight: analytics?.totalBags > 0 ? analytics.totalWeight / analytics.totalBags : 0
+                totalBags: analytics?.periodBags || 0,
+                totalWeight: analytics?.periodWeight || 0,
+                totalWorkers: analytics?.periodUniqueWorkers || 0,
+                averageWeight: analytics?.periodBags > 0 ? analytics.periodWeight / analytics.periodBags : 0
             }
         };
     };

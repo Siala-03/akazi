@@ -97,7 +97,17 @@ export default function WorkersPage() {
 
     const fetchWorkerStats = async () => {
         try {
-            const res = await fetch('/api/workers/stats');
+            const params = new URLSearchParams();
+            if (filters.search) params.append('search', filters.search);
+            if (filters.status && filters.status !== 'all') params.append('status', filters.status);
+            if (filters.gender && filters.gender !== 'all') params.append('gender', filters.gender);
+            if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
+            if (filters.dateTo) params.append('dateTo', filters.dateTo);
+            if (filters.week) params.append('week', filters.week);
+
+            const queryString = params.toString();
+            const url = `/api/workers/stats${queryString ? `?${queryString}` : ''}`;
+            const res = await fetch(url);
             const data = await res.json();
             setWorkerStats(data.stats);
         } catch (error) {

@@ -57,16 +57,31 @@ export async function POST(request: NextRequest) {
     }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         const currentUser = await getCurrentUser();
         if (!currentUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const today = new Date();
+        const { searchParams } = new URL(request.url);
+        const startDate = searchParams.get('startDate');
+        const endDate = searchParams.get('endDate');
+
+        let dateFilter: { gte: Date; lte: Date };
+        if (startDate || endDate) {
+            const gte = startDate ? new Date(startDate) : new Date('2000-01-01');
+            gte.setHours(0, 0, 0, 0);
+            const lte = endDate ? new Date(endDate) : new Date();
+            lte.setHours(23, 59, 59, 999);
+            dateFilter = { gte, lte };
+        } else {
+            const today = new Date();
+            dateFilter = { gte: getStartOfDay(today), lte: getEndOfDay(today) };
+        }
+
         const attendance = await prisma.attendance.findMany({
-            where: { date: { gte: getStartOfDay(today), lte: getEndOfDay(today) } },
+            where: { date: dateFilter },
             include: { worker: true, facility: true },
             orderBy: { checkInTime: 'desc' },
         });

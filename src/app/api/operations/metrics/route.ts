@@ -14,31 +14,37 @@ export async function GET() {
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
-        const [bagsToday, sessionsToday, uniqueExporterIds, inProgressBags] = await Promise.all([
+        const [bagsToday, sessionsToday, inProgressBags] = await Promise.all([
             prisma.bag.findMany({
                 where: {
-                    status: { in: ['completed', 'validated', 'locked'] },
                     OR: [
+                        { date: { gte: startOfDay, lte: endOfDay } },
                         { completedAt: { gte: startOfDay, lte: endOfDay } },
-                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                        {
+                            workers: {
+                                some: {
+                                    session: {
+                                        date: { gte: startOfDay, lte: endOfDay },
+                                    },
+                                },
+                            },
+                        },
                     ],
                 },
-                select: { workers: { select: { id: true } } },
+                select: {
+                    workers: {
+                        where: {
+                            session: {
+                                date: { gte: startOfDay, lte: endOfDay },
+                            },
+                        },
+                        select: { id: true },
+                    },
+                },
             }),
             prisma.session.findMany({
                 where: { date: { gte: startOfDay, lte: endOfDay } },
-                select: { startTime: true, endTime: true, status: true },
-            }),
-            prisma.bag.findMany({
-                where: {
-                    status: { in: ['completed', 'validated', 'locked'] },
-                    OR: [
-                        { completedAt: { gte: startOfDay, lte: endOfDay } },
-                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
-                    ],
-                },
-                select: { exporterId: true },
-                distinct: ['exporterId'],
+                select: { startTime: true, endTime: true, status: true, exporterId: true },
             }),
             prisma.bag.count({ where: { status: 'in_progress' } }),
         ]);
@@ -60,6 +66,8 @@ export async function GET() {
             }
         }
 
+        const exportersServedToday = new Set(sessionsToday.map((s) => s.exporterId)).size;
+
         return NextResponse.json({
             metrics: {
                 bagsToday: bagsToday.length,
@@ -67,7 +75,7 @@ export async function GET() {
                 totalKilogramsToday,
                 avgWorkersPerBag: Math.round(avgWorkersPerBag * 10) / 10,
                 totalHoursToday: Math.round(totalHoursToday * 10) / 10,
-                exportersServedToday: uniqueExporterIds.length,
+                exportersServedToday,
             },
         });
     } catch (error) {

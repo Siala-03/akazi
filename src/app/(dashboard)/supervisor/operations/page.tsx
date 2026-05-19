@@ -181,6 +181,7 @@ export default function OperationsPage() {
 
             toast.success('Worker checked in successfully');
             fetchAttendance();
+            fetchOperationsMetrics();
             setSearchWorkerId(''); // Clear search after successful check-in
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Check-in failed');
@@ -251,6 +252,7 @@ export default function OperationsPage() {
             
             fetchAttendance();
             fetchSessions();
+            fetchOperationsMetrics();
         } catch (error) {
             console.error('Checkout error:', error);
             toast.error(error instanceof Error ? error.message : 'Check-out failed');
@@ -275,6 +277,7 @@ export default function OperationsPage() {
 
             toast.success('Worker assigned to exporter');
             fetchSessions();
+            fetchOperationsMetrics();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Assignment failed');
         } finally {
@@ -439,6 +442,7 @@ export default function OperationsPage() {
                         toast.success(`${result.workerName} checked ${qrScannerMode === 'checkin' ? 'in' : 'out'} via QR`);
                         fetchAttendance();
                         fetchSessions();
+                        fetchOperationsMetrics();
                     }}
                 />
             )}

@@ -89,6 +89,8 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const exporterIdParam = searchParams.get('exporterId');
         const date = searchParams.get('date');
+        const startDate = searchParams.get('startDate');
+        const endDate = searchParams.get('endDate');
         const status = searchParams.get('status');
 
         const where: any = {};
@@ -113,6 +115,26 @@ export async function GET(request: NextRequest) {
                 some: {
                     session: {
                         date: { gte: start, lte: end },
+                    },
+                },
+            };
+        } else if (startDate || endDate) {
+            const dateRange: { gte?: Date; lte?: Date } = {};
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                dateRange.gte = start;
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                dateRange.lte = end;
+            }
+
+            where.workers = {
+                some: {
+                    session: {
+                        date: dateRange,
                     },
                 },
             };

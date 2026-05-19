@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
         const sevenDaysAgo = new Date(today);
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+        const completedStatuses: Array<'completed' | 'validated' | 'locked'> = ['completed', 'validated', 'locked'];
+
         const [
             totalWorkers,
             workersCheckedInToday,
@@ -31,19 +33,41 @@ export async function GET(request: NextRequest) {
             prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay } } }),
             prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay }, status: 'checked-out' } }),
             prisma.session.count({ where: { status: 'active' } }),
-            prisma.bag.count({ where: { date: { gte: startOfDay, lte: endOfDay } } }),
-            prisma.bag.count({ where: { date: { gte: sevenDaysAgo, lte: endOfDay } } }),
+            prisma.bag.count({
+                where: {
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: startOfDay, lte: endOfDay } },
+                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                    ],
+                },
+            }),
+            prisma.bag.count({
+                where: {
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: sevenDaysAgo, lte: endOfDay } },
+                        { completedAt: null, date: { gte: sevenDaysAgo, lte: endOfDay } },
+                    ],
+                },
+            }),
             prisma.session.findMany({
                 where: { date: { gte: startOfDay, lte: endOfDay } },
-                select: { startTime: true, endTime: true, status: true },
+                select: { startTime: true, endTime: true, status: true, exporterId: true },
             }),
             prisma.bag.findMany({
-                where: { date: { gte: startOfDay, lte: endOfDay } },
+                where: {
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: startOfDay, lte: endOfDay } },
+                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                    ],
+                },
                 select: { exporterId: true, weight: true, workers: { select: { id: true } } },
             }),
         ]);
 
-        const totalKilograms = bagsToday * 60;
+        const totalKilograms = allBagsToday.reduce((sum, bag) => sum + (bag.weight || 60), 0);
 
         let totalHoursWorked = 0;
         for (const session of sessionsToday) {
@@ -60,7 +84,7 @@ export async function GET(request: NextRequest) {
             avgWorkersPerBag = totalWorkersAcrossBags / bagsToday;
         }
 
-        const uniqueExporterIds = [...new Set(allBagsToday.map(b => b.exporterId).filter(Boolean))];
+        const uniqueExporterIds = [...new Set(sessionsToday.map(s => s.exporterId).filter(Boolean))];
         const exportersServedToday = uniqueExporterIds.length;
 
         let totalCostForExporters = 0;
@@ -91,9 +115,11 @@ export async function GET(request: NextRequest) {
                 WHERE date >= ${trendStart} AND date <= ${endOfDay}
                 GROUP BY day`,
             prisma.$queryRaw<{ day: string; count: bigint }[]>`
-                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
+                SELECT TO_CHAR(COALESCE("completedAt", date), 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
                 FROM "Bag"
-                WHERE date >= ${trendStart} AND date <= ${endOfDay}
+                WHERE status IN ('completed', 'validated', 'locked')
+                  AND COALESCE("completedAt", date) >= ${trendStart}
+                  AND COALESCE("completedAt", date) <= ${endOfDay}
                 GROUP BY day`,
         ]);
 
