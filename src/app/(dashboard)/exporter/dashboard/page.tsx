@@ -46,6 +46,7 @@ export default function ExporterDashboard() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [exporterInfo, setExporterInfo] = useState({ name: 'Exporter', code: 'EXP' });
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedWeek, setSelectedWeek] = useState(getWeekStart(new Date()));
@@ -58,6 +59,7 @@ export default function ExporterDashboard() {
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
+            setLoadError(null);
             const params = new URLSearchParams();
             
             if (filterMode === 'week') {
@@ -80,6 +82,15 @@ export default function ExporterDashboard() {
                 fetch(`/api/analytics/exporter?${params.toString()}`),
             ]);
 
+            if (!bagsRes.ok || !analyticsRes.ok) {
+                const bagErr = !bagsRes.ok ? await bagsRes.json().catch(() => ({})) : null;
+                const analyticsErr = !analyticsRes.ok ? await analyticsRes.json().catch(() => ({})) : null;
+                throw new Error(
+                    analyticsErr?.error || bagErr?.error ||
+                    `Failed to load exporter dashboard (${bagsRes.status}/${analyticsRes.status})`
+                );
+            }
+
             const bagsData = await bagsRes.json();
             const analyticsData = await analyticsRes.json();
 
@@ -96,6 +107,7 @@ export default function ExporterDashboard() {
             }
         } catch (error) {
             console.error('Error fetching data:', error);
+            setLoadError(error instanceof Error ? error.message : 'Failed to load dashboard analytics');
         } finally {
             setLoading(false);
         }
@@ -215,6 +227,12 @@ export default function ExporterDashboard() {
                     </div>
                 </div>
             </div>
+
+            {loadError && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 text-sm">
+                    {loadError}. Please refresh after confirming your session is active.
+                </div>
+            )}
 
             {/* Date Filter */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4 shadow-sm">

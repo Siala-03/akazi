@@ -26,6 +26,7 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchAnalytics();
@@ -34,12 +35,18 @@ export default function AdminDashboard() {
     const fetchAnalytics = async () => {
         try {
             setLoading(true);
+            setLoadError(null);
             const res = await fetch('/api/analytics/admin');
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err?.error || `Failed to load analytics (${res.status})`);
+            }
             const data = await res.json();
             setAnalytics(data.analytics);
             setLastUpdated(new Date());
         } catch (error) {
             console.error('Error fetching analytics:', error);
+            setLoadError(error instanceof Error ? error.message : 'Failed to load dashboard analytics');
         } finally {
             setLoading(false);
         }
@@ -200,6 +207,12 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
+
+            {loadError && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 text-sm">
+                    {loadError}. Please refresh after confirming your session is active.
+                </div>
+            )}
 
             {/* Quick Stats Banner */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700/50 p-4">

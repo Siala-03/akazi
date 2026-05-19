@@ -17,8 +17,6 @@ export async function GET(request: NextRequest) {
         const sevenDaysAgo = new Date(today);
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        const completedStatuses: Array<'completed' | 'validated' | 'locked'> = ['completed', 'validated', 'locked'];
-
         const [
             totalWorkers,
             attendanceCheckedInToday,
@@ -37,7 +35,6 @@ export async function GET(request: NextRequest) {
                 where: {
                     OR: [
                         { date: { gte: startOfDay, lte: endOfDay } },
-                        { completedAt: { gte: startOfDay, lte: endOfDay } },
                         {
                             workers: {
                                 some: {
@@ -54,7 +51,6 @@ export async function GET(request: NextRequest) {
                 where: {
                     OR: [
                         { date: { gte: sevenDaysAgo, lte: endOfDay } },
-                        { completedAt: { gte: sevenDaysAgo, lte: endOfDay } },
                         {
                             workers: {
                                 some: {
@@ -75,7 +71,6 @@ export async function GET(request: NextRequest) {
                 where: {
                     OR: [
                         { date: { gte: startOfDay, lte: endOfDay } },
-                        { completedAt: { gte: startOfDay, lte: endOfDay } },
                         {
                             workers: {
                                 some: {
@@ -153,11 +148,10 @@ export async function GET(request: NextRequest) {
                 WHERE date >= ${trendStart} AND date <= ${endOfDay}
                 GROUP BY day`,
             prisma.$queryRaw<{ day: string; count: bigint }[]>`
-                SELECT TO_CHAR(COALESCE("completedAt", date), 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
+                                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
                 FROM "Bag"
-                WHERE status IN ('completed', 'validated', 'locked')
-                  AND COALESCE("completedAt", date) >= ${trendStart}
-                  AND COALESCE("completedAt", date) <= ${endOfDay}
+                                WHERE date >= ${trendStart}
+                                    AND date <= ${endOfDay}
                 GROUP BY day`,
         ]);
 
