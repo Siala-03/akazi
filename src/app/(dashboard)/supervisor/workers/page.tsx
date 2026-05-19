@@ -521,6 +521,7 @@ export default function WorkersPage() {
                             searchKeys={['fullName', 'workerId', 'phone']}
                             pageSize={25}
                             loading={loading}
+                            density="compact"
                             emptyMessage="No workers found. Click 'Onboard Worker' to register your first worker."
                         />
                     </div>

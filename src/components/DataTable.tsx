@@ -29,6 +29,7 @@ interface DataTableProps<T> {
   loading?: boolean;
   emptyMessage?: string;
   className?: string;
+  density?: 'default' | 'compact';
 }
 
 export default function DataTable<T extends Record<string, any>>({
@@ -41,7 +42,8 @@ export default function DataTable<T extends Record<string, any>>({
   pageSize = 25,
   loading = false,
   emptyMessage = 'No data available',
-  className = ''
+  className = '',
+  density = 'default'
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -102,6 +104,13 @@ export default function DataTable<T extends Record<string, any>>({
     setCurrentPage(1);
   };
 
+  const headCellClass = density === 'compact'
+    ? 'px-6 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+    : 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+  const bodyCellClass = density === 'compact'
+    ? 'px-6 py-3 whitespace-nowrap text-sm text-gray-900'
+    : 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+
   return (
     <div className={`bg-white rounded-lg shadow ${className}`}>
       {/* Search Bar */}
@@ -131,7 +140,7 @@ export default function DataTable<T extends Record<string, any>>({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  className={`${headCellClass} ${
                     column.sortable ? 'cursor-pointer hover:bg-gray-100 select-none' : ''
                   }`}
                   onClick={() => column.sortable && handleSort(column.key)}
@@ -176,7 +185,7 @@ export default function DataTable<T extends Record<string, any>>({
                   }`}
                 >
                   {columns.map((column) => (
-                    <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td key={column.key} className={bodyCellClass}>
                       {column.render ? column.render(item) : item[column.key]}
                     </td>
                   ))}

@@ -423,6 +423,17 @@ button:disabled {
   box-shadow: var(--card-shadow-hover);
 }
 
+/* Supervisor table spacing test baseline */
+.table-compact th {
+  padding-top: 0.625rem !important;
+  padding-bottom: 0.625rem !important;
+}
+
+.table-compact td {
+  padding-top: 0.625rem !important;
+  padding-bottom: 0.625rem !important;
+}
+
 /* ========================
    SCROLLBAR
    ======================== */

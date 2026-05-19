@@ -622,7 +622,7 @@ export default function OperationsPage() {
                                 <p className="text-sm font-medium text-gray-700 mb-2">Or select from list:</p>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="w-full">
+                                <table className="w-full table-compact">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
@@ -755,7 +755,7 @@ export default function OperationsPage() {
                                 </div>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="w-full">
+                                <table className="w-full table-compact">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
@@ -936,7 +936,7 @@ export default function OperationsPage() {
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="w-full">
+                                        <table className="w-full table-compact">
                                             <thead className="bg-gray-50 border-b border-gray-200">
                                                 <tr>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -1094,7 +1094,7 @@ export default function OperationsPage() {
                                 Scan QR Badge to Check Out
                             </button>
                             <div className="overflow-x-auto">
-                                <table className="w-full">
+                                <table className="w-full table-compact">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
@@ -1212,7 +1212,7 @@ export default function OperationsPage() {
                     {showSessions && (
                         <div className="border-t border-gray-200">
                             <div className="overflow-x-auto">
-                                <table className="w-full">
+                                <table className="w-full table-compact">
                                     <thead className="bg-gray-50">
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Worker</th>
