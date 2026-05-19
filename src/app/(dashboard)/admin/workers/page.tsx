@@ -322,10 +322,6 @@ export default function AdminWorkersPage() {
                                         {/* Worker */}
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold shadow-sm
-                                                    bg-gradient-to-br from-emerald-400 to-teal-600 text-white">
-                                                    {getInitials(worker.fullName)}
-                                                </div>
                                                 <div>
                                                     <div className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{worker.fullName}</div>
                                                     <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-normal tracking-wide">{worker.workerId}</div>
@@ -371,33 +367,33 @@ export default function AdminWorkersPage() {
                                                 <button
                                                     onClick={() => handleEditWorker(worker)}
                                                     title="Edit worker"
-                                                    className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-800/40 transition-colors"
+                                                    className="p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                                                 >
-                                                    <Pencil className="w-3.5 h-3.5" />
+                                                    <Pencil className="w-4 h-4" strokeWidth={2.5} />
                                                 </button>
                                                 {worker.status === 'active' ? (
                                                     <button
                                                         onClick={() => setConfirmWorker(worker)}
                                                         title="Deactivate worker"
-                                                        className="p-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-800/40 transition-colors"
+                                                        className="p-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
                                                     >
-                                                        <UserX className="w-3.5 h-3.5" />
+                                                        <UserX className="w-4 h-4" strokeWidth={2.5} />
                                                     </button>
                                                 ) : (
                                                     <button
                                                         onClick={() => handleToggleStatus(worker)}
                                                         title="Activate worker"
-                                                        className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-800/40 transition-colors"
+                                                        className="p-1 text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors"
                                                     >
-                                                        <UserCheck className="w-3.5 h-3.5" />
+                                                        <UserCheck className="w-4 h-4" strokeWidth={2.5} />
                                                     </button>
                                                 )}
                                                 <button
                                                     onClick={() => setDeleteWorker(worker)}
                                                     title="Permanently delete worker"
-                                                    className="p-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 dark:bg-gray-700/40 dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors"
+                                                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                                 >
-                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                    <Trash2 className="w-4 h-4" strokeWidth={2.5} />
                                                 </button>
                                             </div>
                                         </td>

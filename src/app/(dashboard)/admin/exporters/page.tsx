@@ -397,28 +397,28 @@ export default function AdminExportersPage() {
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
                                                     onClick={() => openEdit(exp)}
-                                                    className="p-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                                                    className="p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                                                     title="Edit"
                                                 >
-                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                    <Edit2 className="w-4 h-4" strokeWidth={2.5} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleResetPassword(exp)}
-                                                    className="p-1.5 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+                                                    className="p-1 text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors"
                                                     title="Reset Password"
                                                 >
-                                                    <KeyRound className="w-3.5 h-3.5" />
+                                                    <KeyRound className="w-4 h-4" strokeWidth={2.5} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleToggleStatus(exp)}
-                                                    className={`p-1.5 rounded-lg transition-colors ${
+                                                    className={`p-1 transition-colors ${
                                                         exp.isActive
-                                                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                            ? 'text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300'
+                                                            : 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300'
                                                     }`}
                                                     title={exp.isActive ? 'Deactivate' : 'Activate'}
                                                 >
-                                                    {exp.isActive ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
+                                                    {exp.isActive ? <PowerOff className="w-4 h-4" strokeWidth={2.5} /> : <Power className="w-4 h-4" strokeWidth={2.5} />}
                                                 </button>
                                             </div>
                                         </td>

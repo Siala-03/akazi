@@ -317,33 +317,33 @@ export default function AdminSupervisorsPage() {
                                                 <button
                                                     onClick={() => handleResendCredentials(sup)}
                                                     title="Reset Password"
-                                                    className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-800/40 transition-colors"
+                                                    className="p-1 text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors"
                                                 >
-                                                    <KeyRound className="w-3.5 h-3.5" />
+                                                    <KeyRound className="w-4 h-4" strokeWidth={2.5} />
                                                 </button>
                                                 {sup.isActive ? (
                                                     <button
                                                         onClick={() => setConfirmToggle(sup)}
                                                         title="Deactivate"
-                                                        className="p-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-800/40 transition-colors"
+                                                        className="p-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
                                                     >
-                                                        <PowerOff className="w-3.5 h-3.5" />
+                                                        <PowerOff className="w-4 h-4" strokeWidth={2.5} />
                                                     </button>
                                                 ) : (
                                                     <button
                                                         onClick={() => handleToggleStatus(sup)}
                                                         title="Activate"
-                                                        className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-800/40 transition-colors"
+                                                        className="p-1 text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors"
                                                     >
-                                                        <Power className="w-3.5 h-3.5" />
+                                                        <Power className="w-4 h-4" strokeWidth={2.5} />
                                                     </button>
                                                 )}
                                                 <button
                                                     onClick={() => setDeleteSup(sup)}
                                                     title="Delete supervisor"
-                                                    className="p-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 dark:bg-gray-700/40 dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors"
+                                                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                                 >
-                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                    <Trash2 className="w-4 h-4" strokeWidth={2.5} />
                                                 </button>
                                             </div>
                                         </td>
