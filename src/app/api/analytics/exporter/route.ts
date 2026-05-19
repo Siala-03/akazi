@@ -35,6 +35,25 @@ export async function GET(request: NextRequest) {
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
+        // Parse query parameters for date filtering
+        const { searchParams } = request.nextUrl;
+        const filterStartDate = searchParams.get('startDate');
+        const filterEndDate = searchParams.get('endDate');
+
+        // Determine the range to query
+        let rangeStart: Date;
+        let rangeEnd: Date;
+
+        if (filterStartDate && filterEndDate) {
+            // Custom date range provided
+            rangeStart = getStartOfDay(new Date(filterStartDate));
+            rangeEnd = getEndOfDay(new Date(filterEndDate));
+        } else {
+            // Default: use today
+            rangeStart = startOfDay;
+            rangeEnd = endOfDay;
+        }
+
         const sevenDaysAgo = new Date(today);
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -76,12 +95,13 @@ export async function GET(request: NextRequest) {
         ]);
 
         // ── Worker-day cost model (per-exporter) ──────────────────────────────
-                const [workerDaysTodayRows, workerDaysWeekRows, workerDaysCumulativeRows] = await Promise.all([
+        // When filtering by date range, calculate costs for that range
+        const [workerDaysTodayRows, workerDaysWeekRows, workerDaysCumulativeRows] = await Promise.all([
             prisma.$queryRaw<{ count: bigint }[]>`
                                 SELECT COUNT(*)::bigint AS count
                                 FROM "Session"
                                 WHERE "exporterId" = ${exporterId}
-                                    AND date >= ${startOfDay} AND date <= ${endOfDay}`,
+                                    AND date >= ${rangeStart} AND date <= ${rangeEnd}`,
             prisma.$queryRaw<{ count: bigint }[]>`
                                 SELECT COUNT(*)::bigint AS count
                                 FROM "Session"

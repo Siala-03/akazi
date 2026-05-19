@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
     Package,
     Users,
@@ -19,6 +19,26 @@ import {
 import { ExportButton } from '@/components/export/ExportButton';
 import { ExportData } from '@/lib/export';
 
+function getWeekStart(date: Date): string {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().split('T')[0];
+}
+
+function getWeekEnd(date: Date): string {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? 0 : 7 - day;
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().split('T')[0];
+}
+
+function fmtDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 export default function ExporterDashboard() {
     const [bags, setBags] = useState<any[]>([]);
     const [analytics, setAnalytics] = useState<any>(null);
@@ -27,18 +47,29 @@ export default function ExporterDashboard() {
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [exporterInfo, setExporterInfo] = useState({ name: 'Exporter', code: 'EXP' });
     const [currentPage, setCurrentPage] = useState(1);
+    const [selectedWeek, setSelectedWeek] = useState(getWeekStart(new Date()));
+    const [filterMode, setFilterMode] = useState<'week' | 'custom'>('week');
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
     const ITEMS_PER_PAGE = 10;
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             setLoading(true);
+            const params = new URLSearchParams();
+            
+            if (filterMode === 'week') {
+                const weekEnd = getWeekEnd(new Date(selectedWeek));
+                params.append('startDate', selectedWeek);
+                params.append('endDate', weekEnd);
+            } else if (customStartDate && customEndDate) {
+                params.append('startDate', customStartDate);
+                params.append('endDate', customEndDate);
+            }
+
             const [bagsRes, analyticsRes] = await Promise.all([
                 fetch('/api/bags'),
-                fetch('/api/analytics/exporter'),
+                fetch(`/api/analytics/exporter?${params.toString()}`),
             ]);
 
             const bagsData = await bagsRes.json();
@@ -60,7 +91,11 @@ export default function ExporterDashboard() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filterMode, selectedWeek, customStartDate, customEndDate]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const handleRefresh = async () => {
         setRefreshing(true);
@@ -128,6 +163,77 @@ export default function ExporterDashboard() {
                             Refresh
                         </button>
                     </div>
+                </div>
+            </div>
+
+            {/* Date Filter */}
+            <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4 shadow-sm">
+                <div className="flex items-center gap-2 shrink-0">
+                    <Calendar className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by</span>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setFilterMode('week')}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${filterMode === 'week' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-emerald-400'}`}
+                        >
+                            Week
+                        </button>
+                        <button
+                            onClick={() => setFilterMode('custom')}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${filterMode === 'custom' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-emerald-400'}`}
+                        >
+                            Custom
+                        </button>
+                    </div>
+
+                    {filterMode === 'week' ? (
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={selectedWeek}
+                                onChange={e => setSelectedWeek(e.target.value)}
+                                className="px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-shadow"
+                            />
+                            {(() => {
+                                const thisWeek = getWeekStart(new Date());
+                                const lastWeek = getWeekStart(new Date(Date.now() - 7 * 86400000));
+                                return (
+                                    <>
+                                        <button
+                                            onClick={() => setSelectedWeek(thisWeek)}
+                                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${selectedWeek === thisWeek ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-emerald-400'}`}
+                                        >
+                                            This Week
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedWeek(lastWeek)}
+                                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${selectedWeek === lastWeek ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-emerald-400'}`}
+                                        >
+                                            Last Week
+                                        </button>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={customStartDate}
+                                onChange={e => setCustomStartDate(e.target.value)}
+                                className="px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-shadow"
+                            />
+                            <span className="text-gray-400">to</span>
+                            <input
+                                type="date"
+                                value={customEndDate}
+                                onChange={e => setCustomEndDate(e.target.value)}
+                                className="px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-shadow"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -241,41 +347,32 @@ export default function ExporterDashboard() {
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Performance Overview</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Bags processed across different periods</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {filterMode === 'week' 
+                                ? `Week of ${fmtDate(selectedWeek)}`
+                                : customStartDate && customEndDate 
+                                ? `${fmtDate(customStartDate)} – ${fmtDate(customEndDate)}`
+                                : 'All time data'
+                            }
+                        </p>
                     </div>
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <BarChart3 className="w-5 h-5 text-blue-600" />
                     </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div className="bg-white dark:bg-[#1e293b] rounded-xl p-4 border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-3 mb-3">
                             <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                                <Calendar className="w-5 h-5 text-blue-600" />
+                                <Package className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Today</p>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics?.bagsToday || 0}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Bags processed</span>
-                            <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.dailyCost || 0)}</span>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-[#1e293b] rounded-xl p-4 border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                                <BarChart3 className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">This Week</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Period Total</p>
                                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics?.bagsThisWeek || 0}</p>
                             </div>
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Last 7 days</span>
+                            <span>Bags processed</span>
                             <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.weeklyCost || 0)}</span>
                         </div>
                     </div>
