@@ -5,19 +5,24 @@ import { generateBagNumber } from '@/lib/utils';
 import { toMongo } from '@/lib/serialize';
 
 function serializeBag(bag: any) {
-    const { workers: bagWorkers, exporter, facility, supervisor, ...rest } = bag;
-    return {
-        ...rest,
-        _id: rest.id,
-        exporterId: exporter ? toMongo(exporter) : rest.exporterId,
-        facilityId: facility ? toMongo(facility) : rest.facilityId,
-        supervisorId: rest.supervisorId,
-        workers: (bagWorkers ?? []).map((bw: any) => ({
-            _id: bw.id,
-            workerId: bw.worker ? toMongo(bw.worker) : bw.workerId,
-            sessionId: bw.sessionId,
-        })),
-    };
+    try {
+        const { workers: bagWorkers, exporter, facility, supervisor, ...rest } = bag;
+        return {
+            ...rest,
+            _id: rest.id,
+            exporterId: exporter ? toMongo(exporter) : (rest.exporterId || null),
+            facilityId: facility ? toMongo(facility) : (rest.facilityId || null),
+            supervisorId: rest.supervisorId,
+            workers: (bagWorkers ?? []).map((bw: any) => ({
+                _id: bw.id,
+                workerId: bw.worker ? toMongo(bw.worker) : (bw.workerId || null),
+                sessionId: bw.sessionId,
+            })),
+        };
+    } catch (e) {
+        console.error('serializeBag error:', e);
+        throw e;
+    }
 }
 
 export async function POST(request: NextRequest) {
@@ -101,31 +106,50 @@ export async function GET(request: NextRequest) {
             where.exporterId = exporterIdParam;
         }
 
-        if (status) {
+        if (status && status !== 'all') {
             where.status = status;
         }
 
+        // Date filtering - filter directly on bag.date
         if (date) {
-            const targetDate = new Date(date);
-            const start = new Date(targetDate);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(targetDate);
-            end.setHours(23, 59, 59, 999);
-            where.date = { gte: start, lte: end };
-        } else if (startDate || endDate) {
-            const dateRange: { gte?: Date; lte?: Date } = {};
-            if (startDate) {
-                const start = new Date(startDate);
+            try {
+                const targetDate = new Date(date);
+                if (isNaN(targetDate.getTime())) {
+                    return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
+                }
+                const start = new Date(targetDate);
                 start.setHours(0, 0, 0, 0);
-                dateRange.gte = start;
-            }
-            if (endDate) {
-                const end = new Date(endDate);
+                const end = new Date(targetDate);
                 end.setHours(23, 59, 59, 999);
-                dateRange.lte = end;
+                where.date = { gte: start, lte: end };
+            } catch (e) {
+                console.error('Date parse error:', e);
+                return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
             }
-
-            where.date = dateRange;
+        } else if (startDate || endDate) {
+            try {
+                const dateRange: { gte?: Date; lte?: Date } = {};
+                if (startDate) {
+                    const start = new Date(startDate);
+                    if (isNaN(start.getTime())) {
+                        return NextResponse.json({ error: 'Invalid startDate format' }, { status: 400 });
+                    }
+                    start.setHours(0, 0, 0, 0);
+                    dateRange.gte = start;
+                }
+                if (endDate) {
+                    const end = new Date(endDate);
+                    if (isNaN(end.getTime())) {
+                        return NextResponse.json({ error: 'Invalid endDate format' }, { status: 400 });
+                    }
+                    end.setHours(23, 59, 59, 999);
+                    dateRange.lte = end;
+                }
+                where.date = dateRange;
+            } catch (e) {
+                console.error('Date range parse error:', e);
+                return NextResponse.json({ error: 'Invalid date range format' }, { status: 400 });
+            }
         }
 
         const bags = await prisma.bag.findMany({
@@ -142,7 +166,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ bags: bags.map(serializeBag) });
     } catch (error) {
         console.error('Get bags error:', error);
-        console.error('Query where clause:', JSON.stringify({ startDate, endDate, status, exporterIdParam, date }));
+        console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
         return NextResponse.json(
             { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
             { status: 500 }
