@@ -14,6 +14,7 @@ import {
     ChevronRight,
     RefreshCw,
     Info,
+    Download,
 
 } from 'lucide-react';
 import { ExportButton } from '@/components/export/ExportButton';
@@ -108,6 +109,48 @@ export default function ExporterDashboard() {
         setRefreshing(true);
         await fetchData();
         setRefreshing(false);
+    };
+
+    const handleExportBreakdownCsv = () => {
+        const rows = analytics?.dailyBreakdown || [];
+        if (rows.length === 0) return;
+
+        const periodStart = analytics?.periodStart ? new Date(analytics.periodStart) : null;
+        const periodEnd = analytics?.periodEnd ? new Date(analytics.periodEnd) : null;
+        const periodLabel = periodStart && periodEnd
+            ? `${fmtDate(periodStart.toISOString())} - ${fmtDate(periodEnd.toISOString())}`
+            : 'Selected Period';
+
+        const csvRows = [
+            ['Date', 'Sessions', 'Bags', 'Weight (kg)', 'Cost to Exporter (FRw)', 'Worker Wages (FRw)', 'Cooperative Margin (FRw)'],
+            ...rows.map((row: any) => [
+                row.date,
+                row.sessions,
+                row.bags,
+                row.weight,
+                row.costToExporter,
+                row.workerWages,
+                row.coopMargin,
+            ]),
+        ];
+
+        const csvContent = [
+            'Akazi Rwanda Ltd - Exporter Daily Breakdown',
+            `Exporter:,${exporterInfo.name}`,
+            `Code:,${exporterInfo.code}`,
+            `Period:,${periodLabel}`,
+            `Generated:,${new Date().toLocaleString()}`,
+            '',
+            ...csvRows.map((line) => line.join(',')),
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${exporterInfo.code}_daily_breakdown_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const getExportData = (): ExportData => {
@@ -416,6 +459,61 @@ export default function ExporterDashboard() {
                             <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.cumulativeCost || 0)}</span>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* Date-wise Expenses Breakdown */}
+            <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Date-wise Expenses Breakdown</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Sessions, output, and costs per day for selected period</p>
+                    </div>
+                    <button
+                        onClick={handleExportBreakdownCsv}
+                        disabled={!analytics?.dailyBreakdown?.length}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Download className="w-4 h-4" />
+                        Export Breakdown CSV
+                    </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-[#162032]">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight (kg)</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost (FRw)</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Wages (FRw)</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Margin (FRw)</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white dark:bg-[#1e293b] divide-y divide-gray-100 dark:divide-gray-700/40">
+                            {(analytics?.dailyBreakdown || []).length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                                        No data available for this period.
+                                    </td>
+                                </tr>
+                            ) : (
+                                (analytics?.dailyBreakdown || []).map((row: any) => (
+                                    <tr key={row.date}>
+                                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{fmtDate(row.date)}</td>
+                                        <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{row.sessions}</td>
+                                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{row.bags}</td>
+                                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.weight || 0).toLocaleString()}</td>
+                                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.costToExporter || 0).toLocaleString()}</td>
+                                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.workerWages || 0).toLocaleString()}</td>
+                                        <td className="px-6 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">{Number(row.coopMargin || 0).toLocaleString()}</td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 

@@ -23,6 +23,18 @@ export async function GET(request: NextRequest) {
                     sessionsTodayCount: 0, sessionsWeekCount: 0, sessionsCumulativeCount: 0,
                     dailyCost: 0, weeklyCost: 0, cumulativeCost: 0,
                     dailyWorkerWages: 0, weeklyWorkerWages: 0, cumulativeWorkerWages: 0,
+                    periodStart: null,
+                    periodEnd: null,
+                    periodDays: 0,
+                    periodBags: 0,
+                    periodWeight: 0,
+                    periodWorkersEngaged: 0,
+                    periodSessionsCount: 0,
+                    periodAvgBagsPerDay: 0,
+                    periodCostToExporter: 0,
+                    periodWorkerWages: 0,
+                    periodCoopMargin: 0,
+                    dailyBreakdown: [],
                     ratePerWorkerDay: EXPORTER_DAILY_RATE,
                     workerDailyWage: WORKER_DAILY_WAGE,
                     trends: { bags: [], weight: [] },
@@ -179,6 +191,24 @@ export async function GET(request: NextRequest) {
             WHERE "exporterId" = ${exporterId} AND date >= ${trendStart} AND date <= ${endOfDay}
             GROUP BY day`;
 
+        const [dailyBagsRows, dailySessionRows] = await Promise.all([
+            prisma.$queryRaw<{ day: string; bags: bigint; weight: number | null }[]>`
+                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day,
+                       COUNT(*)::bigint AS bags,
+                       COALESCE(SUM(weight), 0)::float AS weight
+                FROM "Bag"
+                WHERE "exporterId" = ${exporterId}
+                    AND date >= ${rangeStart} AND date <= ${rangeEnd}
+                GROUP BY day`,
+            prisma.$queryRaw<{ day: string; sessions: bigint }[]>`
+                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day,
+                       COUNT(*)::bigint AS sessions
+                FROM "Session"
+                WHERE "exporterId" = ${exporterId}
+                    AND date >= ${rangeStart} AND date <= ${rangeEnd}
+                GROUP BY day`,
+        ]);
+
         const bagsTrendMap = new Map(bagsTrendRows.map(d => [d.day, Number(d.count)]));
 
         const trendData = [];
@@ -191,6 +221,37 @@ export async function GET(request: NextRequest) {
                 date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 bags: dayBags,
                 weight: dayBags * 60,
+            });
+        }
+
+        const dailyBagsMap = new Map(dailyBagsRows.map(row => [row.day, { bags: Number(row.bags), weight: Number(row.weight ?? 0) }]));
+        const dailySessionsMap = new Map(dailySessionRows.map(row => [row.day, Number(row.sessions)]));
+
+        const dailyBreakdown: Array<{
+            date: string;
+            sessions: number;
+            bags: number;
+            weight: number;
+            costToExporter: number;
+            workerWages: number;
+            coopMargin: number;
+        }> = [];
+
+        for (let cursor = new Date(rangeStart); cursor <= rangeEnd; cursor.setDate(cursor.getDate() + 1)) {
+            const day = cursor.toISOString().split('T')[0];
+            const sessions = dailySessionsMap.get(day) ?? 0;
+            const bagData = dailyBagsMap.get(day) ?? { bags: 0, weight: 0 };
+            const costToExporter = sessions * EXPORTER_DAILY_RATE;
+            const workerWages = sessions * WORKER_DAILY_WAGE;
+
+            dailyBreakdown.push({
+                date: day,
+                sessions,
+                bags: bagData.bags,
+                weight: bagData.weight,
+                costToExporter,
+                workerWages,
+                coopMargin: costToExporter - workerWages,
             });
         }
 
@@ -216,6 +277,7 @@ export async function GET(request: NextRequest) {
                 periodCostToExporter,
                 periodWorkerWages,
                 periodCoopMargin,
+                dailyBreakdown,
                 // Worker-day cost model
                 workerDaysToday,
                 workerDaysWeek,
