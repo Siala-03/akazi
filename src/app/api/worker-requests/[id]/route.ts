@@ -17,7 +17,7 @@ export async function GET(
         const workerRequest = await prisma.workerRequest.findUnique({
             where: { id },
             include: {
-                exporter: { select: { id: true, companyTradingName: true, exporterCode: true, phone: true, email: true, contactPerson: true } },
+                exporter: { select: { id: true, companyTradingName: true, exporterCode: true, tinNumber: true, phone: true, email: true, contactPerson: true } },
                 reviewer: { select: { id: true, name: true, email: true } },
             },
         });
@@ -68,7 +68,7 @@ export async function PATCH(
                 where: { id },
                 data: { status, adminNotes: adminNotes || workerRequest.adminNotes, reviewedBy: currentUser.userId, reviewedAt: new Date() },
                 include: {
-                    exporter: { select: { id: true, companyTradingName: true, exporterCode: true, phone: true, email: true, contactPerson: true } },
+                    exporter: { select: { id: true, companyTradingName: true, exporterCode: true, tinNumber: true, phone: true, email: true, contactPerson: true } },
                     reviewer: { select: { id: true, name: true, email: true } },
                 },
             });
@@ -88,7 +88,7 @@ export async function PATCH(
             const updated = await prisma.workerRequest.update({
                 where: { id },
                 data: { status: 'rejected' },
-                include: { exporter: { select: { id: true, companyTradingName: true, exporterCode: true } } },
+                include: { exporter: { select: { id: true, companyTradingName: true, exporterCode: true, tinNumber: true } } },
             });
 
             return NextResponse.json({ workerRequest: toMongo(updated, { exporter: 'exporterId' }) });

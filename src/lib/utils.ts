@@ -148,3 +148,44 @@ export function getInitials(name: string): string {
         .toUpperCase()
         .substring(0, 2);
 }
+
+type ExporterIdentifierSource = {
+    tinNumber?: string | null;
+    exporterCode?: string | null;
+    id?: string | null;
+};
+
+export function formatExporterIdentifier(exporter?: ExporterIdentifierSource | null): string {
+    if (!exporter) return 'N/A';
+
+    const tinNumber = exporter.tinNumber?.trim();
+    if (tinNumber) return tinNumber;
+
+    const exporterCode = exporter.exporterCode?.trim();
+    if (exporterCode) return exporterCode;
+
+    return exporter.id?.trim() || 'N/A';
+}
+
+export function formatSessionReference(exporterName?: string | null, date?: Date | string | null): string {
+    const prefix = (exporterName || '')
+        .replace(/[^a-z0-9]/gi, '')
+        .toUpperCase()
+        .slice(0, 3)
+        .padEnd(3, 'X');
+
+    if (!date) {
+        return `${prefix}-UNKNOWN`;
+    }
+
+    const parsedDate = new Date(date);
+    if (Number.isNaN(parsedDate.getTime())) {
+        return `${prefix}-UNKNOWN`;
+    }
+
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+
+    return `${prefix}-${year}${month}${day}`;
+}

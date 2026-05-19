@@ -193,6 +193,7 @@ export default function AdminExportersPage() {
         const matchSearch = !searchTerm ||
             exp.companyTradingName.toLowerCase().includes(q) ||
             exp.exporterCode.toLowerCase().includes(q) ||
+            (exp.tinNumber || '').toLowerCase().includes(q) ||
             exp.email.toLowerCase().includes(q) ||
             exp.contactPerson.toLowerCase().includes(q);
         const matchStatus = statusFilter === 'all' || (statusFilter === 'active' ? exp.isActive : !exp.isActive);
@@ -314,8 +315,11 @@ export default function AdminExportersPage() {
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-200">
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Exporter</th>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Contact</th>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Address</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TIN</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Name</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Phone</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Email</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Location Address</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Rate/Bag</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                     <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -327,37 +331,19 @@ export default function AdminExportersPage() {
                                         <td className="px-4 sm:px-6 py-4">
                                             <div className="min-w-0">
                                                 <p className="font-semibold text-gray-900 text-sm">{exp.companyTradingName}</p>
-                                                <div className="flex items-center gap-1.5 mt-0.5">
-                                                    <Hash className="w-3 h-3 text-gray-400" />
-                                                    <span className="text-xs text-gray-400 font-mono">{exp.exporterCode}</span>
-                                                    {exp.tinNumber && (
-                                                        <span className="text-xs text-gray-400">· TIN: {exp.tinNumber}</span>
-                                                    )}
-                                                </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 sm:px-6 py-4 hidden md:table-cell">
-                                            <div className="space-y-1">
-                                                <div className="flex items-center gap-1.5 text-sm text-gray-700">
-                                                    <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                                                    <span className="truncate max-w-[140px]">{exp.contactPerson}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                                    <Phone className="w-3 h-3 text-gray-400 shrink-0" />
-                                                    <span>{exp.phone}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                                    <Mail className="w-3 h-3 text-gray-400 shrink-0" />
-                                                    <span className="truncate max-w-[160px]">{exp.email}</span>
-                                                </div>
-                                            </div>
+                                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-700">
+                                            {exp.tinNumber ? (
+                                                <span className="font-mono">{exp.tinNumber}</span>
+                                            ) : (
+                                                <span className="text-xs text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Not set</span>
+                                            )}
                                         </td>
-                                        <td className="px-4 sm:px-6 py-4 hidden lg:table-cell">
-                                            <div className="flex items-start gap-1.5 text-sm text-gray-600">
-                                                <MapPin className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
-                                                <span className="max-w-[160px] leading-snug">{exp.companyAddress}</span>
-                                            </div>
-                                        </td>
+                                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-700">{exp.contactPerson}</td>
+                                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-700">{exp.phone}</td>
+                                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-700">{exp.email}</td>
+                                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 min-w-[220px]">{exp.companyAddress}</td>
                                         <td className="px-4 sm:px-6 py-4">
                                             {rateCards[exp._id] ? (
                                                 <button

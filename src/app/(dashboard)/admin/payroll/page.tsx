@@ -296,7 +296,6 @@ export default function PayrollPage() {
                                             </td>
                                             <td className="px-6 py-3.5">
                                                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-tight">{worker.fullName}</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">{worker.workerId}</p>
                                             </td>
                                             <td className="px-6 py-3.5">
                                                 <span className="text-sm text-gray-700 dark:text-gray-200">{worker.phone || 'N/A'}</span>

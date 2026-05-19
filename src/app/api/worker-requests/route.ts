@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         const workerRequests = await prisma.workerRequest.findMany({
             where,
             include: {
-                exporter: { select: { id: true, companyTradingName: true, exporterCode: true } },
+                exporter: { select: { id: true, companyTradingName: true, exporterCode: true, tinNumber: true } },
                 reviewer: { select: { id: true, name: true, email: true } },
             },
             orderBy: { createdAt: 'desc' },
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
                 status: 'pending',
             },
             include: {
-                exporter: { select: { id: true, companyTradingName: true, exporterCode: true } },
+                exporter: { select: { id: true, companyTradingName: true, exporterCode: true, tinNumber: true } },
             },
         });
 

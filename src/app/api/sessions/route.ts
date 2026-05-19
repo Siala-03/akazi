@@ -56,15 +56,38 @@ export async function POST(request: NextRequest) {
     }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         const currentUser = await getCurrentUser();
         if (!currentUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const { searchParams } = new URL(request.url);
+        const includeAll = searchParams.get('all') === 'true' && currentUser.role === 'admin';
+        const startDate = searchParams.get('startDate');
+        const endDate = searchParams.get('endDate');
+
+        const where: any = includeAll ? {} : { status: 'active' };
+
+        if (currentUser.role === 'exporter' && currentUser.exporterId) {
+            where.exporterId = currentUser.exporterId;
+        }
+
+        if (startDate || endDate) {
+            where.date = {};
+            if (startDate) {
+                where.date.gte = new Date(startDate);
+            }
+            if (endDate) {
+                const inclusiveEndDate = new Date(endDate);
+                inclusiveEndDate.setHours(23, 59, 59, 999);
+                where.date.lte = inclusiveEndDate;
+            }
+        }
+
         const sessions = await prisma.session.findMany({
-            where: { status: 'active' },
+            where,
             include: { worker: true, exporter: true, facility: true },
             orderBy: { startTime: 'desc' },
         });

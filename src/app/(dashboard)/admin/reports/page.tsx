@@ -19,6 +19,7 @@ import {
   FileDown
 } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
+import { formatExporterIdentifier, formatSessionReference } from '@/lib/utils';
 
 interface ExporterReport {
   exporterId: string;
@@ -116,17 +117,20 @@ export default function AdminReportsPage() {
 
   const loadExporterReports = async (params: URLSearchParams) => {
     try {
-      // Fetch exporters and bags from real API
-      const [exportersRes, bagsRes] = await Promise.all([
+      // Fetch exporters, bags, and settings from real API
+      const [exportersRes, bagsRes, settingsRes] = await Promise.all([
         fetch('/api/exporters'),
-        fetch(`/api/bags?${params.toString()}`)
+        fetch(`/api/bags?${params.toString()}`),
+        fetch('/api/admin/settings')
       ]);
 
       const exportersData = await exportersRes.json();
       const bagsData = await bagsRes.json();
+      const settingsData = await settingsRes.json();
 
       const exporters = exportersData.exporters || [];
       const bags = bagsData.bags || [];
+      const workerDailyWage = settingsData.settings?.workerDailyWage || 1700;
 
       // Calculate report for each exporter
       const reports: ExporterReport[] = exporters.map((exporter: any) => {
@@ -152,10 +156,10 @@ export default function AdminReportsPage() {
           : 0;
 
         // Calculate labor cost (assuming 1500 RWF per bag per worker)
-        const laborCost = totalWorkers * 1500;
+        const laborCost = totalWorkers * workerDailyWage;
 
         return {
-          exporterId: exporter._id,
+          exporterId: formatExporterIdentifier(exporter),
           exporterName: exporter.companyTradingName,
           bagsSorted: exporterBags.length,
           workersInvolved: workerIds.size,
@@ -176,20 +180,26 @@ export default function AdminReportsPage() {
 
   const loadWorkerReports = async (params: URLSearchParams) => {
     try {
-      // Fetch workers, bags, and attendance from real API
-      const [workersRes, bagsRes, attendanceRes] = await Promise.all([
+      // Fetch workers, bags, attendance, sessions, and settings from real API
+      const [workersRes, bagsRes, attendanceRes, sessionsRes, settingsRes] = await Promise.all([
         fetch('/api/workers'),
         fetch(`/api/bags?${params.toString()}`),
-        fetch('/api/attendance/checkin')
+        fetch('/api/attendance/checkin'),
+        fetch(`/api/sessions?all=true&${params.toString()}`),
+        fetch('/api/admin/settings')
       ]);
 
       const workersData = await workersRes.json();
       const bagsData = await bagsRes.json();
       const attendanceData = await attendanceRes.json();
+      const sessionsData = await sessionsRes.json();
+      const settingsData = await settingsRes.json();
 
       const workers = workersData.workers || [];
       const bags = bagsData.bags || [];
       const attendance = attendanceData.attendance || [];
+      const sessions = sessionsData.sessions || [];
+      const workerDailyWage = settingsData.settings?.workerDailyWage || 1700;
 
       // Calculate report for each worker
       const reports: WorkerReport[] = workers.map((worker: any) => {
@@ -221,8 +231,12 @@ export default function AdminReportsPage() {
           )
         );
 
-        // Calculate earnings (1500 RWF per bag)
-        const totalEarnings = workerBags.length * 1500;
+        const workerSessions = sessions.filter((session: any) =>
+          (session.workerId?._id || session.workerId) === worker._id
+        );
+
+        // Calculate earnings from number of sessions × admin-configured daily wage
+        const totalEarnings = workerSessions.length * workerDailyWage;
 
         // Calculate average bags per day
         const avgBagsPerDay = uniqueDates.size > 0 
@@ -255,22 +269,25 @@ export default function AdminReportsPage() {
   const loadDailyOperations = async (params: URLSearchParams) => {
     try {
       // Fetch data from real APIs
-      const [attendanceRes, sessionsRes, bagsRes, exportersRes] = await Promise.all([
+      const [attendanceRes, sessionsRes, bagsRes, exportersRes, settingsRes] = await Promise.all([
         fetch('/api/attendance/checkin'),
         fetch('/api/sessions'),
         fetch('/api/bags'),
-        fetch('/api/exporters')
+        fetch('/api/exporters'),
+        fetch('/api/admin/settings')
       ]);
 
       const attendanceData = await attendanceRes.json();
       const sessionsData = await sessionsRes.json();
       const bagsData = await bagsRes.json();
       const exportersData = await exportersRes.json();
+      const settingsData = await settingsRes.json();
 
       const attendance = attendanceData.attendance || [];
       const sessions = sessionsData.sessions || [];
       const allBags = bagsData.bags || [];
       const exporters = exportersData.exporters || [];
+      const workerDailyWage = settingsData.settings?.workerDailyWage || 1700;
 
       // Group data by date
       const dateMap = new Map();
@@ -308,9 +325,9 @@ export default function AdminReportsPage() {
         const dateKey = new Date(bag.date).toISOString().split('T')[0];
         if (dateMap.has(dateKey)) {
           dateMap.get(dateKey).bagsCompleted++;
-          // Calculate labor cost (workers × 1500 RWF)
+          // Calculate labor cost from admin-configured daily wage
           const workerCount = bag.workers?.length || 0;
-          dateMap.get(dateKey).totalLaborCost += workerCount * 1500;
+          dateMap.get(dateKey).totalLaborCost += workerCount * workerDailyWage;
         }
       });
 
@@ -347,7 +364,7 @@ export default function AdminReportsPage() {
       const [bagsRes, attendanceRes, sessionsRes] = await Promise.all([
         fetch(`/api/bags?${params.toString()}`),
         fetch('/api/attendance/checkin'),
-        fetch('/api/sessions')
+        fetch(`/api/sessions?all=true&${params.toString()}`)
       ]);
 
       const bagsData = await bagsRes.json();
@@ -384,10 +401,13 @@ export default function AdminReportsPage() {
             date: new Date(bag.date || bag.createdAt).toISOString().split('T')[0],
             workerId: worker?.workerId || 'N/A',
             workerName: worker?.fullName || 'Unknown Worker',
-            exporterId: exporter?._id || 'N/A',
+            exporterId: formatExporterIdentifier(exporter),
             exporterName: exporter?.companyTradingName || 'Unknown Exporter',
             bagId: bag.bagNumber || bag._id,
-            sessionId: session?._id || 'N/A',
+            sessionId: formatSessionReference(
+              exporter?.companyTradingName,
+              session?.startTime || session?.date || bag.date || bag.createdAt
+            ),
             checkInTime: workerAttendance?.checkInTime 
               ? new Date(workerAttendance.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
               : 'N/A',
@@ -424,7 +444,7 @@ export default function AdminReportsPage() {
 
     switch (activeTab) {
       case 'exporter':
-        csvContent = 'Exporter ID,Exporter Name,Bags Sorted,Workers Involved,Total Labor Cost,Avg Workers/Bag\n';
+        csvContent = 'Exporter TIN / Business Reg No,Exporter Name,Bags Sorted,Workers Involved,Total Labor Cost,Avg Workers/Bag\n';
         exporterReports.forEach(row => {
           csvContent += `${row.exporterId},${row.exporterName},${row.bagsSorted},${row.workersInvolved},${row.totalLaborCost},${row.avgWorkersPerBag}\n`;
         });
@@ -445,7 +465,7 @@ export default function AdminReportsPage() {
         filename = 'daily-operations.csv';
         break;
       case 'audit':
-        csvContent = 'Date,Worker ID,Worker Name,Exporter ID,Exporter Name,Bag ID,Session ID,Check In,Check Out,Status\n';
+        csvContent = 'Date,Worker ID,Worker Name,Exporter TIN / Business Reg No,Exporter Name,Bag ID,Session Ref,Check In,Check Out,Status\n';
         auditTrails.forEach(row => {
           csvContent += `${row.date},${row.workerId},${row.workerName},${row.exporterId},${row.exporterName},${row.bagId},${row.sessionId},${row.checkInTime},${row.checkOutTime},${row.status}\n`;
         });
@@ -480,6 +500,7 @@ export default function AdminReportsPage() {
         <table>
           <thead>
             <tr>
+              <th>Business Reg / TIN</th>
               <th>Exporter Name</th>
               <th>Bags Sorted</th>
               <th>Workers Involved</th>
@@ -490,6 +511,7 @@ export default function AdminReportsPage() {
           <tbody>
             ${filteredExporterReports.map(r => `
               <tr>
+                <td>${r.exporterId}</td>
                 <td>${r.exporterName}</td>
                 <td class="num">${r.bagsSorted.toLocaleString()}</td>
                 <td class="num">${r.workersInvolved.toLocaleString()}</td>
@@ -501,6 +523,7 @@ export default function AdminReportsPage() {
           <tfoot>
             <tr>
               <td><strong>Totals</strong></td>
+              <td>—</td>
               <td class="num"><strong>${filteredExporterReports.reduce((s, r) => s + r.bagsSorted, 0).toLocaleString()}</strong></td>
               <td class="num"><strong>${filteredExporterReports.reduce((s, r) => s + r.workersInvolved, 0).toLocaleString()}</strong></td>
               <td class="num"><strong>${filteredExporterReports.reduce((s, r) => s + r.totalLaborCost, 0).toLocaleString()}</strong></td>
@@ -588,7 +611,9 @@ export default function AdminReportsPage() {
               <th>Worker Name</th>
               <th>Worker ID</th>
               <th>Exporter</th>
+              <th>Business Reg / TIN</th>
               <th>Bag ID</th>
+              <th>Session Ref</th>
               <th>Check In</th>
               <th>Check Out</th>
               <th>Status</th>
@@ -601,7 +626,9 @@ export default function AdminReportsPage() {
                 <td>${r.workerName}</td>
                 <td>${r.workerId}</td>
                 <td>${r.exporterName}</td>
+                <td>${r.exporterId}</td>
                 <td>${r.bagId}</td>
+                <td>${r.sessionId}</td>
                 <td class="num">${r.checkInTime}</td>
                 <td class="num">${r.checkOutTime}</td>
                 <td><span class="badge badge-${r.status}">${r.status}</span></td>
@@ -886,8 +913,8 @@ export default function AdminReportsPage() {
                                 onClick={() => handleSort('exporterId')}
                               >
                                 <div className="flex items-center gap-1">
-                                  <span className="hidden sm:inline">Exporter ID</span>
-                                  <span className="sm:hidden">ID</span>
+                                  <span className="hidden sm:inline">Business Reg / TIN</span>
+                                  <span className="sm:hidden">TIN</span>
                                   <ArrowUpDown className="w-3 h-3" />
                                 </div>
                               </th>
@@ -1176,13 +1203,13 @@ export default function AdminReportsPage() {
                                 Exporter Name
                               </th>
                               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
-                                Exporter ID
+                                Business Reg / TIN
                               </th>
                               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
                                 Bag ID
                               </th>
                               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
-                                <span className="hidden lg:inline">Session ID</span>
+                                <span className="hidden lg:inline">Session Ref</span>
                                 <span className="lg:hidden">Session</span>
                               </th>
                               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">

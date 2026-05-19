@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { PageHeader } from '@/components/PageHeader';
+import { formatExporterIdentifier } from '@/lib/utils';
 
 interface WorkerRequest {
     _id: string;
@@ -26,6 +27,7 @@ interface WorkerRequest {
         _id: string;
         companyTradingName: string;
         exporterCode: string;
+        tinNumber?: string;
         phone?: string;
         email?: string;
         contactPerson?: string;
@@ -200,7 +202,7 @@ export default function AdminWorkerRequestsPage() {
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="font-semibold text-gray-900 text-sm truncate">{req.exporterId?.companyTradingName || 'Unknown'}</p>
-                                                <p className="text-xs text-gray-400 font-mono">{req.exporterId?.exporterCode}</p>
+                                                <p className="text-xs text-gray-400 font-mono">{formatExporterIdentifier(req.exporterId)}</p>
                                             </div>
                                         </div>
 
