@@ -100,6 +100,7 @@ export async function GET(request: NextRequest) {
             totalBags,
             sessionsToday,
             weightAgg,
+            todayWeightAgg,
             workersEngagedRows,
             periodBags,
             periodWeightAgg,
@@ -141,6 +142,17 @@ export async function GET(request: NextRequest) {
                 select: { startTime: true, endTime: true, status: true },
             }),
             prisma.bag.aggregate({ where: { exporterId, status: { in: completedStatuses } }, _sum: { weight: true }, _min: { date: true } }),
+            prisma.bag.aggregate({
+                where: {
+                    exporterId,
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: startOfDay, lte: endOfDay } },
+                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                    ],
+                },
+                _sum: { weight: true },
+            }),
             prisma.$queryRaw<{ count: bigint }[]>`
                 SELECT COUNT(DISTINCT bw."workerId")::bigint AS count
                 FROM "BagWorker" bw
@@ -172,7 +184,11 @@ export async function GET(request: NextRequest) {
                 FROM "BagWorker" bw
                 INNER JOIN "Bag" b ON b.id = bw."bagId"
                 WHERE b."exporterId" = ${exporterId}
-                    AND b.date >= ${rangeStart} AND b.date <= ${rangeEnd}`,
+                    AND (
+                        (b."completedAt" IS NOT NULL AND b."completedAt" >= ${rangeStart} AND b."completedAt" <= ${rangeEnd})
+                        OR
+                        (b."completedAt" IS NULL AND b.date >= ${rangeStart} AND b.date <= ${rangeEnd})
+                    )`,
         ]);
 
         // ── Worker-day cost model (per-exporter) ──────────────────────────────
@@ -210,7 +226,7 @@ export async function GET(request: NextRequest) {
         const periodWorkersEngaged = Number(periodWorkersEngagedRows[0]?.count ?? 0);
         const totalWeight = weightAgg._sum.weight ?? 0;
         const periodWeight = periodWeightAgg._sum.weight ?? 0;
-        const totalWeightToday = bagsToday * 60;
+        const totalWeightToday = todayWeightAgg._sum.weight ?? bagsToday * 60;
         const periodDays = Math.max(1, Math.ceil((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
         const periodAvgBagsPerDay = periodBags / periodDays;
 
@@ -233,8 +249,10 @@ export async function GET(request: NextRequest) {
         const avgBagsPerDay = totalBags / daysSinceStart;
 
         const trendStart = getStartOfDay(new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000));
-        const bagsTrendRows = await prisma.$queryRaw<{ day: string; count: bigint }[]>`
-            SELECT TO_CHAR(COALESCE("completedAt", date), 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
+                const bagsTrendRows = await prisma.$queryRaw<{ day: string; count: bigint; weight: number | null }[]>`
+                        SELECT TO_CHAR(COALESCE("completedAt", date), 'YYYY-MM-DD') AS day,
+                                     COUNT(*)::bigint AS count,
+                                     COALESCE(SUM(weight), 0)::float AS weight
             FROM "Bag"
             WHERE "exporterId" = ${exporterId}
               AND status IN ('completed', 'validated', 'locked')
@@ -261,18 +279,18 @@ export async function GET(request: NextRequest) {
                 AND date >= ${rangeStart} AND date <= ${rangeEnd}
             GROUP BY day`;
 
-        const bagsTrendMap = new Map(bagsTrendRows.map(d => [d.day, Number(d.count)]));
+        const bagsTrendMap = new Map(bagsTrendRows.map(d => [d.day, { bags: Number(d.count), weight: Number(d.weight ?? 0) }]));
 
         const trendData = [];
         for (let i = 6; i >= 0; i--) {
             const date = new Date(today);
             date.setDate(date.getDate() - i);
             const dateStr = date.toISOString().split('T')[0];
-            const dayBags = bagsTrendMap.get(dateStr) || 0;
+            const day = bagsTrendMap.get(dateStr) || { bags: 0, weight: 0 };
             trendData.push({
                 date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                bags: dayBags,
-                weight: dayBags * 60,
+                bags: day.bags,
+                weight: day.weight,
             });
         }
 

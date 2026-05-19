@@ -32,6 +32,7 @@ export async function GET() {
                     ],
                 },
                 select: {
+                    weight: true,
                     workers: {
                         where: {
                             session: {
@@ -49,7 +50,7 @@ export async function GET() {
             prisma.bag.count({ where: { status: 'in_progress' } }),
         ]);
 
-        const totalKilogramsToday = bagsToday.length * 60;
+        const totalKilogramsToday = bagsToday.reduce((sum, bag) => sum + (bag.weight || 60), 0);
 
         let avgWorkersPerBag = 0;
         if (bagsToday.length > 0) {
@@ -66,7 +67,7 @@ export async function GET() {
             }
         }
 
-        const exportersServedToday = new Set(sessionsToday.map((s) => s.exporterId)).size;
+        const exportersServedToday = new Set(sessionsToday.map((s) => s.exporterId).filter(Boolean)).size;
 
         return NextResponse.json({
             metrics: {

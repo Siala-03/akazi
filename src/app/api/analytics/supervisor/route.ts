@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
             allBagsToday,
         ] = await Promise.all([
             prisma.worker.count(),
-            prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay } } }),
+            prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay }, status: 'on-site' } }),
             prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay }, status: 'checked-out' } }),
             prisma.session.count({ where: { status: 'active' } }),
             prisma.bag.count({
@@ -115,7 +115,9 @@ export async function GET(request: NextRequest) {
         }
 
         const uniqueWorkersInSessionsToday = new Set(sessionsToday.map(s => s.workerId).filter(Boolean)).size;
-        const workersCheckedInToday = Math.max(attendanceCheckedInToday, uniqueWorkersInSessionsToday);
+        const workersCheckedInToday = attendanceCheckedInToday > 0
+            ? attendanceCheckedInToday
+            : uniqueWorkersInSessionsToday;
 
         const uniqueExporterIds = [...new Set(sessionsToday.map(s => s.exporterId).filter(Boolean))];
         const exportersServedToday = uniqueExporterIds.length;

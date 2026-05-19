@@ -180,7 +180,7 @@ export default function ExporterDashboard() {
             summary: {
                 totalBags: analytics?.periodBags || 0,
                 totalWeight: analytics?.periodWeight || 0,
-                totalWorkers: analytics?.periodUniqueWorkers || 0,
+                totalWorkers: analytics?.periodWorkersEngaged || 0,
                 averageWeight: analytics?.periodBags > 0 ? analytics.periodWeight / analytics.periodBags : 0
             }
         };

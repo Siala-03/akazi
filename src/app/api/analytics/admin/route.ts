@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
         const thirtyDaysAgo = new Date(today);
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+        const completedStatuses: Array<'completed' | 'validated' | 'locked'> = ['completed', 'validated', 'locked'];
+
         // Current week Mon–Fri
         const dayOfWeek = today.getDay();
         const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -53,19 +55,58 @@ export async function GET(request: NextRequest) {
             prisma.exporter.count(),
             prisma.exporter.count({ where: { isActive: true } }),
             prisma.facility.count({ where: { isActive: true } }),
-            prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay } } }),
+            prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay }, status: 'on-site' } }),
             prisma.session.count({ where: { status: 'active' } }),
-            prisma.bag.count({ where: { date: { gte: startOfDay, lte: endOfDay } } }),
-            prisma.bag.count({ where: { date: { gte: sevenDaysAgo, lte: endOfDay } } }),
-            prisma.bag.count({ where: { date: { gte: thirtyDaysAgo, lte: endOfDay } } }),
+            prisma.bag.count({
+                where: {
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: startOfDay, lte: endOfDay } },
+                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                    ],
+                },
+            }),
+            prisma.bag.count({
+                where: {
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: sevenDaysAgo, lte: endOfDay } },
+                        { completedAt: null, date: { gte: sevenDaysAgo, lte: endOfDay } },
+                    ],
+                },
+            }),
+            prisma.bag.count({
+                where: {
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: thirtyDaysAgo, lte: endOfDay } },
+                        { completedAt: null, date: { gte: thirtyDaysAgo, lte: endOfDay } },
+                    ],
+                },
+            }),
             prisma.bag.count(),
             prisma.session.findMany({ where: { date: { gte: startOfDay, lte: endOfDay } }, select: { startTime: true, endTime: true, status: true } }),
             prisma.bag.findMany({
-                where: { date: { gte: startOfDay, lte: endOfDay } },
+                where: {
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: startOfDay, lte: endOfDay } },
+                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                    ],
+                },
                 select: { exporterId: true, weight: true, exporter: { select: { id: true, companyTradingName: true, exporterCode: true } } },
             }),
             prisma.bag.aggregate({ _sum: { weight: true } }),
-            prisma.bag.aggregate({ _sum: { weight: true }, where: { date: { gte: startOfDay, lte: endOfDay } } }),
+            prisma.bag.aggregate({
+                _sum: { weight: true },
+                where: {
+                    status: { in: completedStatuses },
+                    OR: [
+                        { completedAt: { gte: startOfDay, lte: endOfDay } },
+                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                    ],
+                },
+            }),
         ]);
 
         const { exporterDailyRate: EXPORTER_DAILY_RATE, workerDailyWage: WORKER_DAILY_WAGE } = await getSettings();
@@ -85,8 +126,8 @@ export async function GET(request: NextRequest) {
         const avgBagsPerDay = bagsLast7Days / 7;
         const avgBagsPerDayLast30 = bagsLast30Days / 30;
 
-        // ── Worker-day cost model ──────────────────────────────────────────────
-        // Count distinct (workerId, date) from Session as "worker-days"
+        // ── Session-based cost model ───────────────────────────────────────────
+        // Payroll/billing follows session counts for the selected period.
         const [workerDaysTodayRows, workerDaysWeekRows, workerDaysCumulativeRows] = await Promise.all([
             prisma.$queryRaw<{ count: bigint }[]>`
                 SELECT COUNT(*)::bigint AS count
@@ -176,9 +217,11 @@ export async function GET(request: NextRequest) {
                 WHERE date >= ${trendStart} AND date <= ${endOfDay}
                 GROUP BY day`,
             prisma.$queryRaw<{ day: string; count: bigint }[]>`
-                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
+                                SELECT TO_CHAR(COALESCE("completedAt", date), 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
                 FROM "Bag"
-                WHERE date >= ${trendStart} AND date <= ${endOfDay}
+                                WHERE status IN ('completed', 'validated', 'locked')
+                                    AND COALESCE("completedAt", date) >= ${trendStart}
+                                    AND COALESCE("completedAt", date) <= ${endOfDay}
                 GROUP BY day`,
             prisma.$queryRaw<{ day: string; count: bigint }[]>`
                 SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count

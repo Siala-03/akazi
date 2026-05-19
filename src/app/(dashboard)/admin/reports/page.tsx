@@ -120,7 +120,7 @@ export default function AdminReportsPage() {
     try {
       // Fetch exporters, bags, and settings from real API
       const [exportersRes, bagsRes, sessionsRes, settingsRes] = await Promise.all([
-        fetch('/api/exporters'),
+        fetch('/api/exporters?all=true'),
         fetch(`/api/bags?${params.toString()}`),
         fetch(`/api/sessions?all=true&${params.toString()}`),
         fetch('/api/admin/settings')
@@ -136,11 +136,35 @@ export default function AdminReportsPage() {
       const sessions = sessionsData.sessions || [];
       const workerDailyWage = settingsData.settings?.workerDailyWage || 1700;
 
+      const getExporterId = (value: any): string => {
+        if (!value) return '';
+        if (typeof value === 'string') return value;
+        return value._id || value.id || '';
+      };
+
+      const exporterById = new Map<string, any>();
+      exporters.forEach((exp: any) => {
+        const id = getExporterId(exp);
+        if (id) exporterById.set(id, exp);
+      });
+
+      // Include exporters that appear in bags/sessions even if they are not in the exporters list.
+      bags.forEach((bag: any) => {
+        const id = getExporterId(bag.exporterId);
+        if (id && !exporterById.has(id)) exporterById.set(id, bag.exporterId);
+      });
+      sessions.forEach((session: any) => {
+        const id = getExporterId(session.exporterId);
+        if (id && !exporterById.has(id)) exporterById.set(id, session.exporterId);
+      });
+
       // Calculate report for each exporter
-      const reports: ExporterReport[] = exporters.map((exporter: any) => {
+      const reports: ExporterReport[] = Array.from(exporterById.values()).map((exporter: any) => {
+        const exporterIdValue = getExporterId(exporter);
+
         // Filter bags for this exporter
         const exporterBags = bags.filter((bag: any) => 
-          bag.exporterId?._id === exporter._id || bag.exporterId === exporter._id
+          getExporterId(bag.exporterId) === exporterIdValue
         );
 
         // Calculate unique workers involved
@@ -160,13 +184,13 @@ export default function AdminReportsPage() {
           : 0;
 
         const exporterSessions = sessions.filter((session: any) =>
-          (session.exporterId?._id || session.exporterId) === exporter._id
+          getExporterId(session.exporterId) === exporterIdValue
         );
         const laborCost = exporterSessions.length * workerDailyWage;
 
         return {
           exporterId: formatExporterIdentifier(exporter),
-          exporterName: exporter.companyTradingName,
+          exporterName: exporter.companyTradingName || 'Unknown',
           bagsSorted: exporterBags.length,
           workersInvolved: workerIds.size,
           totalLaborCost: laborCost,
@@ -281,9 +305,9 @@ export default function AdminReportsPage() {
       const dateQuery = params.toString();
       const [attendanceRes, sessionsRes, bagsRes, exportersRes, settingsRes] = await Promise.all([
         fetch(`/api/attendance/checkin${dateQuery ? `?${dateQuery}` : ''}`),
-        fetch(`/api/sessions${dateQuery ? `?${dateQuery}` : ''}`),
+        fetch(`/api/sessions?all=true${dateQuery ? `&${dateQuery}` : ''}`),
         fetch(`/api/bags${dateQuery ? `?${dateQuery}` : ''}`),
-        fetch('/api/exporters'),
+        fetch('/api/exporters?all=true'),
         fetch('/api/admin/settings')
       ]);
 
@@ -300,43 +324,46 @@ export default function AdminReportsPage() {
       const workerDailyWage = settingsData.settings?.workerDailyWage || 1700;
 
       // Group data by date
-      const dateMap = new Map();
+      const dateMap = new Map<string, { date: string; workerIds: Set<string>; activeSessions: number; bagsCompleted: number; exporterIds: Set<string>; totalLaborCost: number }>();
+
+      const ensureDay = (dateKey: string) => {
+        if (!dateMap.has(dateKey)) {
+          dateMap.set(dateKey, {
+            date: dateKey,
+            workerIds: new Set<string>(),
+            activeSessions: 0,
+            bagsCompleted: 0,
+            exporterIds: new Set<string>(),
+            totalLaborCost: 0
+          });
+        }
+        return dateMap.get(dateKey)!;
+      };
 
       // Process attendance
       attendance.forEach((att: any) => {
         const dateKey = new Date(att.date).toISOString().split('T')[0];
-        if (!dateMap.has(dateKey)) {
-          dateMap.set(dateKey, {
-            date: dateKey,
-            workersOnSite: 0,
-            activeSessions: 0,
-            bagsCompleted: 0,
-            exporterIds: new Set(),
-            totalLaborCost: 0
-          });
-        }
-        if (att.status === 'on-site') {
-          dateMap.get(dateKey).workersOnSite++;
-        }
+        const day = ensureDay(dateKey);
+        const workerId = att.workerId?._id || att.workerId;
+        if (workerId) day.workerIds.add(workerId);
       });
 
       // Process sessions
       sessions.forEach((session: any) => {
         const dateKey = new Date(session.date).toISOString().split('T')[0];
-        if (dateMap.has(dateKey)) {
-          dateMap.get(dateKey).activeSessions++;
-          const exporterId = session.exporterId?._id || session.exporterId;
-          dateMap.get(dateKey).exporterIds.add(exporterId);
-          dateMap.get(dateKey).totalLaborCost += workerDailyWage;
-        }
+        const day = ensureDay(dateKey);
+        day.activeSessions++;
+        const exporterId = session.exporterId?._id || session.exporterId;
+        if (exporterId) day.exporterIds.add(exporterId);
+        day.totalLaborCost += workerDailyWage;
       });
 
       // Process bags
       allBags.forEach((bag: any) => {
-        const dateKey = new Date(bag.date).toISOString().split('T')[0];
-        if (dateMap.has(dateKey)) {
-          dateMap.get(dateKey).bagsCompleted++;
-        }
+        const bagDate = bag.completedAt || bag.date;
+        const dateKey = new Date(bagDate).toISOString().split('T')[0];
+        const day = ensureDay(dateKey);
+        day.bagsCompleted++;
       });
 
       // Convert map to array and add exporter names
@@ -350,7 +377,7 @@ export default function AdminReportsPage() {
 
           return {
             date: day.date,
-            workersOnSite: day.workersOnSite,
+            workersOnSite: day.workerIds.size,
             activeSessions: day.activeSessions,
             bagsCompleted: day.bagsCompleted,
             exportersActive: activeExporterNames,
@@ -369,9 +396,10 @@ export default function AdminReportsPage() {
   const loadAuditTrail = async (params: URLSearchParams) => {
     try {
       // Fetch all related data from real APIs
+      const dateQuery = params.toString();
       const [bagsRes, attendanceRes, sessionsRes] = await Promise.all([
-        fetch(`/api/bags?${params.toString()}`),
-        fetch('/api/attendance/checkin'),
+        fetch(`/api/bags${dateQuery ? `?${dateQuery}` : ''}`),
+        fetch(`/api/attendance/checkin${dateQuery ? `?${dateQuery}` : ''}`),
         fetch(`/api/sessions?all=true&${params.toString()}`)
       ]);
 
