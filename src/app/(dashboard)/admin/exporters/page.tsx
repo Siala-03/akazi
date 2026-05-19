@@ -325,19 +325,14 @@ export default function AdminExportersPage() {
                                 {paginated.map(exp => (
                                     <tr key={exp._id} className="hover:bg-emerald-50/30 transition-colors">
                                         <td className="px-4 sm:px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
-                                                    <Building2 className="w-4 h-4 text-emerald-600" />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="font-semibold text-gray-900 text-sm">{exp.companyTradingName}</p>
-                                                    <div className="flex items-center gap-1.5 mt-0.5">
-                                                        <Hash className="w-3 h-3 text-gray-400" />
-                                                        <span className="text-xs text-gray-400 font-mono">{exp.exporterCode}</span>
-                                                        {exp.tinNumber && (
-                                                            <span className="text-xs text-gray-400">· TIN: {exp.tinNumber}</span>
-                                                        )}
-                                                    </div>
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-gray-900 text-sm">{exp.companyTradingName}</p>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <Hash className="w-3 h-3 text-gray-400" />
+                                                    <span className="text-xs text-gray-400 font-mono">{exp.exporterCode}</span>
+                                                    {exp.tinNumber && (
+                                                        <span className="text-xs text-gray-400">· TIN: {exp.tinNumber}</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>

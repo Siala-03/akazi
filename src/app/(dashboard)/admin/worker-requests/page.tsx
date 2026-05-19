@@ -115,9 +115,9 @@ export default function AdminWorkerRequestsPage() {
                 title="Worker Requests"
                 subtitle="Review and respond to exporter staffing requests"
                 action={stats.pending > 0 ? (
-                    <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium">
+                    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300 text-sm font-semibold whitespace-nowrap shadow-sm">
                         <Clock className="w-4 h-4" />
-                        {stats.pending} pending review{stats.pending !== 1 ? 's' : ''}
+                        {stats.pending} pending request{stats.pending !== 1 ? 's' : ''}
                     </span>
                 ) : undefined}
             />
@@ -125,17 +125,17 @@ export default function AdminWorkerRequestsPage() {
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total',     value: stats.total,     icon: ClipboardList, colorClass: 'bg-gray-50 border-gray-200',    iconClass: 'text-gray-600' },
-                    { label: 'Pending',   value: stats.pending,   icon: Clock,         colorClass: 'bg-amber-50 border-amber-200',  iconClass: 'text-amber-600' },
-                    { label: 'Approved',  value: stats.approved,  icon: CheckCircle,   colorClass: 'bg-green-50 border-green-200',  iconClass: 'text-green-600' },
-                    { label: 'Fulfilled', value: stats.fulfilled, icon: CheckSquare,   colorClass: 'bg-blue-50 border-blue-200',    iconClass: 'text-blue-600' },
-                ].map(({ label, value, icon: Icon, colorClass, iconClass }) => (
+                    { label: 'Total',     value: stats.total,     icon: ClipboardList, colorClass: 'bg-gray-50 border-gray-200',    iconClass: 'text-gray-600', textClass: 'text-gray-500' },
+                    { label: 'Pending',   value: stats.pending,   icon: Clock,         colorClass: 'bg-amber-50 border-amber-200',  iconClass: 'text-amber-600', textClass: 'text-amber-700' },
+                    { label: 'Approved',  value: stats.approved,  icon: CheckCircle,   colorClass: 'bg-green-50 border-green-200',  iconClass: 'text-green-600', textClass: 'text-green-700' },
+                    { label: 'Fulfilled', value: stats.fulfilled, icon: CheckSquare,   colorClass: 'bg-blue-50 border-blue-200',    iconClass: 'text-blue-600', textClass: 'text-blue-700' },
+                ].map(({ label, value, icon: Icon, colorClass, iconClass, textClass }) => (
                     <div key={label} className={`rounded-xl border shadow-sm p-4 flex items-center gap-3 ${colorClass}`}>
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${iconClass}`}>
                             <Icon className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="text-xs text-gray-500 font-medium">{label}</p>
+                            <p className={`text-xs font-medium ${textClass}`}>{label}</p>
                             <p className="text-2xl font-bold text-gray-900">{value}</p>
                         </div>
                     </div>

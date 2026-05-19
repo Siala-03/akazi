@@ -1166,11 +1166,17 @@ export default function AdminReportsPage() {
                               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
                                 Date
                               </th>
-                              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
-                                Worker
+                              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">
+                                Worker Name
                               </th>
-                              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
-                                Exporter
+                              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                                Worker ID
+                              </th>
+                              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">
+                                Exporter Name
+                              </th>
+                              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                                Exporter ID
                               </th>
                               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
                                 Bag ID
@@ -1201,16 +1207,16 @@ export default function AdminReportsPage() {
                                   })}
                                 </td>
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                                  <div>
-                                    <div className="font-medium">{trail.workerName}</div>
-                                    <div className="text-xs text-gray-500">{trail.workerId}</div>
-                                  </div>
+                                  <span className="font-medium">{trail.workerName}</span>
+                                </td>
+                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-mono text-gray-500">
+                                  {trail.workerId}
                                 </td>
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                                  <div>
-                                    <div className="font-medium">{trail.exporterName}</div>
-                                    <div className="text-xs text-gray-500">{trail.exporterId}</div>
-                                  </div>
+                                  <span className="font-medium">{trail.exporterName}</span>
+                                </td>
+                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-mono text-gray-500">
+                                  {trail.exporterId}
                                 </td>
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-mono text-gray-900">
                                   {trail.bagId}
