@@ -10,8 +10,9 @@ interface CheckInResult {
 }
 
 interface QrScannerModalProps {
+    mode: 'checkin' | 'checkout';
     onClose: () => void;
-    onCheckInSuccess: (result: CheckInResult) => void;
+    onScanSuccess: (result: CheckInResult) => void;
 }
 
 type ScanState = 'scanning' | 'processing' | 'success' | 'error' | 'no-camera';
@@ -38,7 +39,7 @@ const safeStopAndClearScanner = async (scanner: any) => {
     }
 };
 
-export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProps) {
+export function QrScannerModal({ mode, onClose, onScanSuccess }: QrScannerModalProps) {
     const scannerRef = useRef<any>(null);
     const containerId = 'qr-scanner-container';
     const [scanState, setScanState] = useState<ScanState>('scanning');
@@ -95,14 +96,33 @@ export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProp
         if (isProcessingRef.current) return;
         isProcessingRef.current = true;
 
-        // Validate QR format: must start with "AKAZI:"
+        // Validate QR format
         if (!decodedText.startsWith('AKAZI:')) {
             isProcessingRef.current = false;
             return;
         }
 
-        const qrToken = decodedText.replace('AKAZI:', '').trim();
+        const payload = decodedText.replace('AKAZI:', '').trim();
+        let qrMode: 'checkin' | 'checkout' = 'checkin';
+        let qrToken = payload;
+
+        if (payload.startsWith('CHECKIN:')) {
+            qrMode = 'checkin';
+            qrToken = payload.replace('CHECKIN:', '').trim();
+        } else if (payload.startsWith('CHECKOUT:')) {
+            qrMode = 'checkout';
+            qrToken = payload.replace('CHECKOUT:', '').trim();
+        }
+
         if (!qrToken) {
+            isProcessingRef.current = false;
+            return;
+        }
+
+        if (qrMode !== mode) {
+            await safeStopAndClearScanner(scannerRef.current);
+            setScanState('error');
+            setMessage(`This is a ${qrMode === 'checkin' ? 'check-in' : 'check-out'} QR code. Use the ${mode === 'checkin' ? 'check-in' : 'check-out'} scanner.`);
             isProcessingRef.current = false;
             return;
         }
@@ -110,10 +130,10 @@ export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProp
         // Stop the camera while processing
         await safeStopAndClearScanner(scannerRef.current);
         setScanState('processing');
-        setMessage('Processing check-in...');
+        setMessage(`Processing check-${mode === 'checkin' ? 'in' : 'out'}...`);
 
         try {
-            const res = await fetch('/api/attendance/qr-checkin', {
+            const res = await fetch(mode === 'checkin' ? '/api/attendance/qr-checkin' : '/api/attendance/qr-checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ qrToken }),
@@ -132,8 +152,8 @@ export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProp
                 };
                 setLastResult(result);
                 setScanState('success');
-                setMessage(`${data.worker.fullName} checked in successfully!`);
-                onCheckInSuccess(result);
+                setMessage(`${data.worker.fullName} checked ${mode === 'checkin' ? 'in' : 'out'} successfully!`);
+                onScanSuccess(result);
             }
         } catch {
             setScanState('error');
@@ -158,7 +178,7 @@ export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProp
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-emerald-700">
                     <div className="flex items-center gap-2 text-white">
                         <Camera className="w-5 h-5" />
-                        <span className="font-semibold">QR Check-in Scanner</span>
+                        <span className="font-semibold">QR Check-{mode === 'checkin' ? 'in' : 'out'} Scanner</span>
                     </div>
                     <button
                         onClick={onClose}
@@ -178,7 +198,7 @@ export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProp
                                 style={{ minHeight: 260 }}
                             />
                             <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-3">
-                                Point the camera at the worker's QR badge
+                                Point the camera at the worker's check-{mode === 'checkin' ? 'in' : 'out'} QR badge
                             </p>
                         </div>
                     )}
@@ -200,7 +220,7 @@ export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProp
                             <div className="text-center">
                                 <p className="font-bold text-gray-900 dark:text-gray-100 text-lg">{lastResult.workerName}</p>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">ID: {lastResult.workerId}</p>
-                                <p className="mt-2 text-emerald-600 font-semibold text-sm">Checked in successfully</p>
+                                <p className="mt-2 text-emerald-600 font-semibold text-sm">Checked {mode === 'checkin' ? 'in' : 'out'} successfully</p>
                             </div>
                             <div className="flex gap-2 w-full mt-2">
                                 <button
@@ -259,7 +279,7 @@ export function QrScannerModal({ onClose, onCheckInSuccess }: QrScannerModalProp
                                 <AlertCircle className="w-9 h-9 text-red-500" />
                             </div>
                             <div className="text-center">
-                                <p className="font-semibold text-gray-900 dark:text-gray-100">Check-in Failed</p>
+                                <p className="font-semibold text-gray-900 dark:text-gray-100">Check-{mode === 'checkin' ? 'in' : 'out'} Failed</p>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{message}</p>
                             </div>
                             <div className="flex gap-2 w-full">

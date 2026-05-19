@@ -7,10 +7,11 @@ import QRCode from 'qrcode';
 interface WorkerQrModalProps {
     workerId: string; // MongoDB _id
     workerName: string;
+    mode: 'checkin' | 'checkout';
     onClose: () => void;
 }
 
-export function WorkerQrModal({ workerId, workerName, onClose }: WorkerQrModalProps) {
+export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrModalProps) {
     const [qrDataUrl, setQrDataUrl] = useState<string>('');
     const [qrInfo, setQrInfo] = useState<{ qrToken: string; workerId: string; phone?: string } | null>(null);
     const [loading, setLoading] = useState(true);
@@ -32,7 +33,7 @@ export function WorkerQrModal({ workerId, workerName, onClose }: WorkerQrModalPr
             setQrInfo({ qrToken: data.qrToken, workerId: data.workerId, phone: data.phone });
 
             // Generate QR code image from token
-            const url = await QRCode.toDataURL(`AKAZI:${data.qrToken}`, {
+            const url = await QRCode.toDataURL(`AKAZI:${mode.toUpperCase()}:${data.qrToken}`, {
                 width: 280,
                 margin: 2,
                 color: { dark: '#065f46', light: '#ffffff' },
@@ -120,10 +121,10 @@ export function WorkerQrModal({ workerId, workerName, onClose }: WorkerQrModalPr
         // Scan hint
         ctx.fillStyle = '#9ca3af';
         ctx.font = '10px Arial, sans-serif';
-        ctx.fillText('Scan this QR code to check in', W / 2, H - 14);
+        ctx.fillText(`Scan this QR code to check ${mode === 'checkin' ? 'in' : 'out'}`, W / 2, H - 14);
 
         const link = document.createElement('a');
-        link.download = `QR-Badge-${workerName.replace(/\s+/g, '_')}.png`;
+        link.download = `QR-${mode === 'checkin' ? 'Checkin' : 'Checkout'}-${workerName.replace(/\s+/g, '_')}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
     };
@@ -136,7 +137,7 @@ export function WorkerQrModal({ workerId, workerName, onClose }: WorkerQrModalPr
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Worker Badge – ${workerName}</title>
+                <title>Worker ${mode === 'checkin' ? 'Check-in' : 'Check-out'} Badge – ${workerName}</title>
                 <style>
                     * { margin: 0; padding: 0; box-sizing: border-box; }
                     body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f3f4f6; }
@@ -170,7 +171,7 @@ export function WorkerQrModal({ workerId, workerName, onClose }: WorkerQrModalPr
                     <div class="worker-name">${workerName}</div>
                     ${qrInfo.phone ? `<div class="worker-phone">${qrInfo.phone}</div>` : ''}
                     <div class="worker-id">ID: ${qrInfo.workerId}</div>
-                    <div class="scan-hint">Scan this QR code to check in</div>
+                    <div class="scan-hint">Scan this QR code to check ${mode === 'checkin' ? 'in' : 'out'}</div>
                 </div>
                 <script>window.onload = () => { window.print(); window.close(); }</script>
             </body>
@@ -189,7 +190,7 @@ export function WorkerQrModal({ workerId, workerName, onClose }: WorkerQrModalPr
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
                         <QrCode className="w-5 h-5 text-emerald-600" />
-                        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Worker QR Badge</h2>
+                        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Worker QR {mode === 'checkin' ? 'Check-in' : 'Check-out'} Badge</h2>
                     </div>
                     <button
                         onClick={onClose}
@@ -240,7 +241,7 @@ export function WorkerQrModal({ workerId, workerName, onClose }: WorkerQrModalPr
                                         ID: {qrInfo?.workerId}
                                     </p>
                                     <p className="text-xs text-gray-400 border-t border-gray-100 pt-2 mt-1">
-                                        Scan to check in
+                                        Scan to check {mode === 'checkin' ? 'in' : 'out'}
                                     </p>
                                 </div>
                             </div>
@@ -270,7 +271,7 @@ export function WorkerQrModal({ workerId, workerName, onClose }: WorkerQrModalPr
                                 </button>
                             </div>
                             <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-2">
-                                Worker shows this badge. Supervisor scans it at check-in.
+                                Worker shows this badge. Supervisor scans it at check-{mode === 'checkin' ? 'in' : 'out'}.
                             </p>
                         </>
                     )}

@@ -68,6 +68,7 @@ export default function OperationsPage() {
     const [currentTime, setCurrentTime] = useState('');
     const [operationsMetrics, setOperationsMetrics] = useState<any>(null);
     const [showQrScanner, setShowQrScanner] = useState(false);
+    const [qrScannerMode, setQrScannerMode] = useState<'checkin' | 'checkout'>('checkin');
 
     useEffect(() => {
         // Set initial time and update every second
@@ -349,10 +350,12 @@ export default function OperationsPage() {
             {/* QR Scanner Modal */}
             {showQrScanner && (
                 <QrScannerModal
+                    mode={qrScannerMode}
                     onClose={() => setShowQrScanner(false)}
-                    onCheckInSuccess={(result) => {
-                        toast.success(`${result.workerName} checked in via QR`);
+                    onScanSuccess={(result) => {
+                        toast.success(`${result.workerName} checked ${qrScannerMode === 'checkin' ? 'in' : 'out'} via QR`);
                         fetchAttendance();
+                        fetchSessions();
                     }}
                 />
             )}
@@ -577,7 +580,10 @@ export default function OperationsPage() {
 
                             {/* QR Scan Button */}
                             <button
-                                onClick={() => setShowQrScanner(true)}
+                                onClick={() => {
+                                    setQrScannerMode('checkin');
+                                    setShowQrScanner(true);
+                                }}
                                 className="w-full mb-4 flex items-center justify-center gap-3 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-emerald-500/20"
                             >
                                 <QrCode className="w-5 h-5" />
@@ -1077,6 +1083,16 @@ export default function OperationsPage() {
                                     </span>
                                 </div>
                             </div>
+                            <button
+                                onClick={() => {
+                                    setQrScannerMode('checkout');
+                                    setShowQrScanner(true);
+                                }}
+                                className="w-full mb-4 flex items-center justify-center gap-3 py-3 px-4 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-red-500/20"
+                            >
+                                <QrCode className="w-5 h-5" />
+                                Scan QR Badge to Check Out
+                            </button>
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead className="bg-gray-50 border-b border-gray-200">
