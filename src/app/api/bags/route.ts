@@ -142,6 +142,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ bags: bags.map(serializeBag) });
     } catch (error) {
         console.error('Get bags error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        console.error('Query where clause:', JSON.stringify({ startDate, endDate, status, exporterIdParam, date }));
+        return NextResponse.json(
+            { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+            { status: 500 }
+        );
     }
 }
