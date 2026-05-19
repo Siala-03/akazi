@@ -77,23 +77,18 @@ export default function ExporterDashboard() {
                 params.append('endDate', customEndDate);
             }
 
-            const [bagsRes, analyticsRes] = await Promise.all([
-                fetch(`/api/bags?${params.toString()}`),
-                fetch(`/api/analytics/exporter?${params.toString()}`),
-            ]);
+            const analyticsRes = await fetch(`/api/analytics/exporter?${params.toString()}`);
 
-            if (!bagsRes.ok || !analyticsRes.ok) {
-                const bagErr = !bagsRes.ok ? await bagsRes.json().catch(() => ({})) : null;
-                const analyticsErr = !analyticsRes.ok ? await analyticsRes.json().catch(() => ({})) : null;
+            if (!analyticsRes.ok) {
+                const analyticsErr = await analyticsRes.json().catch(() => ({}));
                 throw new Error(
-                    analyticsErr?.error || bagErr?.error ||
-                    `Failed to load exporter dashboard (${bagsRes.status}/${analyticsRes.status})`
+                    analyticsErr?.error ||
+                    `Failed to load exporter dashboard (${analyticsRes.status})`
                 );
             }
 
-            const bagsData = await bagsRes.json();
             const analyticsData = await analyticsRes.json();
-            const myBags = bagsData.bags || [];
+            const myBags: any[] = [];
 
             setBags(myBags);
             setAnalytics(analyticsData.analytics || {});

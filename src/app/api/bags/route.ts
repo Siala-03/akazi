@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { generateBagNumber } from '@/lib/utils';
+import { Prisma } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
     try {
@@ -80,14 +81,65 @@ export async function GET(request: NextRequest) {
             where.status = status;
         }
 
-        // Minimal query without includes to avoid serialization issues
-        const bags = await prisma.bag.findMany({
-            where,
-            orderBy: { createdAt: 'desc' },
-            take: 200,
-        });
+        try {
+            const bags = await prisma.bag.findMany({
+                where,
+                orderBy: { date: 'desc' },
+                take: 200,
+            });
 
-        return NextResponse.json({ bags: bags.map((b) => ({ ...b, _id: b.id })) });
+            return NextResponse.json({ bags: bags.map((b) => ({ ...b, _id: b.id })) });
+        } catch (queryError) {
+            console.error('Get bags prisma query error, using SQL fallback:', queryError);
+
+            const exporterFilter = where.exporterId
+                ? Prisma.sql` AND b."exporterId" = ${where.exporterId}`
+                : Prisma.empty;
+            const statusFilter = where.status
+                ? Prisma.sql` AND b.status::text = ${where.status}`
+                : Prisma.empty;
+
+            const fallbackRows = await prisma.$queryRaw<Array<{
+                id: string;
+                bagNumber: string;
+                exporterId: string;
+                facilityId: string | null;
+                date: Date;
+                startedAt: Date | null;
+                completedAt: Date | null;
+                weight: number;
+                status: string;
+                supervisorId: string;
+                createdAt: Date | null;
+                updatedAt: Date | null;
+            }>>(
+                Prisma.sql`
+                    SELECT
+                        b.id,
+                        b."bagNumber",
+                        b."exporterId",
+                        b."facilityId",
+                        b.date,
+                        b."startedAt",
+                        b."completedAt",
+                        b.weight,
+                        b.status::text AS status,
+                        b."supervisorId",
+                        b."createdAt",
+                        b."updatedAt"
+                    FROM "Bag" b
+                    WHERE 1=1
+                    ${exporterFilter}
+                    ${statusFilter}
+                    ORDER BY b.date DESC
+                    LIMIT 200
+                `
+            );
+
+            return NextResponse.json({
+                bags: fallbackRows.map((row) => ({ ...row, _id: row.id })),
+            });
+        }
     } catch (error) {
         console.error('Get bags error:', error);
         return NextResponse.json(
