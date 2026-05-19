@@ -93,9 +93,6 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
         const exporterIdParam = searchParams.get('exporterId');
-        const date = searchParams.get('date');
-        const startDate = searchParams.get('startDate');
-        const endDate = searchParams.get('endDate');
         const status = searchParams.get('status');
 
         const where: any = {};
@@ -108,48 +105,6 @@ export async function GET(request: NextRequest) {
 
         if (status && status !== 'all') {
             where.status = status;
-        }
-
-        // Date filtering - filter directly on bag.date
-        if (date) {
-            try {
-                const targetDate = new Date(date);
-                if (isNaN(targetDate.getTime())) {
-                    return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
-                }
-                const start = new Date(targetDate);
-                start.setHours(0, 0, 0, 0);
-                const end = new Date(targetDate);
-                end.setHours(23, 59, 59, 999);
-                where.date = { gte: start, lte: end };
-            } catch (e) {
-                console.error('Date parse error:', e);
-                return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
-            }
-        } else if (startDate || endDate) {
-            try {
-                const dateRange: { gte?: Date; lte?: Date } = {};
-                if (startDate) {
-                    const start = new Date(startDate);
-                    if (isNaN(start.getTime())) {
-                        return NextResponse.json({ error: 'Invalid startDate format' }, { status: 400 });
-                    }
-                    start.setHours(0, 0, 0, 0);
-                    dateRange.gte = start;
-                }
-                if (endDate) {
-                    const end = new Date(endDate);
-                    if (isNaN(end.getTime())) {
-                        return NextResponse.json({ error: 'Invalid endDate format' }, { status: 400 });
-                    }
-                    end.setHours(23, 59, 59, 999);
-                    dateRange.lte = end;
-                }
-                where.date = dateRange;
-            } catch (e) {
-                console.error('Date range parse error:', e);
-                return NextResponse.json({ error: 'Invalid date range format' }, { status: 400 });
-            }
         }
 
         const bags = await prisma.bag.findMany({
