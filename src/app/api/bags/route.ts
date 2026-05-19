@@ -111,13 +111,7 @@ export async function GET(request: NextRequest) {
             start.setHours(0, 0, 0, 0);
             const end = new Date(targetDate);
             end.setHours(23, 59, 59, 999);
-            where.workers = {
-                some: {
-                    session: {
-                        date: { gte: start, lte: end },
-                    },
-                },
-            };
+            where.date = { gte: start, lte: end };
         } else if (startDate || endDate) {
             const dateRange: { gte?: Date; lte?: Date } = {};
             if (startDate) {
@@ -131,13 +125,7 @@ export async function GET(request: NextRequest) {
                 dateRange.lte = end;
             }
 
-            where.workers = {
-                some: {
-                    session: {
-                        date: dateRange,
-                    },
-                },
-            };
+            where.date = dateRange;
         }
 
         const bags = await prisma.bag.findMany({
