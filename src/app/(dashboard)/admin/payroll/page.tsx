@@ -19,6 +19,7 @@ import { exportPayrollToExcel } from '@/lib/export/payrollExport';
 interface PayrollWorker {
     workerId: string;
     fullName: string;
+    phone: string;
     nationalId: string;
     numberOfBags: number;
     numberOfDays: number;
@@ -276,6 +277,7 @@ export default function PayrollPage() {
                                     <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">#</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Worker</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Phone</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">National ID</th>
                                         <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags</th>
                                         <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Days</th>
@@ -295,6 +297,9 @@ export default function PayrollPage() {
                                             <td className="px-6 py-3.5">
                                                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-tight">{worker.fullName}</p>
                                                 <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">{worker.workerId}</p>
+                                            </td>
+                                            <td className="px-6 py-3.5">
+                                                <span className="text-sm text-gray-700 dark:text-gray-200">{worker.phone || 'N/A'}</span>
                                             </td>
                                             <td className="px-6 py-3.5">
                                                 {worker.nationalId ? (
@@ -324,6 +329,7 @@ export default function PayrollPage() {
                                         <td className="px-6 py-4">
                                             <span className="text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Total — {payroll.length} workers</span>
                                         </td>
+                                        <td className="px-6 py-4" />
                                         <td className="px-6 py-4" />
                                         <td className="px-6 py-4 text-center">
                                             <span className="text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">

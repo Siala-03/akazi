@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
         // Worker details — workerId field contains the national ID (entered at onboarding)
         const workers = await prisma.worker.findMany({
             where: { id: { in: workerIds } },
-            select: { id: true, fullName: true, workerId: true },
+            select: { id: true, fullName: true, workerId: true, phone: true },
             orderBy: { fullName: 'asc' },
         });
 
@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
             return {
                 workerId: w.workerId,
                 fullName: w.fullName,
+                phone: w.phone,
                 nationalId: w.workerId, // workerId holds the national ID entered at onboarding
                 numberOfBags: bags,
                 numberOfDays: days,

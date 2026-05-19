@@ -404,7 +404,7 @@ export default function AdminWorkersPage() {
                         </table>
                         {filteredWorkers.length === 0 && (
                             <div className="p-16 text-center">
-                                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
                                     <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                                 </div>
                                 <p className="font-semibold text-gray-700 dark:text-gray-300">
@@ -484,7 +484,7 @@ export default function AdminWorkersPage() {
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex flex-col items-center text-center gap-4">
-                            <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                            <div className="w-14 h-14 rounded-full flex items-center justify-center">
                                 <AlertTriangle className="w-7 h-7 text-red-600 dark:text-red-400" />
                             </div>
                             <div>
@@ -517,7 +517,7 @@ export default function AdminWorkersPage() {
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-100 dark:border-gray-700">
                         <div className="flex flex-col items-center text-center gap-4">
-                            <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                            <div className="w-14 h-14 rounded-full flex items-center justify-center">
                                 <Trash2 className="w-7 h-7 text-red-600 dark:text-red-400" />
                             </div>
                             <div>
