@@ -17,6 +17,21 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const printRef = useRef<HTMLDivElement>(null);
+    const isCheckOut = mode === 'checkout';
+    const accentHex = isCheckOut ? '#b91c1c' : '#065f46';
+    const accentSoftHex = isCheckOut ? '#fecaca' : '#a7f3d0';
+    const idPillBgHex = isCheckOut ? '#fef2f2' : '#f0fdf4';
+    const idPillBorderHex = isCheckOut ? '#fecaca' : '#d1fae5';
+    const idPillTextHex = isCheckOut ? '#b91c1c' : '#065f46';
+    const previewHeaderClass = isCheckOut ? 'bg-red-700' : 'bg-emerald-700';
+    const previewHeaderSubClass = isCheckOut ? 'text-red-200' : 'text-emerald-200';
+    const previewBorderClass = isCheckOut ? 'border-red-600' : 'border-emerald-600';
+    const previewQrBorderClass = isCheckOut ? 'border-red-100' : 'border-emerald-100';
+    const previewModeLabelClass = isCheckOut
+        ? 'bg-red-50 text-red-700 border-red-200'
+        : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    const headerIconClass = isCheckOut ? 'text-red-600' : 'text-emerald-600';
+    const primaryButtonClass = isCheckOut ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700';
 
     useEffect(() => {
         fetchQrToken();
@@ -36,7 +51,7 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
             const url = await QRCode.toDataURL(`AKAZI:${mode.toUpperCase()}:${data.qrToken}`, {
                 width: 280,
                 margin: 2,
-                color: { dark: '#065f46', light: '#ffffff' },
+                color: { dark: accentHex, light: '#ffffff' },
                 errorCorrectionLevel: 'M',
             });
             setQrDataUrl(url);
@@ -61,14 +76,14 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
         // White background + border
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, W, H);
-        ctx.strokeStyle = '#065f46';
+        ctx.strokeStyle = accentHex;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.roundRect(2, 2, W - 4, H - 4, 10);
         ctx.stroke();
 
         // Emerald header
-        ctx.fillStyle = '#065f46';
+        ctx.fillStyle = accentHex;
         ctx.beginPath();
         ctx.roundRect(0, 0, W, 64, [10, 10, 0, 0]);
         ctx.fill();
@@ -77,7 +92,7 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
         ctx.font = 'bold 20px Arial, sans-serif';
         ctx.fillText('Akazi Rwanda Ltd', W / 2, 36);
         ctx.font = '11px Arial, sans-serif';
-        ctx.fillStyle = '#a7f3d0';
+        ctx.fillStyle = accentSoftHex;
         ctx.fillText('Akazi Rwanda Ltd', W / 2, 54);
 
         // QR code
@@ -108,14 +123,14 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
         ctx.font = '11px monospace, Courier New';
         const idW = ctx.measureText(idText).width + 24;
         const idX = (W - idW) / 2;
-        ctx.fillStyle = '#f0fdf4';
+        ctx.fillStyle = idPillBgHex;
         ctx.beginPath();
         ctx.roundRect(idX, nextY, idW, 22, 4);
         ctx.fill();
-        ctx.strokeStyle = '#d1fae5';
+        ctx.strokeStyle = idPillBorderHex;
         ctx.lineWidth = 1;
         ctx.stroke();
-        ctx.fillStyle = '#065f46';
+        ctx.fillStyle = idPillTextHex;
         ctx.fillText(idText, W / 2, nextY + 15);
 
         // Scan hint
@@ -143,12 +158,12 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
                     body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f3f4f6; }
                     .badge {
                         width: 85mm; padding: 6mm;
-                        background: white; border: 2px solid #065f46;
+                        background: white; border: 2px solid ${accentHex};
                         border-radius: 4mm; text-align: center;
                         box-shadow: 0 2px 8px rgba(0,0,0,0.15);
                     }
                     .badge-header {
-                        background: #065f46; color: white;
+                        background: ${accentHex}; color: white;
                         padding: 3mm 4mm; border-radius: 2mm; margin-bottom: 4mm;
                         font-size: 11pt; font-weight: bold; letter-spacing: 1px;
                     }
@@ -189,7 +204,7 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
-                        <QrCode className="w-5 h-5 text-emerald-600" />
+                        <QrCode className={`w-5 h-5 ${headerIconClass}`} />
                         <h2 className="font-semibold text-gray-900 dark:text-gray-100">Worker QR {mode === 'checkin' ? 'Check-in' : 'Check-out'} Badge</h2>
                     </div>
                     <button
@@ -217,19 +232,22 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
                     ) : (
                         <>
                             {/* Badge Preview */}
-                            <div ref={printRef} className="border-2 border-emerald-600 rounded-xl overflow-hidden mb-4">
-                                <div className="bg-emerald-700 text-white text-center py-2 px-4">
+                            <div ref={printRef} className={`border-2 ${previewBorderClass} rounded-xl overflow-hidden mb-4`}>
+                                <div className={`${previewHeaderClass} text-white text-center py-2 px-4`}>
                                     <p className="font-bold tracking-widest text-sm">Akazi Rwanda Ltd</p>
-                                    <p className="text-xs text-emerald-200">Akazi Rwanda Ltd</p>
+                                    <p className={`text-xs ${previewHeaderSubClass}`}>Akazi Rwanda Ltd</p>
                                 </div>
                                 <div className="bg-white p-4 text-center">
                                     {qrDataUrl && (
                                         <img
                                             src={qrDataUrl}
                                             alt="QR Code"
-                                            className="w-48 h-48 mx-auto mb-3 rounded-lg border border-emerald-100"
+                                            className={`w-48 h-48 mx-auto mb-3 rounded-lg border ${previewQrBorderClass}`}
                                         />
                                     )}
+                                    <p className={`inline-flex items-center px-2.5 py-0.5 rounded-full border text-[11px] font-semibold mb-2 ${previewModeLabelClass}`}>
+                                        {mode === 'checkin' ? 'CHECK-IN BADGE' : 'CHECK-OUT BADGE'}
+                                    </p>
                                     <div className="flex items-center justify-center gap-2 mb-1">
                                         <User className="w-4 h-4 text-gray-400" />
                                         <p className="font-bold text-gray-900 text-base">{workerName}</p>
@@ -250,7 +268,7 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
                             <div className="flex gap-2">
                                 <button
                                     onClick={handlePrint}
-                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium text-sm transition-colors"
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-white rounded-xl font-medium text-sm transition-colors ${primaryButtonClass}`}
                                 >
                                     <Printer className="w-4 h-4" />
                                     Print
