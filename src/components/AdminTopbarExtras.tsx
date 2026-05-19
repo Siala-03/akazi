@@ -41,10 +41,10 @@ export function AdminTopbarExtras() {
     const fetchAlerts = async () => {
         const newAlerts: Alert[] = [];
         try {
-            const res = await fetch('/api/admin/worker-requests');
+            const res = await fetch('/api/worker-requests');
             if (res.ok) {
                 const data = await res.json();
-                const pending = (data.requests || []).filter((r: any) => r.status === 'pending');
+                const pending = (data.workerRequests || []).filter((r: any) => r.status === 'pending');
                 if (pending.length > 0) {
                     newAlerts.push({
                         type: 'worker-requests',

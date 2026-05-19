@@ -19,7 +19,6 @@ export async function GET() {
                 where: {
                     OR: [
                         { date: { gte: startOfDay, lte: endOfDay } },
-                        { completedAt: { gte: startOfDay, lte: endOfDay } },
                         {
                             workers: {
                                 some: {

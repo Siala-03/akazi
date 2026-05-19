@@ -110,30 +110,21 @@ export async function GET(request: NextRequest) {
                 where: {
                     exporterId,
                     status: { in: completedStatuses },
-                    OR: [
-                        { completedAt: { gte: startOfDay, lte: endOfDay } },
-                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
-                    ],
+                    date: { gte: startOfDay, lte: endOfDay },
                 },
             }),
             prisma.bag.count({
                 where: {
                     exporterId,
                     status: { in: completedStatuses },
-                    OR: [
-                        { completedAt: { gte: sevenDaysAgo, lte: endOfDay } },
-                        { completedAt: null, date: { gte: sevenDaysAgo, lte: endOfDay } },
-                    ],
+                    date: { gte: sevenDaysAgo, lte: endOfDay },
                 },
             }),
             prisma.bag.count({
                 where: {
                     exporterId,
                     status: { in: completedStatuses },
-                    OR: [
-                        { completedAt: { gte: monthStart, lte: endOfDay } },
-                        { completedAt: null, date: { gte: monthStart, lte: endOfDay } },
-                    ],
+                    date: { gte: monthStart, lte: endOfDay },
                 },
             }),
             prisma.bag.count({ where: { exporterId, status: { in: completedStatuses } } }),
@@ -146,10 +137,7 @@ export async function GET(request: NextRequest) {
                 where: {
                     exporterId,
                     status: { in: completedStatuses },
-                    OR: [
-                        { completedAt: { gte: startOfDay, lte: endOfDay } },
-                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
-                    ],
+                    date: { gte: startOfDay, lte: endOfDay },
                 },
                 _sum: { weight: true },
             }),
@@ -162,20 +150,14 @@ export async function GET(request: NextRequest) {
                 where: {
                     exporterId,
                     status: { in: completedStatuses },
-                    OR: [
-                        { completedAt: { gte: rangeStart, lte: rangeEnd } },
-                        { completedAt: null, date: { gte: rangeStart, lte: rangeEnd } },
-                    ],
+                    date: { gte: rangeStart, lte: rangeEnd },
                 },
             }),
             prisma.bag.aggregate({
                 where: {
                     exporterId,
                     status: { in: completedStatuses },
-                    OR: [
-                        { completedAt: { gte: rangeStart, lte: rangeEnd } },
-                        { completedAt: null, date: { gte: rangeStart, lte: rangeEnd } },
-                    ],
+                    date: { gte: rangeStart, lte: rangeEnd },
                 },
                 _sum: { weight: true },
             }),
@@ -184,11 +166,7 @@ export async function GET(request: NextRequest) {
                 FROM "BagWorker" bw
                 INNER JOIN "Bag" b ON b.id = bw."bagId"
                 WHERE b."exporterId" = ${exporterId}
-                    AND (
-                        (b."completedAt" IS NOT NULL AND b."completedAt" >= ${rangeStart} AND b."completedAt" <= ${rangeEnd})
-                        OR
-                        (b."completedAt" IS NULL AND b.date >= ${rangeStart} AND b.date <= ${rangeEnd})
-                    )`,
+                    AND b.date >= ${rangeStart} AND b.date <= ${rangeEnd}`,
         ]);
 
         // ── Worker-day cost model (per-exporter) ──────────────────────────────
@@ -249,26 +227,26 @@ export async function GET(request: NextRequest) {
         const avgBagsPerDay = totalBags / daysSinceStart;
 
         const trendStart = getStartOfDay(new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000));
-                const bagsTrendRows = await prisma.$queryRaw<{ day: string; count: bigint; weight: number | null }[]>`
-                        SELECT TO_CHAR(COALESCE("completedAt", date), 'YYYY-MM-DD') AS day,
+                                const bagsTrendRows = await prisma.$queryRaw<{ day: string; count: bigint; weight: number | null }[]>`
+                                                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day,
                                      COUNT(*)::bigint AS count,
                                      COALESCE(SUM(weight), 0)::float AS weight
             FROM "Bag"
             WHERE "exporterId" = ${exporterId}
               AND status IN ('completed', 'validated', 'locked')
-              AND COALESCE("completedAt", date) >= ${trendStart}
-              AND COALESCE("completedAt", date) <= ${endOfDay}
+                            AND date >= ${trendStart}
+                            AND date <= ${endOfDay}
             GROUP BY day`;
 
         const dailyBagsRows = await prisma.$queryRaw<{ day: string; bags: bigint; weight: number | null }[]>`
-            SELECT TO_CHAR(COALESCE("completedAt", date), 'YYYY-MM-DD') AS day,
+                        SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day,
                    COUNT(*)::bigint AS bags,
                    COALESCE(SUM(weight), 0)::float AS weight
             FROM "Bag"
             WHERE "exporterId" = ${exporterId}
                 AND status IN ('completed', 'validated', 'locked')
-                AND COALESCE("completedAt", date) >= ${rangeStart}
-                AND COALESCE("completedAt", date) <= ${rangeEnd}
+                                AND date >= ${rangeStart}
+                                AND date <= ${rangeEnd}
             GROUP BY day`;
 
         const dailySessionRows = await prisma.$queryRaw<{ day: string; sessions: bigint }[]>`
