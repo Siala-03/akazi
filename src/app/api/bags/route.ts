@@ -3,39 +3,6 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { generateBagNumber } from '@/lib/utils';
 
-function serializeBag(bag: any) {
-    try {
-        return {
-            _id: bag.id,
-            id: bag.id,
-            bagNumber: bag.bagNumber,
-            exporterId: bag.exporterId,
-            facilityId: bag.facilityId,
-            date: bag.date,
-            startedAt: bag.startedAt,
-            completedAt: bag.completedAt,
-            weight: bag.weight,
-            status: bag.status,
-            supervisorId: bag.supervisorId,
-            createdAt: bag.createdAt,
-            updatedAt: bag.updatedAt,
-            exporter: bag.exporter ? { _id: bag.exporter.id, id: bag.exporter.id, ...bag.exporter } : null,
-            facility: bag.facility ? { _id: bag.facility.id, id: bag.facility.id, ...bag.facility } : null,
-            workers: (bag.workers ?? []).map((bw: any) => ({
-                _id: bw.id,
-                id: bw.id,
-                bagId: bw.bagId,
-                workerId: bw.workerId,
-                sessionId: bw.sessionId,
-                worker: bw.worker ? { _id: bw.worker.id, id: bw.worker.id, ...bw.worker } : null,
-            })),
-        };
-    } catch (e) {
-        console.error('serializeBag error for bag:', bag?.id, e);
-        throw e;
-    }
-}
-
 export async function POST(request: NextRequest) {
     try {
         const currentUser = await getCurrentUser();
@@ -81,14 +48,9 @@ export async function POST(request: NextRequest) {
                     create: sessions.map((s) => ({ workerId: s.workerId, sessionId: s.id })),
                 },
             },
-            include: {
-                exporter: true,
-                facility: true,
-                workers: { include: { worker: true } },
-            },
         });
 
-        return NextResponse.json({ bag: serializeBag(bag) }, { status: 201 });
+        return NextResponse.json({ bag: { ...bag, _id: bag.id } }, { status: 201 });
     } catch (error) {
         console.error('Create bag error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -118,18 +80,14 @@ export async function GET(request: NextRequest) {
             where.status = status;
         }
 
+        // Minimal query without includes to avoid serialization issues
         const bags = await prisma.bag.findMany({
             where,
-            include: {
-                exporter: true,
-                facility: true,
-                workers: { include: { worker: true } },
-            },
             orderBy: { createdAt: 'desc' },
             take: 200,
         });
 
-        return NextResponse.json({ bags: bags.map(serializeBag) });
+        return NextResponse.json({ bags: bags.map((b) => ({ ...b, _id: b.id })) });
     } catch (error) {
         console.error('Get bags error:', error);
         return NextResponse.json(
