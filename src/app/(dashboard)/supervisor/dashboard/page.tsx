@@ -63,7 +63,7 @@ export default function SupervisorDashboard() {
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30 animate-bounce-once">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center animate-bounce-once">
                                 <TrendingUp className="w-7 h-7 text-white" />
                             </div>
                             <h1 className="text-4xl font-bold text-white drop-shadow-lg">Supervisor Dashboard</h1>
@@ -123,7 +123,7 @@ export default function SupervisorDashboard() {
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="relative">
                         <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                                 <Users className="w-6 h-6 text-blue-600" />
                             </div>
                             <TrendingUp className="w-5 h-5 text-emerald-500" />
@@ -144,7 +144,7 @@ export default function SupervisorDashboard() {
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-emerald-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="relative">
                         <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                                 <UserPlus className="w-6 h-6 text-emerald-600" />
                             </div>
                             <TrendingUp className="w-5 h-5 text-emerald-500" />
@@ -163,7 +163,7 @@ export default function SupervisorDashboard() {
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="relative">
                         <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                                 <Activity className="w-6 h-6 text-purple-600" />
                             </div>
                             {analytics?.activeSessions > 0 && (
@@ -184,7 +184,7 @@ export default function SupervisorDashboard() {
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-amber-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="relative">
                         <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                                 <Package className="w-6 h-6 text-amber-600" />
                             </div>
                             <TrendingUp className="w-5 h-5 text-emerald-500" />
@@ -203,7 +203,7 @@ export default function SupervisorDashboard() {
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-teal-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="relative">
                         <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-xl flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                                 <Building2 className="w-6 h-6 text-teal-600" />
                             </div>
                             <TrendingUp className="w-5 h-5 text-emerald-500" />
@@ -224,7 +224,7 @@ export default function SupervisorDashboard() {
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Attendance Trend</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Last 7 days</p>
                         </div>
-                        <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                             <Users className="w-5 h-5 text-emerald-600" />
                         </div>
                     </div>
@@ -272,7 +272,7 @@ export default function SupervisorDashboard() {
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bags Processed</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Last 7 days</p>
                         </div>
-                        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                             <Package className="w-5 h-5 text-purple-600" />
                         </div>
                     </div>
@@ -323,7 +323,7 @@ export default function SupervisorDashboard() {
                         className="group p-5 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all hover:shadow-md"
                     >
                         <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800 transition-colors">
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors">
                                 <Settings className="w-5 h-5 text-emerald-600" />
                             </div>
                             <div className="flex-1">
@@ -340,7 +340,7 @@ export default function SupervisorDashboard() {
                         className="group p-5 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all hover:shadow-md"
                     >
                         <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-800 transition-colors">
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors">
                                 <UserPlus className="w-5 h-5 text-blue-600" />
                             </div>
                             <div className="flex-1">
@@ -357,7 +357,7 @@ export default function SupervisorDashboard() {
                         className="group p-5 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all hover:shadow-md"
                     >
                         <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-800 transition-colors">
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors">
                                 <Users className="w-5 h-5 text-purple-600" />
                             </div>
                             <div className="flex-1">
@@ -375,7 +375,7 @@ export default function SupervisorDashboard() {
                         className="group p-5 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:shadow-md disabled:opacity-50"
                     >
                         <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors">
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors">
                                 <RefreshCw className={`w-5 h-5 text-gray-600 dark:text-gray-400 ${refreshing ? 'animate-spin' : ''}`} />
                             </div>
                             <div className="flex-1 text-left">
@@ -390,7 +390,7 @@ export default function SupervisorDashboard() {
             {/* Info Card */}
             <div className="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700/50 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center">
                         <Info className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                     </div>
                     <h3 className="font-semibold text-gray-900 dark:text-white text-lg">

@@ -144,7 +144,7 @@ export default function ExporterWorkerRequestsPage() {
             {notLinked && (
                 <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm">
                     <div className="flex flex-col sm:flex-row gap-4 sm:items-start">
-                        <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0">
                             <AlertCircle className="w-6 h-6 text-amber-600" />
                         </div>
                         <div className="flex-1">
@@ -159,6 +159,7 @@ export default function ExporterWorkerRequestsPage() {
 
             <PageHeader
                 icon={ClipboardList}
+                iconBg="bg-transparent"
                 title="Worker Requests"
                 subtitle="Submit casual worker staffing requests to the cooperative admin"
                 action={
@@ -176,7 +177,7 @@ export default function ExporterWorkerRequestsPage() {
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="card rounded-xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <ClipboardList className="w-5 h-5 text-gray-600" />
                     </div>
                     <div>
@@ -185,7 +186,7 @@ export default function ExporterWorkerRequestsPage() {
                     </div>
                 </div>
                 <div className="bg-white rounded-xl border border-amber-200 shadow-sm p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <Clock className="w-5 h-5 text-amber-600" />
                     </div>
                     <div>
@@ -194,7 +195,7 @@ export default function ExporterWorkerRequestsPage() {
                     </div>
                 </div>
                 <div className="bg-white rounded-xl border border-green-200 shadow-sm p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <CheckCircle className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
@@ -203,7 +204,7 @@ export default function ExporterWorkerRequestsPage() {
                     </div>
                 </div>
                 <div className="bg-white rounded-xl border border-blue-200 shadow-sm p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <CheckSquare className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>

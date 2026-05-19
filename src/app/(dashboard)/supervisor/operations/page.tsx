@@ -360,7 +360,7 @@ export default function OperationsPage() {
             <PageHeader
                 icon={Activity}
                 iconColor="text-teal-600 dark:text-teal-400"
-                iconBg="bg-teal-100 dark:bg-teal-900/30"
+                iconBg="bg-transparent"
                 title="Daily Operations"
                 subtitle="Manage worker check-in, exporter assignments, and bag recording"
             />
@@ -369,7 +369,7 @@ export default function OperationsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                 <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
                             <Package className="w-4 h-4 text-gray-600" />
                         </div>
                         <TrendingUp className="w-4 h-4 text-gray-400" />
@@ -382,7 +382,7 @@ export default function OperationsPage() {
 
                 <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
                             <Weight className="w-4 h-4 text-gray-600" />
                         </div>
                         <TrendingUp className="w-4 h-4 text-gray-400" />
@@ -396,7 +396,7 @@ export default function OperationsPage() {
 
                 <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
                             <Users className="w-4 h-4 text-gray-600" />
                         </div>
                     </div>
@@ -409,7 +409,7 @@ export default function OperationsPage() {
 
                 <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
                             <Clock className="w-4 h-4 text-gray-600" />
                         </div>
                     </div>
@@ -422,7 +422,7 @@ export default function OperationsPage() {
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 col-span-2 sm:col-span-1">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
                             <Building2 className="w-4 h-4 text-gray-600" />
                         </div>
                     </div>
@@ -444,7 +444,7 @@ export default function OperationsPage() {
                                 {onSiteWorkers.length}
                             </p>
                         </div>
-                        <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center">
                             <Users className="w-5 h-5 text-gray-600" />
                         </div>
                     </div>
@@ -458,7 +458,7 @@ export default function OperationsPage() {
                                 {sessions.length}
                             </p>
                         </div>
-                        <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center">
                             <Activity className="w-5 h-5 text-gray-600" />
                         </div>
                     </div>
@@ -472,7 +472,7 @@ export default function OperationsPage() {
                                 {attendance.length}
                             </p>
                         </div>
-                        <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center">
                             <TrendingUp className="w-5 h-5 text-gray-600" />
                         </div>
                     </div>
@@ -693,9 +693,6 @@ export default function OperationsPage() {
                                                 <tr key={worker._id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                                                {worker.fullName.charAt(0).toUpperCase()}
-                                                            </div>
                                                             <span className="font-medium text-gray-900">{worker.fullName}</span>
                                                         </div>
                                                     </td>
@@ -775,9 +772,6 @@ export default function OperationsPage() {
                                                     <tr key={att._id} className="hover:bg-gray-50">
                                                         <td className="px-6 py-4">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                                                    {att.workerId.fullName.charAt(0).toUpperCase()}
-                                                                </div>
                                                                 <span className="font-medium text-gray-900">{att.workerId.fullName}</span>
                                                             </div>
                                                         </td>
@@ -1020,7 +1014,7 @@ export default function OperationsPage() {
                                                                 </td>
                                                                 <td className="px-6 py-4">
                                                                     <div className="flex items-center gap-2">
-                                                                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center">
                                                                             <Link2 className="w-4 h-4 text-gray-700" />
                                                                         </div>
                                                                         <span className="text-sm font-medium text-gray-900">
@@ -1115,9 +1109,6 @@ export default function OperationsPage() {
                                                     <tr key={att._id} className="hover:bg-gray-50">
                                                         <td className="px-6 py-4">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                                                    {att.workerId.fullName.charAt(0).toUpperCase()}
-                                                                </div>
                                                                 <span className="font-medium text-gray-900">{att.workerId.fullName}</span>
                                                             </div>
                                                         </td>
@@ -1176,8 +1167,8 @@ export default function OperationsPage() {
                         className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
                     >
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                                <Activity className="w-5 h-5 text-white" />
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+                                <Activity className="w-5 h-5 text-gray-600" />
                             </div>
                             <div className="text-left">
                                 <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
@@ -1223,9 +1214,6 @@ export default function OperationsPage() {
                                                 <tr key={session._id} className="hover:bg-gray-50 transition-colors">
                                                     <td className="px-6 py-3">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                                                                {session.workerId.fullName.charAt(0).toUpperCase()}
-                                                            </div>
                                                             <div>
                                                                 <p className="text-sm font-medium text-gray-900">{session.workerId.fullName}</p>
                                                                 <p className="text-xs text-gray-500">{session.workerId.workerId}</p>
@@ -1234,7 +1222,7 @@ export default function OperationsPage() {
                                                     </td>
                                                     <td className="px-6 py-3">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center">
+                                                            <div className="w-6 h-6 rounded flex items-center justify-center">
                                                                 <Link2 className="w-3.5 h-3.5 text-gray-700" />
                                                             </div>
                                                             <span className="text-sm font-medium text-gray-900">{session.exporterId.companyTradingName}</span>

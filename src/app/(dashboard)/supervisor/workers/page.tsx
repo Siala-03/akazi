@@ -172,12 +172,7 @@ export default function WorkersPage() {
             label: 'Name',
             sortable: true,
             render: (worker) => (
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-semibold text-sm">
-                        {worker.fullName.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="font-medium text-gray-900">{worker.fullName}</div>
-                </div>
+                <div className="font-medium text-gray-900">{worker.fullName}</div>
             )
         },
         {
@@ -288,6 +283,7 @@ export default function WorkersPage() {
         <div className="space-y-6">
             <PageHeader
                 icon={Users}
+                iconBg="bg-transparent"
                 title="Workers Directory"
                 subtitle={`Manage and view all registered workers (${workers.length} total)`}
                 action={
@@ -432,7 +428,7 @@ export default function WorkersPage() {
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
                             <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                         </div>
                         <TrendingUp className="w-4 h-4 text-gray-400" />
@@ -445,7 +441,7 @@ export default function WorkersPage() {
 
                 <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
                             <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                         </div>
                     </div>
@@ -457,7 +453,7 @@ export default function WorkersPage() {
 
                 <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
                             <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                         </div>
                     </div>
@@ -470,7 +466,7 @@ export default function WorkersPage() {
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 col-span-2 sm:col-span-1">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
                             <Award className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                         </div>
                     </div>
@@ -531,7 +527,7 @@ export default function WorkersPage() {
                             <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Worker Details</h2>
                             <button
                                 onClick={() => setSelectedWorker(null)}
-                                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+                                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
                             >
                                 <X className="w-5 h-5 text-gray-600" />
                             </button>
@@ -545,7 +541,7 @@ export default function WorkersPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-200">
                                     <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-9 h-9 bg-gray-200 rounded-lg flex items-center justify-center shrink-0">
+                                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
                                             <Clock className="w-5 h-5 text-gray-600" />
                                         </div>
                                         <p className="text-sm font-medium text-gray-700">Total Hours Worked</p>
@@ -556,7 +552,7 @@ export default function WorkersPage() {
 
                                 <div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-200">
                                     <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-9 h-9 bg-gray-200 rounded-lg flex items-center justify-center shrink-0">
+                                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
                                             <Package className="w-5 h-5 text-gray-600" />
                                         </div>
                                         <p className="text-sm font-medium text-gray-700">Total Bags Processed</p>
@@ -567,7 +563,7 @@ export default function WorkersPage() {
 
                                 <div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-200">
                                     <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-9 h-9 bg-gray-200 rounded-lg flex items-center justify-center shrink-0">
+                                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
                                             <Banknote className="w-5 h-5 text-gray-600" />
                                         </div>
                                         <p className="text-sm font-medium text-gray-700">Earnings to Date (RWF)</p>
@@ -578,7 +574,7 @@ export default function WorkersPage() {
 
                                 <div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-200">
                                     <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-9 h-9 bg-gray-200 rounded-lg flex items-center justify-center shrink-0">
+                                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
                                             <Calendar className="w-5 h-5 text-gray-600" />
                                         </div>
                                         <p className="text-sm font-medium text-gray-700">Days Worked This Month</p>

@@ -103,7 +103,7 @@ export default function ExporterDashboard() {
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30 animate-bounce-once">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center animate-bounce-once">
                                 <TrendingUp className="w-7 h-7 text-white" />
                             </div>
                             <h1 className="text-4xl font-bold text-white drop-shadow-lg">Exporter Dashboard</h1>
@@ -135,7 +135,7 @@ export default function ExporterDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                             <Package className="w-6 h-6 text-blue-600" />
                         </div>
                         <TrendingUp className="w-5 h-5 text-emerald-500" />
@@ -147,7 +147,7 @@ export default function ExporterDashboard() {
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                             <Users className="w-6 h-6 text-purple-600" />
                         </div>
                         <BarChart3 className="w-5 h-5 text-purple-500" />
@@ -159,7 +159,7 @@ export default function ExporterDashboard() {
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-emerald-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                             <Weight className="w-6 h-6 text-emerald-600" />
                         </div>
                         <TrendingUp className="w-5 h-5 text-emerald-500" />
@@ -171,7 +171,7 @@ export default function ExporterDashboard() {
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-amber-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                             <Clock className="w-6 h-6 text-amber-600" />
                         </div>
                         <TrendingUp className="w-5 h-5 text-amber-500" />
@@ -187,7 +187,7 @@ export default function ExporterDashboard() {
                 {/* Daily Cost */}
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-green-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                             <DollarSign className="w-6 h-6 text-green-600" />
                         </div>
                         <TrendingUp className="w-5 h-5 text-green-500" />
@@ -204,7 +204,7 @@ export default function ExporterDashboard() {
                 {/* Weekly Cost */}
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                             <DollarSign className="w-6 h-6 text-blue-600" />
                         </div>
                         <Calendar className="w-5 h-5 text-blue-500" />
@@ -221,7 +221,7 @@ export default function ExporterDashboard() {
                 {/* Cumulative Cost */}
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-orange-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                             <DollarSign className="w-6 h-6 text-orange-600" />
                         </div>
                         <BarChart3 className="w-5 h-5 text-orange-500" />
@@ -243,14 +243,14 @@ export default function ExporterDashboard() {
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Performance Overview</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Bags processed across different periods</p>
                     </div>
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <BarChart3 className="w-5 h-5 text-blue-600" />
                     </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                     <div className="bg-white dark:bg-[#1e293b] rounded-xl p-4 border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                                 <Calendar className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
@@ -266,7 +266,7 @@ export default function ExporterDashboard() {
 
                     <div className="bg-white dark:bg-[#1e293b] rounded-xl p-4 border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                                 <BarChart3 className="w-5 h-5 text-purple-600" />
                             </div>
                             <div>
@@ -282,7 +282,7 @@ export default function ExporterDashboard() {
 
                     <div className="bg-white dark:bg-[#1e293b] rounded-xl p-4 border-l-4 border-l-emerald-500 border-t border-r border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                                 <TrendingUp className="w-5 h-5 text-emerald-600" />
                             </div>
                             <div>
@@ -332,7 +332,7 @@ export default function ExporterDashboard() {
                                     {pageBags.map((bag, idx) => (
                                         <div key={bag._id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all gap-3 sm:gap-0 bg-white dark:bg-[#1e293b]">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
                                                     <Package className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                                                 </div>
                                                 <div>
@@ -403,7 +403,7 @@ export default function ExporterDashboard() {
             {/* Info Card */}
             <div className="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700/50 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center">
                         <Info className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                     </div>
                     <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Read-Only Access</h3>

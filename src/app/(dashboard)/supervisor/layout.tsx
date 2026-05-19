@@ -56,7 +56,7 @@ export default function SupervisorLayout({ children }: { children: ReactNode }) 
 
                             {/* Logo */}
                             <div className="flex-shrink-0 flex items-center gap-3">
-                                <div className="w-9 h-9 bg-white/15 rounded-xl flex items-center justify-center">
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center">
                                     <Coffee className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="hidden sm:block">
@@ -128,13 +128,7 @@ export default function SupervisorLayout({ children }: { children: ReactNode }) 
                                     )}
 
                                     {/* Icon container */}
-                                    <span className={`
-                                        flex items-center justify-center w-8 h-8 rounded-lg shrink-0 transition-all duration-200
-                                        ${isActive
-                                            ? 'bg-emerald-100 dark:bg-emerald-900/50'
-                                            : 'bg-gray-100 dark:bg-white/5 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/40'
-                                        }
-                                    `}>
+                                    <span className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0 transition-all duration-200">
                                         <Icon className={`w-4 h-4 transition-colors duration-200 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500 group-hover:text-emerald-500 dark:group-hover:text-emerald-400'}`} />
                                     </span>
 

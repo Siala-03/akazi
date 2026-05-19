@@ -148,6 +148,7 @@ export default function OnboardingPage() {
 
             <PageHeader
                 icon={UserPlus}
+                iconBg="bg-transparent"
                 title="Worker Onboarding"
                 subtitle={`Target: under 5 minutes · Step ${currentStep} of 3`}
             />
