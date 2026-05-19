@@ -744,6 +744,7 @@ export default function AdminReportsPage() {
       <div className="max-w-7xl mx-auto">
         <PageHeader
           icon={TrendingUp}
+          iconBg="bg-transparent"
           title="Reports & Analytics"
           subtitle="Comprehensive operational reports and audit trails"
           action={

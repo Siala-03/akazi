@@ -97,7 +97,7 @@ export default function AdminCooperativesPage() {
             <PageHeader
                 icon={GitBranch}
                 iconColor="text-indigo-600 dark:text-indigo-400"
-                iconBg="bg-indigo-100 dark:bg-indigo-900/30"
+                iconBg="bg-transparent"
                 title="Cooperatives Management"
                 subtitle="Manage worker cooperatives"
                 action={

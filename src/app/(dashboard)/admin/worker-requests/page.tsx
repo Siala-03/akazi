@@ -111,7 +111,7 @@ export default function AdminWorkerRequestsPage() {
             <PageHeader
                 icon={ClipboardList}
                 iconColor="text-amber-600 dark:text-amber-400"
-                iconBg="bg-amber-100 dark:bg-amber-900/30"
+                iconBg="bg-transparent"
                 title="Worker Requests"
                 subtitle="Review and respond to exporter staffing requests"
                 action={stats.pending > 0 ? (
@@ -125,10 +125,10 @@ export default function AdminWorkerRequestsPage() {
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total',     value: stats.total,     icon: ClipboardList, colorClass: 'bg-gray-50 border-gray-200',    iconClass: 'bg-gray-100 text-gray-600' },
-                    { label: 'Pending',   value: stats.pending,   icon: Clock,         colorClass: 'bg-amber-50 border-amber-200',  iconClass: 'bg-amber-100 text-amber-600' },
-                    { label: 'Approved',  value: stats.approved,  icon: CheckCircle,   colorClass: 'bg-green-50 border-green-200',  iconClass: 'bg-green-100 text-green-600' },
-                    { label: 'Fulfilled', value: stats.fulfilled, icon: CheckSquare,   colorClass: 'bg-blue-50 border-blue-200',    iconClass: 'bg-blue-100 text-blue-600' },
+                    { label: 'Total',     value: stats.total,     icon: ClipboardList, colorClass: 'bg-gray-50 border-gray-200',    iconClass: 'text-gray-600' },
+                    { label: 'Pending',   value: stats.pending,   icon: Clock,         colorClass: 'bg-amber-50 border-amber-200',  iconClass: 'text-amber-600' },
+                    { label: 'Approved',  value: stats.approved,  icon: CheckCircle,   colorClass: 'bg-green-50 border-green-200',  iconClass: 'text-green-600' },
+                    { label: 'Fulfilled', value: stats.fulfilled, icon: CheckSquare,   colorClass: 'bg-blue-50 border-blue-200',    iconClass: 'text-blue-600' },
                 ].map(({ label, value, icon: Icon, colorClass, iconClass }) => (
                     <div key={label} className={`rounded-xl border shadow-sm p-4 flex items-center gap-3 ${colorClass}`}>
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${iconClass}`}>
@@ -195,7 +195,7 @@ export default function AdminWorkerRequestsPage() {
                                     >
                                         {/* Exporter info */}
                                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                                            <div className="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0">
+                                            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
                                                 <Building2 className="w-4 h-4 text-emerald-600" />
                                             </div>
                                             <div className="min-w-0">

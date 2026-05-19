@@ -145,6 +145,7 @@ export default function ProfilePage() {
 
             <PageHeader
                 icon={User}
+                iconBg="bg-transparent"
                 title="My Profile"
                 subtitle="Manage your account settings and preferences"
             />

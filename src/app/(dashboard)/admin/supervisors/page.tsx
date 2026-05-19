@@ -159,7 +159,7 @@ export default function AdminSupervisorsPage() {
             <PageHeader
                 icon={Shield}
                 iconColor="text-violet-600 dark:text-violet-400"
-                iconBg="bg-violet-100 dark:bg-violet-900/30"
+                iconBg="bg-transparent"
                 title="Supervisors"
                 subtitle="Manage supervisor accounts and access"
                 action={
@@ -175,7 +175,7 @@ export default function AdminSupervisorsPage() {
             {/* Summary cards */}
             <div className="grid grid-cols-3 gap-4">
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <Shield className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     </div>
                     <div>
@@ -184,7 +184,7 @@ export default function AdminSupervisorsPage() {
                     </div>
                 </div>
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-green-200 dark:border-green-800 shadow-sm p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <Power className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
@@ -193,7 +193,7 @@ export default function AdminSupervisorsPage() {
                     </div>
                 </div>
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <PowerOff className="w-5 h-5 text-gray-400" />
                     </div>
                     <div>

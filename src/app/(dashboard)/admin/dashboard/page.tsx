@@ -73,7 +73,7 @@ export default function AdminDashboard() {
             color: 'emerald',
             hoverBorder: 'hover:border-emerald-500',
             hoverBg: 'hover:bg-emerald-50 dark:hover:bg-emerald-900/20',
-            iconBg: 'bg-emerald-100 dark:bg-emerald-900/30',
+            iconBg: '',
             iconColor: 'text-emerald-600',
         },
         {
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
             color: 'blue',
             hoverBorder: 'hover:border-blue-500',
             hoverBg: 'hover:bg-blue-50 dark:hover:bg-blue-900/20',
-            iconBg: 'bg-blue-100 dark:bg-blue-900/30',
+            iconBg: '',
             iconColor: 'text-blue-600',
         },
         {
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
             color: 'purple',
             hoverBorder: 'hover:border-purple-500',
             hoverBg: 'hover:bg-purple-50 dark:hover:bg-purple-900/20',
-            iconBg: 'bg-purple-100 dark:bg-purple-900/30',
+            iconBg: '',
             iconColor: 'text-purple-600',
         },
         {
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
             color: 'orange',
             hoverBorder: 'hover:border-orange-500',
             hoverBg: 'hover:bg-orange-50 dark:hover:bg-orange-900/20',
-            iconBg: 'bg-orange-100 dark:bg-orange-900/30',
+            iconBg: '',
             iconColor: 'text-orange-600',
         },
     ];
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
             sub: `${analytics?.activeWorkers || 0} active`,
             icon: Users,
             border: 'border-l-blue-500',
-            iconBg: 'bg-blue-100 dark:bg-blue-900/30',
+            iconBg: '',
             iconColor: 'text-blue-600',
             subColor: 'text-blue-600 dark:text-blue-400',
         },
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
             sub: 'On-site now',
             icon: UserCheck,
             border: 'border-l-emerald-500',
-            iconBg: 'bg-emerald-100 dark:bg-emerald-900/30',
+            iconBg: '',
             iconColor: 'text-emerald-600',
             subColor: 'text-emerald-600 dark:text-emerald-400',
         },
@@ -138,7 +138,7 @@ export default function AdminDashboard() {
             sub: 'Sorting now',
             icon: Activity,
             border: 'border-l-purple-500',
-            iconBg: 'bg-purple-100 dark:bg-purple-900/30',
+            iconBg: '',
             iconColor: 'text-purple-600',
             subColor: 'text-purple-600 dark:text-purple-400',
             pulse: (analytics?.activeSessions || 0) > 0,
@@ -149,7 +149,7 @@ export default function AdminDashboard() {
             sub: `${analytics?.totalKilogramsToday || 0} kg`,
             icon: Package,
             border: 'border-l-amber-500',
-            iconBg: 'bg-amber-100 dark:bg-amber-900/30',
+            iconBg: '',
             iconColor: 'text-amber-600',
             subColor: 'text-amber-600 dark:text-amber-400',
         },
@@ -159,7 +159,7 @@ export default function AdminDashboard() {
             sub: `${analytics?.activeExporters || 0} active`,
             icon: Building2,
             border: 'border-l-indigo-500',
-            iconBg: 'bg-indigo-100 dark:bg-indigo-900/30',
+            iconBg: '',
             iconColor: 'text-indigo-600',
             subColor: 'text-indigo-600 dark:text-indigo-400',
         },
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
             sub: `${analytics?.workerDaysToday || 0} worker-days billed`,
             icon: DollarSign,
             border: 'border-l-green-500',
-            iconBg: 'bg-green-100 dark:bg-green-900/30',
+            iconBg: '',
             iconColor: 'text-green-600',
             subColor: 'text-green-600 dark:text-green-400',
         },
@@ -187,7 +187,7 @@ export default function AdminDashboard() {
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                                 <TrendingUp className="w-7 h-7 text-white" />
                             </div>
                             <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">Admin Dashboard</h1>
@@ -314,7 +314,7 @@ export default function AdminDashboard() {
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Attendance Trend</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Last 7 days</p>
                         </div>
-                        <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                             <Users className="w-5 h-5 text-emerald-600" />
                         </div>
                     </div>
@@ -346,7 +346,7 @@ export default function AdminDashboard() {
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bags Processed</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Last 7 days</p>
                         </div>
-                        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                             <Package className="w-5 h-5 text-purple-600" />
                         </div>
                     </div>
@@ -415,7 +415,7 @@ export default function AdminDashboard() {
                                     <tr key={exp.exporterId} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center shrink-0">
+                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
                                                     <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{i + 1}</span>
                                                 </div>
                                                 <div>
@@ -485,7 +485,7 @@ export default function AdminDashboard() {
                                 className={`group p-5 border-2 border-gray-200 dark:border-gray-700 rounded-xl ${action.hoverBorder} ${action.hoverBg} transition-all hover:shadow-md`}
                             >
                                 <div className="flex items-start gap-3">
-                                    <div className={`w-10 h-10 ${action.iconBg} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
+                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
                                         <Icon className={`w-5 h-5 ${action.iconColor}`} />
                                     </div>
                                     <div className="flex-1 min-w-0">

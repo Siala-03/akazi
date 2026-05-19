@@ -238,6 +238,7 @@ export default function AdminWorkersPage() {
 
             <PageHeader
                 icon={Users}
+                iconBg="bg-transparent"
                 title="Workers Management"
                 subtitle="Manage all workers across cooperatives"
                 action={

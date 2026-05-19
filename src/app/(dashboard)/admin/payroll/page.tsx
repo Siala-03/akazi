@@ -112,6 +112,7 @@ export default function PayrollPage() {
 
             <PageHeader
                 icon={FileSpreadsheet}
+                iconBg="bg-transparent"
                 title="Weekly Payroll"
                 subtitle={weekLabel
                     ? `${weekLabel} · FRw ${(summary?.workerDailyWage || 1700).toLocaleString()} / worker-day`
@@ -219,7 +220,7 @@ export default function PayrollPage() {
                     },
                 ].map(({ label, value, sub, icon: Icon, format, accent }) => (
                     <div key={label} className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 shadow-sm p-5 flex flex-col gap-3">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${accent === 'emerald' ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : 'bg-teal-50/50 dark:bg-teal-900/10'}`}>
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center">
                             <Icon className={`w-4 h-4 ${accent === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : 'text-teal-600 dark:text-teal-400'}`} />
                         </div>
                         <div>

@@ -212,6 +212,7 @@ export default function AdminExportersPage() {
 
             <PageHeader
                 icon={Building2}
+                iconBg="bg-transparent"
                 title="Exporters"
                 subtitle="Manage coffee exporters and sorting rates"
                 action={
@@ -227,7 +228,7 @@ export default function AdminExportersPage() {
             {/* Summary cards */}
             <div className="grid grid-cols-3 gap-4">
                 <div className="card rounded-xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700/50 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <Building2 className="w-5 h-5 text-gray-600" />
                     </div>
                     <div>
@@ -236,7 +237,7 @@ export default function AdminExportersPage() {
                     </div>
                 </div>
                 <div className="card rounded-xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <Power className="w-5 h-5 text-emerald-600" />
                     </div>
                     <div>
@@ -245,7 +246,7 @@ export default function AdminExportersPage() {
                     </div>
                 </div>
                 <div className="card rounded-xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700/50 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                         <PowerOff className="w-5 h-5 text-gray-400" />
                     </div>
                     <div>
@@ -325,7 +326,7 @@ export default function AdminExportersPage() {
                                     <tr key={exp._id} className="hover:bg-emerald-50/30 transition-colors">
                                         <td className="px-4 sm:px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0">
+                                                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
                                                     <Building2 className="w-4 h-4 text-emerald-600" />
                                                 </div>
                                                 <div className="min-w-0">
