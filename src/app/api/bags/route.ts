@@ -2,25 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { generateBagNumber } from '@/lib/utils';
-import { toMongo } from '@/lib/serialize';
 
 function serializeBag(bag: any) {
     try {
-        const { workers: bagWorkers, exporter, facility, supervisor, ...rest } = bag;
         return {
-            ...rest,
-            _id: rest.id,
-            exporterId: exporter ? toMongo(exporter) : (rest.exporterId || null),
-            facilityId: facility ? toMongo(facility) : (rest.facilityId || null),
-            supervisorId: rest.supervisorId,
-            workers: (bagWorkers ?? []).map((bw: any) => ({
+            _id: bag.id,
+            id: bag.id,
+            bagNumber: bag.bagNumber,
+            exporterId: bag.exporterId,
+            facilityId: bag.facilityId,
+            date: bag.date,
+            startedAt: bag.startedAt,
+            completedAt: bag.completedAt,
+            weight: bag.weight,
+            status: bag.status,
+            supervisorId: bag.supervisorId,
+            createdAt: bag.createdAt,
+            updatedAt: bag.updatedAt,
+            exporter: bag.exporter ? { _id: bag.exporter.id, id: bag.exporter.id, ...bag.exporter } : null,
+            facility: bag.facility ? { _id: bag.facility.id, id: bag.facility.id, ...bag.facility } : null,
+            workers: (bag.workers ?? []).map((bw: any) => ({
                 _id: bw.id,
-                workerId: bw.worker ? toMongo(bw.worker) : (bw.workerId || null),
+                id: bw.id,
+                bagId: bw.bagId,
+                workerId: bw.workerId,
                 sessionId: bw.sessionId,
+                worker: bw.worker ? { _id: bw.worker.id, id: bw.worker.id, ...bw.worker } : null,
             })),
         };
     } catch (e) {
-        console.error('serializeBag error:', e);
+        console.error('serializeBag error for bag:', bag?.id, e);
         throw e;
     }
 }
@@ -114,14 +125,13 @@ export async function GET(request: NextRequest) {
                 facility: true,
                 workers: { include: { worker: true } },
             },
-            orderBy: [{ createdAt: 'desc' }, { date: 'desc' }],
+            orderBy: { createdAt: 'desc' },
             take: 200,
         });
 
         return NextResponse.json({ bags: bags.map(serializeBag) });
     } catch (error) {
         console.error('Get bags error:', error);
-        console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
         return NextResponse.json(
             { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
             { status: 500 }
