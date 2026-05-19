@@ -1097,12 +1097,12 @@ export default function OperationsPage() {
                                 <table className="w-full table-compact">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker ID</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-in Time</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Session</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
+                                            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
+                                            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Worker ID</th>
+                                            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check-in Time</th>
+                                            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                                            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Session</th>
+                                            <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
@@ -1123,15 +1123,15 @@ export default function OperationsPage() {
                                                 
                                                 return (
                                                     <tr key={att._id} className="hover:bg-gray-50">
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex items-center gap-3">
+                                                        <td className="px-6 py-2.5">
+                                                            <div className="flex items-center gap-2">
                                                                 <span className="font-medium text-gray-900">{att.workerId.fullName}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-4">
+                                                        <td className="px-6 py-2.5">
                                                             <span className="text-sm font-mono font-semibold text-gray-700">{att.workerId.workerId}</span>
                                                         </td>
-                                                        <td className="px-6 py-4">
+                                                        <td className="px-6 py-2.5">
                                                             <div className="flex items-center gap-2 text-sm text-gray-600">
                                                                 <Clock className="w-4 h-4 text-gray-400" />
                                                                 {new Date(att.checkInTime).toLocaleTimeString('en-US', {
@@ -1140,10 +1140,10 @@ export default function OperationsPage() {
                                                                 })}
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-4">
+                                                        <td className="px-6 py-2.5">
                                                             <span className="font-medium text-gray-700">{durationDisplay}</span>
                                                         </td>
-                                                        <td className="px-6 py-4">
+                                                        <td className="px-6 py-2.5">
                                                             {hasSession && session ? (
                                                                 <div className="flex flex-col gap-1">
                                                                     <span className="text-sm font-medium text-gray-900">{session.exporterId.companyTradingName}</span>
@@ -1153,11 +1153,11 @@ export default function OperationsPage() {
                                                                 <span className="text-sm text-gray-500 italic">No active session</span>
                                                             )}
                                                         </td>
-                                                        <td className="px-6 py-4 text-right">
+                                                        <td className="px-6 py-2.5 text-right">
                                                             <button
                                                                 onClick={() => handleCheckOut(att._id)}
                                                                 disabled={loading}
-                                                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium disabled:opacity-50 transition-colors"
+                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium text-sm disabled:opacity-50 transition-colors"
                                                             >
                                                                 <UserX className="w-4 h-4" />
                                                                 Check Out
