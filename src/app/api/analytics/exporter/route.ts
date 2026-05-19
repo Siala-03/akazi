@@ -54,6 +54,16 @@ export async function GET(request: NextRequest) {
             rangeEnd = endOfDay;
         }
 
+        if (Number.isNaN(rangeStart.getTime()) || Number.isNaN(rangeEnd.getTime())) {
+            return NextResponse.json({ error: 'Invalid date range' }, { status: 400 });
+        }
+
+        if (rangeStart > rangeEnd) {
+            const temp = rangeStart;
+            rangeStart = rangeEnd;
+            rangeEnd = temp;
+        }
+
         const sevenDaysAgo = new Date(today);
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -77,6 +87,9 @@ export async function GET(request: NextRequest) {
             sessionsToday,
             weightAgg,
             workersEngagedRows,
+            periodBags,
+            periodWeightAgg,
+            periodWorkersEngagedRows,
         ] = await Promise.all([
             prisma.bag.count({ where: { exporterId, date: { gte: startOfDay, lte: endOfDay } } }),
             prisma.bag.count({ where: { exporterId, date: { gte: sevenDaysAgo, lte: endOfDay } } }),
@@ -92,6 +105,14 @@ export async function GET(request: NextRequest) {
                 FROM "BagWorker" bw
                 INNER JOIN "Bag" b ON b.id = bw."bagId"
                 WHERE b."exporterId" = ${exporterId}`,
+            prisma.bag.count({ where: { exporterId, date: { gte: rangeStart, lte: rangeEnd } } }),
+            prisma.bag.aggregate({ where: { exporterId, date: { gte: rangeStart, lte: rangeEnd } }, _sum: { weight: true } }),
+            prisma.$queryRaw<{ count: bigint }[]>`
+                SELECT COUNT(DISTINCT bw."workerId")::bigint AS count
+                FROM "BagWorker" bw
+                INNER JOIN "Bag" b ON b.id = bw."bagId"
+                WHERE b."exporterId" = ${exporterId}
+                    AND b.date >= ${rangeStart} AND b.date <= ${rangeEnd}`,
         ]);
 
         // ── Worker-day cost model (per-exporter) ──────────────────────────────
@@ -126,8 +147,17 @@ export async function GET(request: NextRequest) {
         const cumulativeWorkerWages = workerDaysCumulative * WORKER_DAILY_WAGE;
 
         const workersEngaged = Number(workersEngagedRows[0]?.count ?? 0);
+        const periodWorkersEngaged = Number(periodWorkersEngagedRows[0]?.count ?? 0);
         const totalWeight = weightAgg._sum.weight ?? 0;
+        const periodWeight = periodWeightAgg._sum.weight ?? 0;
         const totalWeightToday = bagsToday * 60;
+        const periodDays = Math.max(1, Math.ceil((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+        const periodAvgBagsPerDay = periodBags / periodDays;
+
+        const periodSessionsCount = workerDaysToday;
+        const periodCostToExporter = periodSessionsCount * EXPORTER_DAILY_RATE;
+        const periodWorkerWages = periodSessionsCount * WORKER_DAILY_WAGE;
+        const periodCoopMargin = periodCostToExporter - periodWorkerWages;
 
         let totalHoursWorked = 0;
         for (const session of sessionsToday) {
@@ -175,6 +205,17 @@ export async function GET(request: NextRequest) {
                 totalHoursWorked: Math.round(totalHoursWorked * 10) / 10,
                 bagsThisWeek,
                 bagsThisMonth,
+                periodStart: rangeStart.toISOString(),
+                periodEnd: rangeEnd.toISOString(),
+                periodDays,
+                periodBags,
+                periodWeight,
+                periodWorkersEngaged,
+                periodSessionsCount,
+                periodAvgBagsPerDay: Math.round(periodAvgBagsPerDay * 10) / 10,
+                periodCostToExporter,
+                periodWorkerWages,
+                periodCoopMargin,
                 // Worker-day cost model
                 workerDaysToday,
                 workerDaysWeek,

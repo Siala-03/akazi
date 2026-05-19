@@ -48,7 +48,8 @@ export default function ExporterDashboard() {
     const [exporterInfo, setExporterInfo] = useState({ name: 'Exporter', code: 'EXP' });
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedWeek, setSelectedWeek] = useState(getWeekStart(new Date()));
-    const [filterMode, setFilterMode] = useState<'week' | 'custom'>('week');
+    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+    const [filterMode, setFilterMode] = useState<'week' | 'month' | 'custom'>('week');
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
     const ITEMS_PER_PAGE = 10;
@@ -62,6 +63,12 @@ export default function ExporterDashboard() {
                 const weekEnd = getWeekEnd(new Date(selectedWeek));
                 params.append('startDate', selectedWeek);
                 params.append('endDate', weekEnd);
+            } else if (filterMode === 'month') {
+                const [year, month] = selectedMonth.split('-').map(Number);
+                const monthStart = new Date(year, month - 1, 1);
+                const monthEnd = new Date(year, month, 0);
+                params.append('startDate', monthStart.toISOString().split('T')[0]);
+                params.append('endDate', monthEnd.toISOString().split('T')[0]);
             } else if (customStartDate && customEndDate) {
                 params.append('startDate', customStartDate);
                 params.append('endDate', customEndDate);
@@ -91,7 +98,7 @@ export default function ExporterDashboard() {
         } finally {
             setLoading(false);
         }
-    }, [filterMode, selectedWeek, customStartDate, customEndDate]);
+    }, [filterMode, selectedWeek, selectedMonth, customStartDate, customEndDate]);
 
     useEffect(() => {
         fetchData();
@@ -186,6 +193,12 @@ export default function ExporterDashboard() {
                         >
                             Custom
                         </button>
+                        <button
+                            onClick={() => setFilterMode('month')}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${filterMode === 'month' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-emerald-400'}`}
+                        >
+                            Month
+                        </button>
                     </div>
 
                     {filterMode === 'week' ? (
@@ -217,6 +230,15 @@ export default function ExporterDashboard() {
                                 );
                             })()}
                         </div>
+                    ) : filterMode === 'month' ? (
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="month"
+                                value={selectedMonth}
+                                onChange={e => setSelectedMonth(e.target.value)}
+                                className="px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-shadow"
+                            />
+                        </div>
                     ) : (
                         <div className="flex items-center gap-2">
                             <input
@@ -247,8 +269,8 @@ export default function ExporterDashboard() {
                         <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Bags</p>
-                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.totalBags || 0}</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">All time processed</p>
+                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.periodBags || 0}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Selected period</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -259,8 +281,8 @@ export default function ExporterDashboard() {
                         <BarChart3 className="w-5 h-5 text-purple-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Workers Engaged</p>
-                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.workersEngaged || 0}</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Unique workers</p>
+                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.periodWorkersEngaged || 0}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Unique workers in period</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-emerald-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -271,8 +293,8 @@ export default function ExporterDashboard() {
                         <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Weight</p>
-                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.totalWeight?.toLocaleString() || 0}</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">kg processed</p>
+                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.periodWeight?.toLocaleString() || 0}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">kg in selected period</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-amber-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -283,8 +305,8 @@ export default function ExporterDashboard() {
                         <TrendingUp className="w-5 h-5 text-amber-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Average</p>
-                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.avgBagsPerDay?.toFixed(1) || 0}</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">bags per day</p>
+                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.periodAvgBagsPerDay?.toFixed(1) || 0}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">avg bags per day in period</p>
                 </div>
             </div>
 
@@ -298,12 +320,12 @@ export default function ExporterDashboard() {
                         </div>
                         <TrendingUp className="w-5 h-5 text-green-500" />
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Labor Cost</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Period Labor Cost</p>
                     <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
-                        {fmt(analytics?.dailyCost || 0)}
+                        {fmt(analytics?.periodCostToExporter || 0)}
                     </p>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        {analytics?.sessionsTodayCount || analytics?.workerDaysToday || 0} sessions @ FRw {(analytics?.ratePerWorkerDay || 2000).toLocaleString()}/session
+                        {analytics?.periodSessionsCount || 0} sessions @ FRw {(analytics?.ratePerWorkerDay || 2000).toLocaleString()}/session
                     </p>
                 </div>
 
@@ -315,12 +337,12 @@ export default function ExporterDashboard() {
                         </div>
                         <Calendar className="w-5 h-5 text-blue-500" />
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Weekly Cost</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Worker Wages (Period)</p>
                     <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
-                        {fmt(analytics?.weeklyCost || 0)}
+                        {fmt(analytics?.periodWorkerWages || 0)}
                     </p>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        {analytics?.sessionsWeekCount || analytics?.workerDaysWeek || 0} sessions this week · wages paid Fri
+                        FRw {(analytics?.workerDailyWage || 1700).toLocaleString()}/session
                     </p>
                 </div>
 
@@ -332,12 +354,12 @@ export default function ExporterDashboard() {
                         </div>
                         <BarChart3 className="w-5 h-5 text-orange-500" />
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Cumulative Cost</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Cooperative Margin (Period)</p>
                     <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
-                        {fmt(analytics?.cumulativeCost || 0)}
+                        {fmt(analytics?.periodCoopMargin || 0)}
                     </p>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        {analytics?.sessionsCumulativeCount || analytics?.workerDaysCumulative || 0} total sessions
+                        Revenue - wages in selected period
                     </p>
                 </div>
             </div>
@@ -350,6 +372,8 @@ export default function ExporterDashboard() {
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             {filterMode === 'week' 
                                 ? `Week of ${fmtDate(selectedWeek)}`
+                                : filterMode === 'month'
+                                ? selectedMonth
                                 : customStartDate && customEndDate 
                                 ? `${fmtDate(customStartDate)} – ${fmtDate(customEndDate)}`
                                 : 'All time data'
@@ -368,12 +392,12 @@ export default function ExporterDashboard() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Period Total</p>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics?.bagsThisWeek || 0}</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics?.periodBags || 0}</p>
                             </div>
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                             <span>Bags processed</span>
-                            <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.weeklyCost || 0)}</span>
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.periodCostToExporter || 0)}</span>
                         </div>
                     </div>
 
