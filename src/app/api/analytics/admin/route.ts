@@ -85,22 +85,16 @@ export async function GET(request: NextRequest) {
         // Count distinct (workerId, date) from Session as "worker-days"
         const [workerDaysTodayRows, workerDaysWeekRows, workerDaysCumulativeRows] = await Promise.all([
             prisma.$queryRaw<{ count: bigint }[]>`
-                SELECT COUNT(*)::bigint AS count FROM (
-                    SELECT DISTINCT "workerId", DATE(date)
-                    FROM "Session"
-                    WHERE date >= ${startOfDay} AND date <= ${endOfDay}
-                ) AS sub`,
+                SELECT COUNT(*)::bigint AS count
+                FROM "Session"
+                WHERE date >= ${startOfDay} AND date <= ${endOfDay}`,
             prisma.$queryRaw<{ count: bigint }[]>`
-                SELECT COUNT(*)::bigint AS count FROM (
-                    SELECT DISTINCT "workerId", DATE(date)
-                    FROM "Session"
-                    WHERE date >= ${weekStart} AND date <= ${weekEnd}
-                ) AS sub`,
+                SELECT COUNT(*)::bigint AS count
+                FROM "Session"
+                WHERE date >= ${weekStart} AND date <= ${weekEnd}`,
             prisma.$queryRaw<{ count: bigint }[]>`
-                SELECT COUNT(*)::bigint AS count FROM (
-                    SELECT DISTINCT "workerId", DATE(date)
-                    FROM "Session"
-                ) AS sub`,
+                SELECT COUNT(*)::bigint AS count
+                FROM "Session"`,
         ]);
 
         const workerDaysToday = Number(workerDaysTodayRows[0]?.count ?? 0);
@@ -127,11 +121,9 @@ export async function GET(request: NextRequest) {
         if (uniqueExporterIds.length > 0) {
             // Worker-days per exporter today
             const exporterWorkerDaysRows = await prisma.$queryRaw<{ exporterId: string; worker_days: bigint }[]>`
-                SELECT "exporterId", COUNT(*)::bigint AS worker_days FROM (
-                    SELECT DISTINCT "exporterId", "workerId", DATE(date)
-                    FROM "Session"
-                    WHERE date >= ${startOfDay} AND date <= ${endOfDay}
-                ) AS sub
+                SELECT "exporterId", COUNT(*)::bigint AS worker_days
+                FROM "Session"
+                WHERE date >= ${startOfDay} AND date <= ${endOfDay}
                 GROUP BY "exporterId"`;
 
             const exporterWorkerDaysMap = new Map(exporterWorkerDaysRows.map(r => [r.exporterId, Number(r.worker_days)]));
@@ -233,6 +225,9 @@ export async function GET(request: NextRequest) {
                 workerDaysToday,
                 workerDaysWeek,
                 workerDaysCumulative,
+                sessionsTodayCount: workerDaysToday,
+                sessionsWeekCount: workerDaysWeek,
+                sessionsCumulativeCount: workerDaysCumulative,
                 dailyCostToExporters,
                 dailyWorkerWages,
                 dailyCoopMargin,

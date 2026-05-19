@@ -197,7 +197,7 @@ export default function ExporterDashboard() {
                         {fmt(analytics?.dailyCost || 0)}
                     </p>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        {analytics?.workerDaysToday || 0} worker-days @ FRw {(analytics?.ratePerWorkerDay || 2000).toLocaleString()}/day
+                        {analytics?.sessionsTodayCount || analytics?.workerDaysToday || 0} sessions @ FRw {(analytics?.ratePerWorkerDay || 2000).toLocaleString()}/session
                     </p>
                 </div>
 
@@ -214,7 +214,7 @@ export default function ExporterDashboard() {
                         {fmt(analytics?.weeklyCost || 0)}
                     </p>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        {analytics?.workerDaysWeek || 0} worker-days this week · wages paid Fri
+                        {analytics?.sessionsWeekCount || analytics?.workerDaysWeek || 0} sessions this week · wages paid Fri
                     </p>
                 </div>
 
@@ -231,7 +231,7 @@ export default function ExporterDashboard() {
                         {fmt(analytics?.cumulativeCost || 0)}
                     </p>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        {analytics?.workerDaysCumulative || 0} total worker-days
+                        {analytics?.sessionsCumulativeCount || analytics?.workerDaysCumulative || 0} total sessions
                     </p>
                 </div>
             </div>

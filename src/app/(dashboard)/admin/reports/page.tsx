@@ -34,6 +34,7 @@ interface ExporterReport {
 interface WorkerReport {
   workerId: string;
   workerName: string;
+  sessionCount: number;
   daysWorked: number;
   exportersServed: string[];
   bagsContributed: number;
@@ -118,18 +119,21 @@ export default function AdminReportsPage() {
   const loadExporterReports = async (params: URLSearchParams) => {
     try {
       // Fetch exporters, bags, and settings from real API
-      const [exportersRes, bagsRes, settingsRes] = await Promise.all([
+      const [exportersRes, bagsRes, sessionsRes, settingsRes] = await Promise.all([
         fetch('/api/exporters'),
         fetch(`/api/bags?${params.toString()}`),
+        fetch(`/api/sessions?all=true&${params.toString()}`),
         fetch('/api/admin/settings')
       ]);
 
       const exportersData = await exportersRes.json();
       const bagsData = await bagsRes.json();
+      const sessionsData = await sessionsRes.json();
       const settingsData = await settingsRes.json();
 
       const exporters = exportersData.exporters || [];
       const bags = bagsData.bags || [];
+      const sessions = sessionsData.sessions || [];
       const workerDailyWage = settingsData.settings?.workerDailyWage || 1700;
 
       // Calculate report for each exporter
@@ -155,8 +159,10 @@ export default function AdminReportsPage() {
           ? Number((totalWorkers / exporterBags.length).toFixed(1))
           : 0;
 
-        // Calculate labor cost (assuming 1500 RWF per bag per worker)
-        const laborCost = totalWorkers * workerDailyWage;
+        const exporterSessions = sessions.filter((session: any) =>
+          (session.exporterId?._id || session.exporterId) === exporter._id
+        );
+        const laborCost = exporterSessions.length * workerDailyWage;
 
         return {
           exporterId: formatExporterIdentifier(exporter),
@@ -246,6 +252,7 @@ export default function AdminReportsPage() {
         return {
           workerId: worker.workerId,
           workerName: worker.fullName,
+          sessionCount: workerSessions.length,
           daysWorked: uniqueDates.size,
           exportersServed: exporterNames,
           bagsContributed: workerBags.length,
@@ -255,9 +262,7 @@ export default function AdminReportsPage() {
       });
 
       // Filter out workers with no activity if date range is set
-      const filteredReports = reports.filter(r => 
-        !startDate || r.bagsContributed > 0
-      );
+      const filteredReports = reports.filter(r => !startDate || r.sessionCount > 0);
 
       setWorkerReports(filteredReports);
     } catch (error) {
@@ -317,6 +322,7 @@ export default function AdminReportsPage() {
           dateMap.get(dateKey).activeSessions++;
           const exporterId = session.exporterId?._id || session.exporterId;
           dateMap.get(dateKey).exporterIds.add(exporterId);
+          dateMap.get(dateKey).totalLaborCost += workerDailyWage;
         }
       });
 
@@ -325,9 +331,6 @@ export default function AdminReportsPage() {
         const dateKey = new Date(bag.date).toISOString().split('T')[0];
         if (dateMap.has(dateKey)) {
           dateMap.get(dateKey).bagsCompleted++;
-          // Calculate labor cost from admin-configured daily wage
-          const workerCount = bag.workers?.length || 0;
-          dateMap.get(dateKey).totalLaborCost += workerCount * workerDailyWage;
         }
       });
 

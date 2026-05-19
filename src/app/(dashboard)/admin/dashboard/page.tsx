@@ -166,7 +166,7 @@ export default function AdminDashboard() {
         {
             label: "Revenue Today",
             value: `FRw ${(analytics?.dailyCostToExporters || 0).toLocaleString()}`,
-            sub: `${analytics?.workerDaysToday || 0} worker-days billed`,
+            sub: `${analytics?.sessionsTodayCount || analytics?.workerDaysToday || 0} sessions billed`,
             icon: DollarSign,
             border: 'border-l-green-500',
             iconBg: '',
@@ -270,7 +270,7 @@ export default function AdminDashboard() {
                         FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Today · FRw {(analytics?.exporterDailyRate || 2000).toLocaleString()}/worker-day
+                        Today · FRw ${(analytics?.exporterDailyRate || 2000).toLocaleString()}/session
                     </p>
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
                         <span className="text-gray-500 dark:text-gray-400">This week</span>
@@ -283,7 +283,7 @@ export default function AdminDashboard() {
                         FRw {(analytics?.dailyWorkerWages || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Today · FRw {(analytics?.workerDailyWage || 1700).toLocaleString()}/worker-day · paid Fri
+                        Today · FRw ${(analytics?.workerDailyWage || 1700).toLocaleString()}/session · paid Fri
                     </p>
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
                         <span className="text-gray-500 dark:text-gray-400">This week</span>
@@ -296,7 +296,7 @@ export default function AdminDashboard() {
                         FRw {(analytics?.dailyCoopMargin || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Today · FRw {(analytics?.coopMarginPerDay || 300).toLocaleString()}/worker-day
+                        Today · FRw ${(analytics?.coopMarginPerDay || 300).toLocaleString()}/session
                     </p>
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
                         <span className="text-gray-500 dark:text-gray-400">Cumulative</span>
@@ -406,7 +406,7 @@ export default function AdminDashboard() {
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Exporter</th>
                                     <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags Today</th>
                                     <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight (kg)</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Worker-Days</th>
+                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions</th>
                                     <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Billed Today</th>
                                 </tr>
                             </thead>
@@ -436,7 +436,7 @@ export default function AdminDashboard() {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                                {exp.workerDaysToday ?? 0}
+                                                {exp.sessionsTodayCount ?? exp.workerDaysToday ?? 0}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
@@ -457,7 +457,7 @@ export default function AdminDashboard() {
                                         {(analytics?.totalKilogramsToday || 0).toLocaleString()}
                                     </td>
                                     <td className="px-6 py-3 text-right text-sm font-bold text-gray-700 dark:text-gray-300">
-                                        {(analytics?.workerDaysToday || 0)}
+                                        {(analytics?.sessionsTodayCount || analytics?.workerDaysToday || 0)}
                                     </td>
                                     <td className="px-6 py-3 text-right text-sm font-bold text-blue-600 dark:text-blue-400">
                                         FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}

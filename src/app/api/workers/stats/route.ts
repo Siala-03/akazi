@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { getSettings } from '@/lib/settings';
 
 export async function GET() {
     try {
@@ -9,7 +10,7 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const SESSION_RATE = 2000;
+        const { workerDailyWage: SESSION_RATE } = await getSettings();
 
         const [totalActiveWorkers, totalInactiveWorkers] = await Promise.all([
             prisma.worker.count({ where: { status: 'active' } }),

@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import QRCode from 'qrcode';
 import { sendQrBadgeEmail } from '@/lib/email';
 import { toMongoArray, toMongo } from '@/lib/serialize';
+import { getSettings } from '@/lib/settings';
 
 export async function GET(request: NextRequest) {
     try {
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 7);
 
-        const SESSION_RATE = 2000;
+        const { workerDailyWage: SESSION_RATE } = await getSettings();
         const sessionCounts = await prisma.session.groupBy({
             by: ['workerId'],
             where: {

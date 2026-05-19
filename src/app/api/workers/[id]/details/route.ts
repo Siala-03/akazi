@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfMonth, getEndOfMonth } from '@/lib/utils';
+import { getSettings } from '@/lib/settings';
 
 export async function GET(
     _request: NextRequest,
@@ -14,7 +15,7 @@ export async function GET(
         }
 
         const { id: workerId } = await params;
-        const DEFAULT_HOURLY_RATE = 50;
+        const { workerDailyWage } = await getSettings();
 
         const workerSessions = await prisma.session.findMany({
             where: { workerId },
@@ -31,7 +32,7 @@ export async function GET(
         }
 
         const totalBags = await prisma.bagWorker.count({ where: { workerId } });
-        const earnings = totalHours * DEFAULT_HOURLY_RATE;
+        const earnings = workerSessions.length * workerDailyWage;
 
         const today = new Date();
         const daysWorkedThisMonth = await prisma.attendance.count({

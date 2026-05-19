@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { toMongo } from '@/lib/serialize';
+import { getSettings } from '@/lib/settings';
 
 export async function GET(request: NextRequest) {
     try {
@@ -33,34 +34,48 @@ export async function GET(request: NextRequest) {
             orderBy: { date: 'desc' },
         });
 
-        const rateCard = await prisma.rateCard.findFirst({
-            where: { isActive: true },
-            orderBy: { effectiveFrom: 'desc' },
+        const sessionsWhere: any = {};
+        if (startDate && endDate) {
+            sessionsWhere.date = { gte: new Date(startDate), lte: new Date(endDate) };
+        }
+        if (workerIdParam) sessionsWhere.workerId = workerIdParam;
+        if (exporterIdParam) sessionsWhere.exporterId = exporterIdParam;
+
+        const sessions = await prisma.session.findMany({
+            where: sessionsWhere,
+            include: { worker: true, exporter: true },
+            orderBy: { date: 'desc' },
         });
-        const ratePerBag = rateCard?.ratePerBag || 1000;
+
+        const { workerDailyWage } = await getSettings();
 
         const workerEarnings: Record<string, any> = {};
         const exporterStats: Record<string, any> = {};
 
         for (const bag of bags) {
-            const workersCount = bag.workers.length;
-            const earningPerWorker = ratePerBag / workersCount;
-
             for (const bw of bag.workers) {
                 const wid = bw.workerId;
                 if (!workerEarnings[wid]) {
-                    workerEarnings[wid] = { worker: toMongo(bw.worker), bagsContributed: 0, totalEarnings: 0 };
+                    workerEarnings[wid] = { worker: toMongo(bw.worker), bagsContributed: 0, sessionCount: 0, totalEarnings: 0 };
                 }
                 workerEarnings[wid].bagsContributed++;
-                workerEarnings[wid].totalEarnings += earningPerWorker;
             }
+        }
 
-            const eid = bag.exporterId;
-            if (!exporterStats[eid]) {
-                exporterStats[eid] = { exporter: toMongo(bag.exporter), totalBags: 0, totalCost: 0 };
+        for (const session of sessions) {
+            const wid = session.workerId;
+            if (!workerEarnings[wid]) {
+                workerEarnings[wid] = { worker: toMongo(session.worker), bagsContributed: 0, sessionCount: 0, totalEarnings: 0 };
             }
-            exporterStats[eid].totalBags++;
-            exporterStats[eid].totalCost += ratePerBag;
+            workerEarnings[wid].sessionCount++;
+            workerEarnings[wid].totalEarnings += workerDailyWage;
+
+            const eid = session.exporterId;
+            if (!exporterStats[eid]) {
+                exporterStats[eid] = { exporter: toMongo(session.exporter), totalSessions: 0, totalCost: 0 };
+            }
+            exporterStats[eid].totalSessions++;
+            exporterStats[eid].totalCost += workerDailyWage;
         }
 
         return NextResponse.json({
@@ -76,8 +91,8 @@ export async function GET(request: NextRequest) {
             }),
             summary: {
                 totalBags: bags.length,
-                totalEarnings: bags.length * ratePerBag,
-                ratePerBag,
+                totalEarnings: sessions.length * workerDailyWage,
+                workerDailyWage,
                 uniqueWorkers: Object.keys(workerEarnings).length,
                 uniqueExporters: Object.keys(exporterStats).length,
             },

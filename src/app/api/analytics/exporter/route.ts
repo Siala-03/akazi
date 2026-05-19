@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
                     bagsToday: 0, totalWeightToday: 0, totalHoursWorked: 0,
                     bagsThisWeek: 0, bagsThisMonth: 0,
                     workerDaysToday: 0, workerDaysWeek: 0, workerDaysCumulative: 0,
+                    sessionsTodayCount: 0, sessionsWeekCount: 0, sessionsCumulativeCount: 0,
                     dailyCost: 0, weeklyCost: 0, cumulativeCost: 0,
                     dailyWorkerWages: 0, weeklyWorkerWages: 0, cumulativeWorkerWages: 0,
                     ratePerWorkerDay: EXPORTER_DAILY_RATE,
@@ -75,27 +76,21 @@ export async function GET(request: NextRequest) {
         ]);
 
         // ── Worker-day cost model (per-exporter) ──────────────────────────────
-        const [workerDaysTodayRows, workerDaysWeekRows, workerDaysCumulativeRows] = await Promise.all([
+                const [workerDaysTodayRows, workerDaysWeekRows, workerDaysCumulativeRows] = await Promise.all([
             prisma.$queryRaw<{ count: bigint }[]>`
-                SELECT COUNT(*)::bigint AS count FROM (
-                    SELECT DISTINCT "workerId", DATE(date)
-                    FROM "Session"
-                    WHERE "exporterId" = ${exporterId}
-                      AND date >= ${startOfDay} AND date <= ${endOfDay}
-                ) AS sub`,
+                                SELECT COUNT(*)::bigint AS count
+                                FROM "Session"
+                                WHERE "exporterId" = ${exporterId}
+                                    AND date >= ${startOfDay} AND date <= ${endOfDay}`,
             prisma.$queryRaw<{ count: bigint }[]>`
-                SELECT COUNT(*)::bigint AS count FROM (
-                    SELECT DISTINCT "workerId", DATE(date)
-                    FROM "Session"
-                    WHERE "exporterId" = ${exporterId}
-                      AND date >= ${weekStart} AND date <= ${weekEnd}
-                ) AS sub`,
+                                SELECT COUNT(*)::bigint AS count
+                                FROM "Session"
+                                WHERE "exporterId" = ${exporterId}
+                                    AND date >= ${weekStart} AND date <= ${weekEnd}`,
             prisma.$queryRaw<{ count: bigint }[]>`
-                SELECT COUNT(*)::bigint AS count FROM (
-                    SELECT DISTINCT "workerId", DATE(date)
-                    FROM "Session"
-                    WHERE "exporterId" = ${exporterId}
-                ) AS sub`,
+                                SELECT COUNT(*)::bigint AS count
+                                FROM "Session"
+                                WHERE "exporterId" = ${exporterId}`,
         ]);
 
         const workerDaysToday = Number(workerDaysTodayRows[0]?.count ?? 0);
@@ -164,6 +159,9 @@ export async function GET(request: NextRequest) {
                 workerDaysToday,
                 workerDaysWeek,
                 workerDaysCumulative,
+                sessionsTodayCount: workerDaysToday,
+                sessionsWeekCount: workerDaysWeek,
+                sessionsCumulativeCount: workerDaysCumulative,
                 dailyCost,
                 weeklyCost,
                 cumulativeCost,
