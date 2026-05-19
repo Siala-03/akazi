@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
         const [
             totalWorkers,
-            workersCheckedInToday,
+            attendanceCheckedInToday,
             workersCheckedOutToday,
             activeSessions,
             bagsToday,
@@ -29,41 +29,76 @@ export async function GET(request: NextRequest) {
             sessionsToday,
             allBagsToday,
         ] = await Promise.all([
-            prisma.worker.count({ where: { status: 'active' } }),
+            prisma.worker.count(),
             prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay } } }),
             prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay }, status: 'checked-out' } }),
             prisma.session.count({ where: { status: 'active' } }),
             prisma.bag.count({
                 where: {
-                    status: { in: completedStatuses },
                     OR: [
+                        { date: { gte: startOfDay, lte: endOfDay } },
                         { completedAt: { gte: startOfDay, lte: endOfDay } },
-                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                        {
+                            workers: {
+                                some: {
+                                    session: {
+                                        date: { gte: startOfDay, lte: endOfDay },
+                                    },
+                                },
+                            },
+                        },
                     ],
                 },
             }),
             prisma.bag.count({
                 where: {
-                    status: { in: completedStatuses },
                     OR: [
+                        { date: { gte: sevenDaysAgo, lte: endOfDay } },
                         { completedAt: { gte: sevenDaysAgo, lte: endOfDay } },
-                        { completedAt: null, date: { gte: sevenDaysAgo, lte: endOfDay } },
+                        {
+                            workers: {
+                                some: {
+                                    session: {
+                                        date: { gte: sevenDaysAgo, lte: endOfDay },
+                                    },
+                                },
+                            },
+                        },
                     ],
                 },
             }),
             prisma.session.findMany({
                 where: { date: { gte: startOfDay, lte: endOfDay } },
-                select: { startTime: true, endTime: true, status: true, exporterId: true },
+                select: { startTime: true, endTime: true, status: true, exporterId: true, workerId: true },
             }),
             prisma.bag.findMany({
                 where: {
-                    status: { in: completedStatuses },
                     OR: [
+                        { date: { gte: startOfDay, lte: endOfDay } },
                         { completedAt: { gte: startOfDay, lte: endOfDay } },
-                        { completedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+                        {
+                            workers: {
+                                some: {
+                                    session: {
+                                        date: { gte: startOfDay, lte: endOfDay },
+                                    },
+                                },
+                            },
+                        },
                     ],
                 },
-                select: { exporterId: true, weight: true, workers: { select: { id: true } } },
+                select: {
+                    exporterId: true,
+                    weight: true,
+                    workers: {
+                        where: {
+                            session: {
+                                date: { gte: startOfDay, lte: endOfDay },
+                            },
+                        },
+                        select: { id: true },
+                    },
+                },
             }),
         ]);
 
@@ -83,6 +118,9 @@ export async function GET(request: NextRequest) {
             const totalWorkersAcrossBags = allBagsToday.reduce((sum, bag) => sum + (bag.workers?.length || 0), 0);
             avgWorkersPerBag = totalWorkersAcrossBags / bagsToday;
         }
+
+        const uniqueWorkersInSessionsToday = new Set(sessionsToday.map(s => s.workerId).filter(Boolean)).size;
+        const workersCheckedInToday = Math.max(attendanceCheckedInToday, uniqueWorkersInSessionsToday);
 
         const uniqueExporterIds = [...new Set(sessionsToday.map(s => s.exporterId).filter(Boolean))];
         const exportersServedToday = uniqueExporterIds.length;
