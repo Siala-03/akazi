@@ -87,13 +87,12 @@ export async function POST(request: NextRequest) {
             try {
                 bagRows = await prisma.$queryRaw<Array<{ id: string; bagNumber: string; exporterId: string; facilityId: string | null; date: Date; weight: number; status: string; supervisorId: string; createdAt: Date; updatedAt: Date }>>(
                     Prisma.sql`
-                        INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, "startedAt", weight, status, "supervisorId")
+                        INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, weight, status, "supervisorId")
                         VALUES (
                             ${bagId},
                             ${bagNumber},
                             ${exporterId},
                             ${facilityId},
-                            ${now},
                             ${now},
                             ${safeWeight},
                             'in_progress',
@@ -107,13 +106,12 @@ export async function POST(request: NextRequest) {
 
                 bagRows = await prisma.$queryRaw<Array<{ id: string; bagNumber: string; exporterId: string; facilityId: string | null; date: Date; weight: number; status: string; supervisorId: string; createdAt: Date; updatedAt: Date }>>(
                     Prisma.sql`
-                        INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, "startedAt", weight, "supervisorId")
+                        INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, weight, "supervisorId")
                         VALUES (
                             ${bagId},
                             ${bagNumber},
                             ${exporterId},
                             ${facilityId},
-                            ${now},
                             ${now},
                             ${safeWeight},
                             ${supervisorId}
@@ -206,13 +204,13 @@ export async function GET(request: NextRequest) {
                         b."exporterId",
                         b."facilityId",
                         b.date,
-                        b."startedAt",
-                        b."completedAt",
+                        NULL::timestamp AS "startedAt",
+                        NULL::timestamp AS "completedAt",
                         b.weight,
                         b.status::text AS status,
                         b."supervisorId",
-                        b."createdAt",
-                        b."updatedAt"
+                        NULL::timestamp AS "createdAt",
+                        NULL::timestamp AS "updatedAt"
                     FROM "Bag" b
                     WHERE 1=1
                     ${exporterFilter}
