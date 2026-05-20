@@ -301,6 +301,7 @@ export default function OperationsPage() {
     });
     const [bagWorkerSearch, setBagWorkerSearch] = useState('');
     const [bagError, setBagError] = useState<string | null>(null);
+    const [assignedBagWorkerIds, setAssignedBagWorkerIds] = useState<string[]>([]);
 
     const handleWorkerToggle = (workerId: string) => {
         setBagFormData((prev) => {
@@ -325,6 +326,7 @@ export default function OperationsPage() {
 
         setLoading(true);
         try {
+            const justAssignedWorkerIds = [...bagFormData.workers];
             const res = await fetch('/api/bags', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -342,6 +344,7 @@ export default function OperationsPage() {
             }
 
             toast.success('Bag started and workers assigned');
+            setAssignedBagWorkerIds((prev) => [...new Set([...prev, ...justAssignedWorkerIds])]);
             setBagFormData((prev) => ({ ...prev, workers: [] }));
             fetchSessions();
             fetchAttendance();
@@ -363,6 +366,7 @@ export default function OperationsPage() {
     const selectedExporterName = exporters.find((e) => e._id === bagFormData.exporterId)?.companyTradingName;
     const bagCandidates = sessions
         .filter((s) => s.exporterId._id === bagFormData.exporterId)
+        .filter((s) => !assignedBagWorkerIds.includes(s.workerId._id))
         .filter(
             (s) =>
                 !bagWorkerSearch ||
@@ -1001,7 +1005,10 @@ export default function OperationsPage() {
                                                                     ) : bagWorkerSearch ? (
                                                                         <p>No workers match "{bagWorkerSearch}"</p>
                                                                     ) : (
-                                                                        <p>No workers available</p>
+                                                                        <>
+                                                                            <p className="font-medium">All workers for this exporter are already assigned a bag</p>
+                                                                            <p className="text-sm text-gray-400 mt-1">Proceed to checkout at end of day</p>
+                                                                        </>
                                                                     )}
                                                                 </td>
                                                             </tr>
