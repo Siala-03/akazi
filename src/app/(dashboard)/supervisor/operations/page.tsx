@@ -300,6 +300,7 @@ export default function OperationsPage() {
         workers: [] as string[],
     });
     const [bagWorkerSearch, setBagWorkerSearch] = useState('');
+    const [bagError, setBagError] = useState<string | null>(null);
 
     const handleWorkerToggle = (workerId: string) => {
         setBagFormData((prev) => {
@@ -311,6 +312,8 @@ export default function OperationsPage() {
     };
 
     const handleRecordBag = async () => {
+        setBagError(null);
+
         if (!bagFormData.exporterId) {
             toast.error('Please select an exporter');
             return;
@@ -333,18 +336,20 @@ export default function OperationsPage() {
             });
 
             if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error);
+                const data = await res.json().catch(() => ({}));
+                const details = data?.details ? ` (${data.details})` : '';
+                throw new Error((data?.error || `Request failed (${res.status})`) + details);
             }
 
             toast.success('Bag started and workers assigned');
-            const currentExporterId = bagFormData.exporterId;
             setBagFormData((prev) => ({ ...prev, workers: [] }));
             fetchSessions();
             fetchAttendance();
             fetchOperationsMetrics();
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to assign bag');
+            const message = error instanceof Error ? error.message : 'Failed to assign bag';
+            setBagError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -355,6 +360,15 @@ export default function OperationsPage() {
     const availableForAssignment = onSiteWorkers.filter(
         (a) => !sessions.some((s) => s.workerId._id === a.workerId._id)
     );
+    const selectedExporterName = exporters.find((e) => e._id === bagFormData.exporterId)?.companyTradingName;
+    const bagCandidates = sessions
+        .filter((s) => s.exporterId._id === bagFormData.exporterId)
+        .filter(
+            (s) =>
+                !bagWorkerSearch ||
+                s.workerId.fullName.toLowerCase().includes(bagWorkerSearch.toLowerCase()) ||
+                s.workerId.workerId.toLowerCase().includes(bagWorkerSearch.toLowerCase())
+        );
 
     return (
         <div className="space-y-6">
@@ -851,10 +865,10 @@ export default function OperationsPage() {
                                 <div>
                                     <h3 className="text-lg font-semibold flex items-center gap-2">
                                         <Package className="w-5 h-5 text-gray-700" />
-                                        Multi-Day Bag Assignment (60kg)
+                                        Assign Bags (60kg)
                                     </h3>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        STEP 3: Start a bag, reallocate workers across days when needed, then complete the bag
+                                        STEP 3: Select exporter, pick 2-4 workers with active sessions, then start a bag
                                     </p>
                                 </div>
                                 <div className="text-right">
@@ -888,11 +902,17 @@ export default function OperationsPage() {
                                 {bagFormData.exporterId && (
                                     <div className="mt-3">
                                         <p className="text-sm text-gray-600">
-                                            Showing workers assigned to {exporters.find(e => e._id === bagFormData.exporterId)?.companyTradingName}
+                                            Showing active session workers for {selectedExporterName}
                                         </p>
                                     </div>
                                 )}
                             </div>
+
+                            {bagError && (
+                                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                    {bagError}
+                                </div>
+                            )}
 
                             {/* Workers Table */}
                             {bagFormData.exporterId ? (
@@ -968,34 +988,27 @@ export default function OperationsPage() {
                                             </thead>
                                             <tbody className="divide-y divide-gray-200">
                                                 {(() => {
-                                                    const filtered = sessions
-                                                        .filter(s => s.exporterId._id === bagFormData.exporterId)
-                                                        .filter(s => !bagWorkerSearch || s.workerId.fullName.toLowerCase().includes(bagWorkerSearch.toLowerCase()) || s.workerId.workerId.toLowerCase().includes(bagWorkerSearch.toLowerCase()));
-
-                                                    if (filtered.length === 0) {
+                                                    if (bagCandidates.length === 0) {
                                                         return (
                                                             <tr>
                                                                 <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
                                                                     <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                                                     {sessions.filter(s => s.exporterId._id === bagFormData.exporterId).length === 0 ? (
                                                                         <>
-                                                                            <p>No workers currently assigned to {exporters.find(e => e._id === bagFormData.exporterId)?.companyTradingName}</p>
+                                                                            <p>No active session workers for {selectedExporterName}</p>
                                                                             <p className="text-sm text-gray-400 mt-1">Assign workers in the "Assign Exporter" tab first</p>
                                                                         </>
                                                                     ) : bagWorkerSearch ? (
                                                                         <p>No workers match "{bagWorkerSearch}"</p>
                                                                     ) : (
-                                                                        <>
-                                                                            <p className="font-medium">All workers have been assigned a bag today</p>
-                                                                            <p className="text-sm text-gray-400 mt-1">All active workers for this exporter already have a bag recorded</p>
-                                                                        </>
+                                                                        <p>No workers available</p>
                                                                     )}
                                                                 </td>
                                                             </tr>
                                                         );
                                                     }
 
-                                                    return filtered.map((session) => {
+                                                    return bagCandidates.map((session) => {
                                                         const workerId = session.workerId._id;
                                                         const isSelected = bagFormData.workers.includes(workerId);
                                                         const canSelect = isSelected || bagFormData.workers.length < 4;
