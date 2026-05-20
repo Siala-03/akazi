@@ -29,27 +29,46 @@ export async function GET(request: NextRequest) {
 
         if (!currentUser.exporterId) {
             return NextResponse.json({
-                date: null,
-                workerDailyWage: 0,
-                totals: { workers: 0, totalBags: 0, totalEstimatedEarnings: 0 },
+                rangeStart: null,
+                rangeEnd: null,
+                exporterDailyRate: 0,
+                totals: { workers: 0, totalBags: 0, totalPayout: 0 },
                 workers: [],
             });
         }
 
         const rawDate = request.nextUrl.searchParams.get('date');
-        const selectedDate = rawDate ? new Date(`${rawDate}T00:00:00`) : new Date();
-        if (Number.isNaN(selectedDate.getTime())) {
-            return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
+        const rawStartDate = request.nextUrl.searchParams.get('startDate');
+        const rawEndDate = request.nextUrl.searchParams.get('endDate');
+
+        let rangeStart: Date;
+        let rangeEnd: Date;
+
+        if (rawStartDate && rawEndDate) {
+            rangeStart = getStartOfDay(new Date(`${rawStartDate}T00:00:00`));
+            rangeEnd = getEndOfDay(new Date(`${rawEndDate}T00:00:00`));
+        } else {
+            const selectedDate = rawDate ? new Date(`${rawDate}T00:00:00`) : new Date();
+            rangeStart = getStartOfDay(selectedDate);
+            rangeEnd = getEndOfDay(selectedDate);
         }
 
-        const dayStart = getStartOfDay(selectedDate);
-        const dayEnd = getEndOfDay(selectedDate);
-        const { workerDailyWage } = await getSettings();
+        if (Number.isNaN(rangeStart.getTime()) || Number.isNaN(rangeEnd.getTime())) {
+            return NextResponse.json({ error: 'Invalid date or range' }, { status: 400 });
+        }
 
-        const sessions = await prisma.session.findMany({
+        if (rangeStart > rangeEnd) {
+            const temp = rangeStart;
+            rangeStart = rangeEnd;
+            rangeEnd = temp;
+        }
+
+        const { exporterDailyRate } = await getSettings();
+
+        const sessions = (await prisma.session.findMany({
             where: {
                 exporterId: currentUser.exporterId,
-                date: { gte: dayStart, lte: dayEnd },
+                date: { gte: rangeStart, lte: rangeEnd },
             },
             select: {
                 id: true,
@@ -70,7 +89,7 @@ export async function GET(request: NextRequest) {
                 },
             },
             orderBy: { startTime: 'asc' },
-        }) as SessionRow[];
+        })) as SessionRow[];
 
         const bagCountRows = await prisma.$queryRaw<Array<{ workerId: string; bagCount: bigint }>>(
             Prisma.sql`
@@ -78,8 +97,8 @@ export async function GET(request: NextRequest) {
                 FROM "BagWorker" bw
                 INNER JOIN "Bag" b ON b.id = bw."bagId"
                 WHERE b."exporterId" = ${currentUser.exporterId}
-                  AND b.date >= ${dayStart}
-                  AND b.date <= ${dayEnd}
+                  AND b.date >= ${rangeStart}
+                  AND b.date <= ${rangeEnd}
                 GROUP BY bw."workerId"
             `
         );
@@ -137,7 +156,7 @@ export async function GET(request: NextRequest) {
         const workers = Array.from(workerMap.entries())
             .map(([id, row]) => {
                 const totalBags = bagCountMap.get(id) ?? 0;
-                const estimatedEarnings = row.sessionCount * workerDailyWage;
+                const totalPayout = row.sessionCount * exporterDailyRate;
 
                 return {
                     workerName: row.workerName,
@@ -147,7 +166,8 @@ export async function GET(request: NextRequest) {
                     checkoutTime: row.checkoutTime ? row.checkoutTime.toISOString() : null,
                     sessionStatus: row.sessionStatus,
                     totalBags,
-                    estimatedEarnings,
+                    totalPayout,
+                    sessionCount: row.sessionCount,
                 };
             })
             .sort((a, b) => a.workerName.localeCompare(b.workerName));
@@ -155,12 +175,13 @@ export async function GET(request: NextRequest) {
         const totals = {
             workers: workers.length,
             totalBags: workers.reduce((sum, worker) => sum + worker.totalBags, 0),
-            totalEstimatedEarnings: workers.reduce((sum, worker) => sum + worker.estimatedEarnings, 0),
+            totalPayout: workers.reduce((sum, worker) => sum + worker.totalPayout, 0),
         };
 
         return NextResponse.json({
-            date: dayStart.toISOString().slice(0, 10),
-            workerDailyWage,
+            rangeStart: rangeStart.toISOString().slice(0, 10),
+            rangeEnd: rangeEnd.toISOString().slice(0, 10),
+            exporterDailyRate,
             totals,
             workers,
         });
