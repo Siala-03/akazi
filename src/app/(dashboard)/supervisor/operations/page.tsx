@@ -315,8 +315,8 @@ export default function OperationsPage() {
             toast.error('Please select an exporter');
             return;
         }
-        if (bagFormData.workers.length < 1 || bagFormData.workers.length > 4) {
-            toast.error('Please select 1-4 workers');
+        if (bagFormData.workers.length < 2 || bagFormData.workers.length > 4) {
+            toast.error('Please select 2-4 workers');
             return;
         }
 

@@ -16,23 +16,39 @@ export async function POST(request: NextRequest) {
             ? [...new Set(workerIds.filter((id: unknown): id is string => typeof id === 'string' && id.length > 0))]
             : [];
 
+        if (!exporterId || typeof exporterId !== 'string') {
+            return NextResponse.json({ error: 'Exporter is required' }, { status: 400 });
+        }
+
         if (uniqueWorkerIds.length < 2 || uniqueWorkerIds.length > 4) {
             return NextResponse.json({ error: 'Each bag must have between 2 and 4 workers' }, { status: 400 });
         }
 
         const parsedWeight = Number(weight);
         const safeWeight = Number.isFinite(parsedWeight) && parsedWeight > 0 ? parsedWeight : 60;
+        const now = new Date();
+        const supervisorId = currentUser.userId;
 
-        // Use raw SQL to avoid enum compatibility issues
-        const sessions = await prisma.$queryRaw<Array<{ id: string; workerId: string; facilityId: string | null }>>(
-            Prisma.sql`
-                SELECT s.id, s."workerId", s."facilityId"
-                FROM "Session" s
-                WHERE s."workerId" IN (${Prisma.join(uniqueWorkerIds)})
-                  AND s."exporterId" = ${exporterId}
-                  AND s.status::text = 'active'
-            `
-        );
+        // Baseline behavior: use Prisma first (as it worked before the bag flow changes).
+        let sessions: Array<{ id: string; workerId: string; facilityId: string | null }> = [];
+        try {
+            sessions = await prisma.session.findMany({
+                where: { workerId: { in: uniqueWorkerIds }, exporterId, status: 'active' },
+                select: { id: true, workerId: true, facilityId: true },
+            });
+        } catch (sessionQueryError) {
+            console.error('Create bag prisma session query failed, using SQL fallback:', sessionQueryError);
+
+            sessions = await prisma.$queryRaw<Array<{ id: string; workerId: string; facilityId: string | null }>>(
+                Prisma.sql`
+                    SELECT s.id, s."workerId", s."facilityId"
+                    FROM "Session" s
+                    WHERE s."workerId" IN (${Prisma.join(uniqueWorkerIds)})
+                      AND s."exporterId" = ${exporterId}
+                      AND s.status::text = 'active'
+                `
+            );
+        }
 
         if (sessions.length !== uniqueWorkerIds.length) {
             return NextResponse.json(
@@ -42,44 +58,86 @@ export async function POST(request: NextRequest) {
         }
 
         const facilityId = sessions[0]?.facilityId || null;
-        const bagId = crypto.randomUUID();
-        const bagNumber = generateBagNumber();
-        const now = new Date();
-        const supervisorId = currentUser.userId;
 
-        // Insert bag via raw SQL to avoid enum issues
-        const bagRows = await prisma.$queryRaw<Array<{ id: string; bagNumber: string; exporterId: string; facilityId: string | null; date: Date; weight: number; status: string; supervisorId: string; createdAt: Date; updatedAt: Date }>>(
-            Prisma.sql`
-                INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, "startedAt", weight, "supervisorId")
-                VALUES (
-                    ${bagId},
-                    ${bagNumber},
-                    ${exporterId},
-                    ${facilityId},
-                    ${now},
-                    ${now},
-                    ${safeWeight},
-                    ${supervisorId}
-                )
-                RETURNING id, "bagNumber", "exporterId", "facilityId", date, weight, status::text AS status, "supervisorId", "createdAt", "updatedAt"
-            `
-        );
+        try {
+            const bag = await prisma.bag.create({
+                data: {
+                    bagNumber: generateBagNumber(),
+                    exporterId,
+                    facilityId,
+                    date: now,
+                    startedAt: now,
+                    weight: safeWeight,
+                    status: 'in_progress',
+                    supervisorId,
+                    workers: {
+                        create: sessions.map((s) => ({ workerId: s.workerId, sessionId: s.id })),
+                    },
+                },
+            });
 
-        const bag = bagRows[0];
-        if (!bag) throw new Error('Failed to create bag');
+            return NextResponse.json({ bag: { ...bag, _id: bag.id } }, { status: 201 });
+        } catch (bagCreateError) {
+            console.error('Create bag prisma create failed, using SQL fallback:', bagCreateError);
 
-        // Insert BagWorker records
-        for (const session of sessions) {
-            const bagWorkerId = crypto.randomUUID();
-            await prisma.$executeRaw(
-                Prisma.sql`
-                    INSERT INTO "BagWorker" (id, "bagId", "workerId", "sessionId")
-                    VALUES (${bagWorkerId}, ${bag.id}, ${session.workerId}, ${session.id})
-                `
-            );
+            const bagId = crypto.randomUUID();
+            const bagNumber = generateBagNumber();
+            let bagRows: Array<{ id: string; bagNumber: string; exporterId: string; facilityId: string | null; date: Date; weight: number; status: string; supervisorId: string; createdAt: Date; updatedAt: Date }> = [];
+
+            try {
+                bagRows = await prisma.$queryRaw<Array<{ id: string; bagNumber: string; exporterId: string; facilityId: string | null; date: Date; weight: number; status: string; supervisorId: string; createdAt: Date; updatedAt: Date }>>(
+                    Prisma.sql`
+                        INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, "startedAt", weight, status, "supervisorId")
+                        VALUES (
+                            ${bagId},
+                            ${bagNumber},
+                            ${exporterId},
+                            ${facilityId},
+                            ${now},
+                            ${now},
+                            ${safeWeight},
+                            'in_progress',
+                            ${supervisorId}
+                        )
+                        RETURNING id, "bagNumber", "exporterId", "facilityId", date, weight, status::text AS status, "supervisorId", "createdAt", "updatedAt"
+                    `
+                );
+            } catch (insertWithStatusError) {
+                console.error('Create bag SQL insert with status failed, retrying with DB default:', insertWithStatusError);
+
+                bagRows = await prisma.$queryRaw<Array<{ id: string; bagNumber: string; exporterId: string; facilityId: string | null; date: Date; weight: number; status: string; supervisorId: string; createdAt: Date; updatedAt: Date }>>(
+                    Prisma.sql`
+                        INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, "startedAt", weight, "supervisorId")
+                        VALUES (
+                            ${bagId},
+                            ${bagNumber},
+                            ${exporterId},
+                            ${facilityId},
+                            ${now},
+                            ${now},
+                            ${safeWeight},
+                            ${supervisorId}
+                        )
+                        RETURNING id, "bagNumber", "exporterId", "facilityId", date, weight, status::text AS status, "supervisorId", "createdAt", "updatedAt"
+                    `
+                );
+            }
+
+            const bag = bagRows[0];
+            if (!bag) throw new Error('Failed to create bag');
+
+            for (const session of sessions) {
+                const bagWorkerId = crypto.randomUUID();
+                await prisma.$executeRaw(
+                    Prisma.sql`
+                        INSERT INTO "BagWorker" (id, "bagId", "workerId", "sessionId")
+                        VALUES (${bagWorkerId}, ${bag.id}, ${session.workerId}, ${session.id})
+                    `
+                );
+            }
+
+            return NextResponse.json({ bag: { ...bag, _id: bag.id } }, { status: 201 });
         }
-
-        return NextResponse.json({ bag: { ...bag, _id: bag.id } }, { status: 201 });
     } catch (error) {
         console.error('Create bag error:', error);
         return NextResponse.json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 });
