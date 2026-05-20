@@ -293,7 +293,7 @@ export default function OnboardingPage() {
                                         onChange={e => set('consentWorkRecords', e.target.checked)}
                                         className="mt-0.5 w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                                     />
-                                    <span className="text-sm text-amber-800 dark:text-amber-300">
+                                    <span className="text-sm text-gray-800 dark:text-gray-200">
                                         Worker consents to storing their work and earnings records in this system. *
                                     </span>
                                 </label>

@@ -17,14 +17,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Each bag must have between 2 and 4 workers' }, { status: 400 });
         }
 
-        const sessions = await prisma.session.findMany({
-            where: { workerId: { in: workerIds }, exporterId, status: 'active' },
-            select: {
-                id: true,
-                workerId: true,
-                facilityId: true,
-            },
-        });
+        // Use raw SQL to avoid enum compatibility issues
+        const sessions = await prisma.$queryRaw<Array<{ id: string; workerId: string; facilityId: string | null }>>(
+            Prisma.sql`
+                SELECT s.id, s."workerId", s."facilityId"
+                FROM "Session" s
+                WHERE s."workerId" = ANY(${workerIds})
+                  AND s."exporterId" = ${exporterId}
+                  AND s.status::text = 'active'
+            `
+        );
 
         if (sessions.length !== workerIds.length) {
             return NextResponse.json(
@@ -34,27 +36,48 @@ export async function POST(request: NextRequest) {
         }
 
         const facilityId = sessions[0]?.facilityId || null;
+        const bagNumber = generateBagNumber();
+        const now = new Date();
+        const supervisorId = currentUser.userId;
 
-        const bag = await prisma.bag.create({
-            data: {
-                bagNumber: generateBagNumber(),
-                exporterId,
-                facilityId,
-                date: new Date(),
-                startedAt: new Date(),
-                weight: weight || 60,
-                status: 'in_progress',
-                supervisorId: currentUser.userId,
-                workers: {
-                    create: sessions.map((s) => ({ workerId: s.workerId, sessionId: s.id })),
-                },
-            },
-        });
+        // Insert bag via raw SQL to avoid enum issues
+        const bagRows = await prisma.$queryRaw<Array<{ id: string; bagNumber: string; exporterId: string; facilityId: string | null; date: Date; weight: number; status: string; supervisorId: string; createdAt: Date; updatedAt: Date }>>(
+            Prisma.sql`
+                INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, "startedAt", weight, status, "supervisorId", "createdAt", "updatedAt")
+                VALUES (
+                    gen_random_uuid()::text,
+                    ${bagNumber},
+                    ${exporterId},
+                    ${facilityId},
+                    ${now},
+                    ${now},
+                    ${weight || 60},
+                    'in_progress',
+                    ${supervisorId},
+                    ${now},
+                    ${now}
+                )
+                RETURNING id, "bagNumber", "exporterId", "facilityId", date, weight, status::text AS status, "supervisorId", "createdAt", "updatedAt"
+            `
+        );
+
+        const bag = bagRows[0];
+        if (!bag) throw new Error('Failed to create bag');
+
+        // Insert BagWorker records
+        for (const session of sessions) {
+            await prisma.$executeRaw(
+                Prisma.sql`
+                    INSERT INTO "BagWorker" (id, "bagId", "workerId", "sessionId")
+                    VALUES (gen_random_uuid()::text, ${bag.id}, ${session.workerId}, ${session.id})
+                `
+            );
+        }
 
         return NextResponse.json({ bag: { ...bag, _id: bag.id } }, { status: 201 });
     } catch (error) {
         console.error('Create bag error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 });
     }
 }
 
