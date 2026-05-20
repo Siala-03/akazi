@@ -12,23 +12,29 @@ export async function POST(request: NextRequest) {
         }
 
         const { exporterId, workerIds, weight } = await request.json();
+        const uniqueWorkerIds: string[] = Array.isArray(workerIds)
+            ? [...new Set(workerIds.filter((id: unknown): id is string => typeof id === 'string' && id.length > 0))]
+            : [];
 
-        if (!workerIds || workerIds.length < 2 || workerIds.length > 4) {
+        if (uniqueWorkerIds.length < 2 || uniqueWorkerIds.length > 4) {
             return NextResponse.json({ error: 'Each bag must have between 2 and 4 workers' }, { status: 400 });
         }
+
+        const parsedWeight = Number(weight);
+        const safeWeight = Number.isFinite(parsedWeight) && parsedWeight > 0 ? parsedWeight : 60;
 
         // Use raw SQL to avoid enum compatibility issues
         const sessions = await prisma.$queryRaw<Array<{ id: string; workerId: string; facilityId: string | null }>>(
             Prisma.sql`
                 SELECT s.id, s."workerId", s."facilityId"
                 FROM "Session" s
-                WHERE s."workerId" = ANY(${workerIds})
+                WHERE s."workerId" IN (${Prisma.join(uniqueWorkerIds)})
                   AND s."exporterId" = ${exporterId}
                   AND s.status::text = 'active'
             `
         );
 
-        if (sessions.length !== workerIds.length) {
+        if (sessions.length !== uniqueWorkerIds.length) {
             return NextResponse.json(
                 { error: 'All workers must have active sessions with the selected exporter' },
                 { status: 400 }
@@ -43,19 +49,15 @@ export async function POST(request: NextRequest) {
         // Insert bag via raw SQL to avoid enum issues
         const bagRows = await prisma.$queryRaw<Array<{ id: string; bagNumber: string; exporterId: string; facilityId: string | null; date: Date; weight: number; status: string; supervisorId: string; createdAt: Date; updatedAt: Date }>>(
             Prisma.sql`
-                INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, "startedAt", weight, status, "supervisorId", "createdAt", "updatedAt")
+                INSERT INTO "Bag" ("bagNumber", "exporterId", "facilityId", date, "startedAt", weight, "supervisorId")
                 VALUES (
-                    gen_random_uuid()::text,
                     ${bagNumber},
                     ${exporterId},
                     ${facilityId},
                     ${now},
                     ${now},
-                    ${weight || 60},
-                    'in_progress',
-                    ${supervisorId},
-                    ${now},
-                    ${now}
+                    ${safeWeight},
+                    ${supervisorId}
                 )
                 RETURNING id, "bagNumber", "exporterId", "facilityId", date, weight, status::text AS status, "supervisorId", "createdAt", "updatedAt"
             `
@@ -68,8 +70,8 @@ export async function POST(request: NextRequest) {
         for (const session of sessions) {
             await prisma.$executeRaw(
                 Prisma.sql`
-                    INSERT INTO "BagWorker" (id, "bagId", "workerId", "sessionId")
-                    VALUES (gen_random_uuid()::text, ${bag.id}, ${session.workerId}, ${session.id})
+                    INSERT INTO "BagWorker" ("bagId", "workerId", "sessionId")
+                    VALUES (${bag.id}, ${session.workerId}, ${session.id})
                 `
             );
         }
