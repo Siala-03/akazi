@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
             try {
                 bagRows = await prisma.$queryRaw<Array<{ id: string; bagNumber: string; exporterId: string; facilityId: string | null; date: Date; weight: number; status: string; supervisorId: string; createdAt: Date; updatedAt: Date }>>(
                     Prisma.sql`
-                        INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, weight, status, "supervisorId")
+                        INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, weight, status, "supervisorId", "createdAt", "updatedAt")
                         VALUES (
                             ${bagId},
                             ${bagNumber},
@@ -96,7 +96,9 @@ export async function POST(request: NextRequest) {
                             ${now},
                             ${safeWeight},
                             'in_progress',
-                            ${supervisorId}
+                            ${supervisorId},
+                            ${now},
+                            ${now}
                         )
                         RETURNING id, "bagNumber", "exporterId", "facilityId", date, weight, status::text AS status, "supervisorId", "createdAt", "updatedAt"
                     `
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
 
                 bagRows = await prisma.$queryRaw<Array<{ id: string; bagNumber: string; exporterId: string; facilityId: string | null; date: Date; weight: number; status: string; supervisorId: string; createdAt: Date; updatedAt: Date }>>(
                     Prisma.sql`
-                        INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, weight, "supervisorId")
+                        INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, weight, "supervisorId", "createdAt", "updatedAt")
                         VALUES (
                             ${bagId},
                             ${bagNumber},
@@ -114,7 +116,9 @@ export async function POST(request: NextRequest) {
                             ${facilityId},
                             ${now},
                             ${safeWeight},
-                            ${supervisorId}
+                            ${supervisorId},
+                            ${now},
+                            ${now}
                         )
                         RETURNING id, "bagNumber", "exporterId", "facilityId", date, weight, status::text AS status, "supervisorId", "createdAt", "updatedAt"
                     `
