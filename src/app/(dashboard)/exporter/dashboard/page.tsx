@@ -9,6 +9,7 @@ import {
     Weight,
     Clock,
     BarChart3,
+    DollarSign,
     ChevronLeft,
     ChevronRight,
     RefreshCw,
@@ -313,7 +314,7 @@ export default function ExporterDashboard() {
             </div>
 
             {/* Main Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="flex items-center justify-between mb-4">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center">
@@ -360,6 +361,18 @@ export default function ExporterDashboard() {
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Average</p>
                     <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.periodAvgBagsPerDay?.toFixed(1) || 0}</p>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">avg bags per day in period</p>
+                </div>
+
+                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-green-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
+                            <DollarSign className="w-6 h-6 text-green-600" />
+                        </div>
+                        <TrendingUp className="w-5 h-5 text-green-500" />
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Cost</p>
+                    <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">{fmt(analytics?.periodCostToExporter || 0)}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">selected period</p>
                 </div>
             </div>
 
