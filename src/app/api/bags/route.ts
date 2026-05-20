@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
         }
 
         const facilityId = sessions[0]?.facilityId || null;
+        const bagId = crypto.randomUUID();
         const bagNumber = generateBagNumber();
         const now = new Date();
         const supervisorId = currentUser.userId;
@@ -49,8 +50,9 @@ export async function POST(request: NextRequest) {
         // Insert bag via raw SQL to avoid enum issues
         const bagRows = await prisma.$queryRaw<Array<{ id: string; bagNumber: string; exporterId: string; facilityId: string | null; date: Date; weight: number; status: string; supervisorId: string; createdAt: Date; updatedAt: Date }>>(
             Prisma.sql`
-                INSERT INTO "Bag" ("bagNumber", "exporterId", "facilityId", date, "startedAt", weight, "supervisorId")
+                INSERT INTO "Bag" (id, "bagNumber", "exporterId", "facilityId", date, "startedAt", weight, "supervisorId")
                 VALUES (
+                    ${bagId},
                     ${bagNumber},
                     ${exporterId},
                     ${facilityId},
@@ -68,10 +70,11 @@ export async function POST(request: NextRequest) {
 
         // Insert BagWorker records
         for (const session of sessions) {
+            const bagWorkerId = crypto.randomUUID();
             await prisma.$executeRaw(
                 Prisma.sql`
-                    INSERT INTO "BagWorker" ("bagId", "workerId", "sessionId")
-                    VALUES (${bag.id}, ${session.workerId}, ${session.id})
+                    INSERT INTO "BagWorker" (id, "bagId", "workerId", "sessionId")
+                    VALUES (${bagWorkerId}, ${bag.id}, ${session.workerId}, ${session.id})
                 `
             );
         }
