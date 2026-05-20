@@ -9,7 +9,6 @@ import {
     Weight,
     Clock,
     BarChart3,
-    DollarSign,
     ChevronLeft,
     ChevronRight,
     RefreshCw,
@@ -129,15 +128,13 @@ export default function ExporterDashboard() {
             : 'Selected Period';
 
         const csvRows = [
-            ['Date', 'Sessions', 'Bags', 'Weight (kg)', 'Cost to Exporter (FRw)', 'Worker Wages (FRw)', 'Cooperative Margin (FRw)'],
+            ['Date', 'Sessions', 'Bags', 'Weight (kg)', 'Cost to Exporter (FRw)'],
             ...rows.map((row: any) => [
                 row.date,
                 row.sessions,
                 row.bags,
                 row.weight,
                 row.costToExporter,
-                row.workerWages,
-                row.coopMargin,
             ]),
         ];
 
@@ -366,60 +363,6 @@ export default function ExporterDashboard() {
                 </div>
             </div>
 
-            {/* Labor Cost Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                {/* Daily Cost */}
-                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-green-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
-                            <DollarSign className="w-6 h-6 text-green-600" />
-                        </div>
-                        <TrendingUp className="w-5 h-5 text-green-500" />
-                    </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Period Labor Cost</p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
-                        {fmt(analytics?.periodCostToExporter || 0)}
-                    </p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        {analytics?.periodSessionsCount || 0} sessions @ FRw {(analytics?.ratePerWorkerDay || 2000).toLocaleString()}/session
-                    </p>
-                </div>
-
-                {/* Weekly Cost */}
-                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
-                            <DollarSign className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <Calendar className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Worker Wages (Period)</p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
-                        {fmt(analytics?.periodWorkerWages || 0)}
-                    </p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        FRw {(analytics?.workerDailyWage || 1700).toLocaleString()}/session
-                    </p>
-                </div>
-
-                {/* Cumulative Cost */}
-                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-orange-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
-                            <DollarSign className="w-6 h-6 text-orange-600" />
-                        </div>
-                        <BarChart3 className="w-5 h-5 text-orange-500" />
-                    </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Cooperative Margin (Period)</p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
-                        {fmt(analytics?.periodCoopMargin || 0)}
-                    </p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        Revenue - wages in selected period
-                    </p>
-                </div>
-            </div>
-
             {/* Performance Overview */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -501,14 +444,12 @@ export default function ExporterDashboard() {
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight (kg)</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost (FRw)</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Wages (FRw)</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Margin (FRw)</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-[#1e293b] divide-y divide-gray-100 dark:divide-gray-700/40">
                             {(analytics?.dailyBreakdown || []).length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                                         No data available for this period.
                                     </td>
                                 </tr>
@@ -520,8 +461,6 @@ export default function ExporterDashboard() {
                                         <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{row.bags}</td>
                                         <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.weight || 0).toLocaleString()}</td>
                                         <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.costToExporter || 0).toLocaleString()}</td>
-                                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.workerWages || 0).toLocaleString()}</td>
-                                        <td className="px-6 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">{Number(row.coopMargin || 0).toLocaleString()}</td>
                                     </tr>
                                 ))
                             )}
