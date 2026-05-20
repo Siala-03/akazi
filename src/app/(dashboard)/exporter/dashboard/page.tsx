@@ -347,8 +347,8 @@ export default function ExporterDashboard() {
                         <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Weight</p>
-                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.periodWeight?.toLocaleString() || 0}</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">kg in selected period</p>
+                    <p className="mt-2 text-xl font-bold text-gray-900 dark:text-gray-100 break-all">{analytics?.periodWeight?.toLocaleString() || 0} kg</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">selected period</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-amber-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -371,7 +371,7 @@ export default function ExporterDashboard() {
                         <TrendingUp className="w-5 h-5 text-green-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Cost</p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">{fmt(analytics?.periodCostToExporter || 0)}</p>
+                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 break-all">{fmt(analytics?.periodCostToExporter || 0)}</p>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">selected period</p>
                 </div>
             </div>
