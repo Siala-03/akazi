@@ -224,16 +224,20 @@ export async function exportToPDF(data: ExportData): Promise<void> {
 
     // ── Footer ──
     const pageCount = doc.getNumberOfPages();
+    const pageH = doc.internal.pageSize.getHeight();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         doc.setFontSize(7);
         doc.setTextColor(150, 150, 150);
         doc.text(
-            `Akazi Rwanda Ltd  ·  Page ${i} of ${pageCount}  ·  Generated ${format(new Date(), 'dd MMM yyyy HH:mm')}`,
+            `Page ${i} of ${pageCount}  ·  Generated ${format(new Date(), 'dd MMM yyyy HH:mm')}`,
             pageWidth / 2,
-            doc.internal.pageSize.getHeight() - 8,
+            pageH - 12,
             { align: 'center' }
         );
+        doc.setFontSize(8);
+        doc.setTextColor(6, 95, 70);
+        doc.text('Akazi Rwanda Ltd by Umucyo Women Cooperative', pageWidth / 2, pageH - 6, { align: 'center' });
     }
 
     const fileName = `${data.exporterCode}_report_${format(new Date(), 'yyyyMMdd_HHmmss')}.pdf`;

@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import { 
-  FileText, 
-  Download, 
-  Filter, 
-  Search, 
+import {
+  FileText,
+  Download,
+  Filter,
+  Search,
   Calendar,
   ArrowUpDown,
   Users,
@@ -18,6 +18,9 @@ import {
   FileSpreadsheet,
   FileDown
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { format } from 'date-fns';
 import { PageHeader } from '@/components/PageHeader';
 import { formatExporterIdentifier, formatSessionReference } from '@/lib/utils';
 
@@ -598,258 +601,181 @@ export default function AdminReportsPage() {
     };
 
     const dateRangeLabel = startDate && endDate
-      ? `${new Date(startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} – ${new Date(endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`
+      ? `${format(new Date(startDate), 'dd MMM yyyy')} – ${format(new Date(endDate), 'dd MMM yyyy')}`
       : 'All Time';
 
-    let tableHTML = '';
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 14;
+
+    // ── Header ──
+    doc.setFillColor(6, 95, 70);
+    doc.rect(0, 0, pageWidth, 28, 'F');
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Akazi Rwanda Ltd', margin, 12);
+    doc.setFontSize(10);
+    doc.text(tabLabels[activeTab], margin, 20);
+    doc.setFontSize(8);
+    doc.text(`Period: ${dateRangeLabel}`, pageWidth - margin, 12, { align: 'right' });
+    doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy, HH:mm')}`, pageWidth - margin, 19, { align: 'right' });
+
+    let y = 36;
+    const cellCenter = { halign: 'center' as const };
+
+    // ── Summary bar chart helper ──
+    const drawSummaryBar = (items: { label: string; value: number }[], title: string, color: [number, number, number]) => {
+      if (items.length === 0 || items.every(i => i.value === 0)) return;
+      if (y > pageH - 80) { doc.addPage(); y = 20; }
+      doc.setFontSize(10);
+      doc.setTextColor(6, 95, 70);
+      doc.text(title, margin, y);
+      y += 5;
+      const maxVal = Math.max(...items.map(i => i.value), 1);
+      const barW = Math.min((pageWidth - margin * 2 - 10) / items.length, 28);
+      const gap = 2;
+      const chartH = 35;
+      items.forEach((item, i) => {
+        const bh = (item.value / maxVal) * (chartH - 8);
+        const bx = margin + 5 + i * (barW + gap);
+        doc.setFillColor(color[0], color[1], color[2]);
+        doc.rect(bx, y + chartH - bh, barW, bh, 'F');
+        doc.setFontSize(5);
+        doc.setTextColor(60, 60, 60);
+        if (item.value > 0) doc.text(item.value.toLocaleString(), bx + barW / 2, y + chartH - bh - 1, { align: 'center' });
+        doc.setTextColor(100, 100, 100);
+        const lbl = item.label.length > 12 ? item.label.slice(0, 11) + '…' : item.label;
+        doc.text(lbl, bx + barW / 2, y + chartH + 4, { align: 'center' });
+      });
+      y += chartH + 10;
+    };
 
     if (activeTab === 'exporter') {
-      tableHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>Business Reg / TIN</th>
-              <th>Exporter Name</th>
-              <th>Bags Sorted</th>
-              <th>Workers Involved</th>
-              <th>Total Labor Cost (RWF)</th>
-              <th>Avg Workers / Bag</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredExporterReports.map(r => `
-              <tr>
-                <td>${r.exporterId}</td>
-                <td>${r.exporterName}</td>
-                <td class="num">${r.bagsSorted.toLocaleString()}</td>
-                <td class="num">${r.workersInvolved.toLocaleString()}</td>
-                <td class="num">${r.totalLaborCost.toLocaleString()}</td>
-                <td class="num">${r.avgWorkersPerBag}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td><strong>Totals</strong></td>
-              <td>—</td>
-              <td class="num"><strong>${filteredExporterReports.reduce((s, r) => s + r.bagsSorted, 0).toLocaleString()}</strong></td>
-              <td class="num"><strong>${filteredExporterReports.reduce((s, r) => s + r.workersInvolved, 0).toLocaleString()}</strong></td>
-              <td class="num"><strong>${filteredExporterReports.reduce((s, r) => s + r.totalLaborCost, 0).toLocaleString()}</strong></td>
-              <td class="num">—</td>
-            </tr>
-          </tfoot>
-        </table>`;
+      // Summary chart
+      const top = filteredExporterReports.slice(0, 15);
+      drawSummaryBar(top.map(r => ({ label: r.exporterName, value: r.bagsSorted })), 'Bags by Exporter', [59, 130, 246]);
+
+      // Summary stats
+      const totBags = filteredExporterReports.reduce((s, r) => s + r.bagsSorted, 0);
+      const totWorkers = filteredExporterReports.reduce((s, r) => s + r.workersInvolved, 0);
+      const totCost = filteredExporterReports.reduce((s, r) => s + r.totalLaborCost, 0);
+      autoTable(doc, {
+        startY: y,
+        head: [['Total Exporters', 'Total Bags', 'Total Workers', 'Total Labor Cost']],
+        body: [[filteredExporterReports.length.toString(), totBags.toLocaleString(), totWorkers.toLocaleString(), `FRw ${totCost.toLocaleString()}`]],
+        theme: 'grid',
+        headStyles: { fillColor: [6, 95, 70], fontSize: 8, halign: 'center' },
+        bodyStyles: { fontSize: 9, halign: 'center', fontStyle: 'bold' },
+        margin: { left: margin, right: margin },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+
+      // Detail table
+      const rows = filteredExporterReports.map(r => [r.exporterId, r.exporterName, r.bagsSorted.toLocaleString(), r.workersInvolved.toLocaleString(), `FRw ${r.totalLaborCost.toLocaleString()}`, r.avgWorkersPerBag.toString()]);
+      rows.push(['TOTAL', '', totBags.toLocaleString(), totWorkers.toLocaleString(), `FRw ${totCost.toLocaleString()}`, '']);
+      autoTable(doc, {
+        startY: y,
+        head: [['TIN / Reg', 'Exporter Name', 'Bags', 'Workers', 'Labor Cost', 'Avg/Bag']],
+        body: rows,
+        theme: 'striped',
+        headStyles: { fillColor: [6, 95, 70], fontSize: 7, halign: 'center' },
+        bodyStyles: { fontSize: 7, halign: 'center' },
+        columnStyles: { 0: { halign: 'left' }, 1: { halign: 'left' } },
+        margin: { left: margin, right: margin },
+        didParseCell: (d) => { if (d.row.index === rows.length - 1 && d.section === 'body') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [240, 253, 244]; } },
+      });
+
     } else if (activeTab === 'worker') {
-      tableHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>Worker Name</th>
-              <th>Worker ID</th>
-              <th>Days Worked</th>
-              <th>Bags Contributed</th>
-              <th>Total Earnings (RWF)</th>
-              <th>Avg Bags / Day</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredWorkerReports.map(r => `
-              <tr>
-                <td>${r.workerName}</td>
-                <td>${r.workerId}</td>
-                <td class="num">${r.daysWorked}</td>
-                <td class="num">${r.bagsContributed.toLocaleString()}</td>
-                <td class="num">${r.totalEarnings.toLocaleString()}</td>
-                <td class="num">${r.avgBagsPerDay}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colspan="2"><strong>Totals</strong></td>
-              <td class="num"><strong>${filteredWorkerReports.reduce((s, r) => s + r.daysWorked, 0).toLocaleString()}</strong></td>
-              <td class="num"><strong>${filteredWorkerReports.reduce((s, r) => s + r.bagsContributed, 0).toLocaleString()}</strong></td>
-              <td class="num"><strong>${filteredWorkerReports.reduce((s, r) => s + r.totalEarnings, 0).toLocaleString()}</strong></td>
-              <td class="num">—</td>
-            </tr>
-          </tfoot>
-        </table>`;
+      const top = filteredWorkerReports.filter(r => r.bagsContributed > 0).sort((a, b) => b.bagsContributed - a.bagsContributed).slice(0, 15);
+      drawSummaryBar(top.map(r => ({ label: r.workerName, value: r.bagsContributed })), 'Top Workers by Bags', [139, 92, 246]);
+
+      const totDays = filteredWorkerReports.reduce((s, r) => s + r.daysWorked, 0);
+      const totBags = filteredWorkerReports.reduce((s, r) => s + r.bagsContributed, 0);
+      const totEarn = filteredWorkerReports.reduce((s, r) => s + r.totalEarnings, 0);
+      autoTable(doc, {
+        startY: y,
+        head: [['Total Workers', 'Total Days', 'Total Bags', 'Total Earnings']],
+        body: [[filteredWorkerReports.length.toString(), totDays.toLocaleString(), totBags.toLocaleString(), `FRw ${totEarn.toLocaleString()}`]],
+        theme: 'grid',
+        headStyles: { fillColor: [6, 95, 70], fontSize: 8, halign: 'center' },
+        bodyStyles: { fontSize: 9, halign: 'center', fontStyle: 'bold' },
+        margin: { left: margin, right: margin },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+
+      const rows = filteredWorkerReports.map(r => [r.workerName, r.workerId, r.daysWorked.toString(), r.bagsContributed.toLocaleString(), `FRw ${r.totalEarnings.toLocaleString()}`, r.avgBagsPerDay.toString()]);
+      rows.push(['TOTAL', '', totDays.toLocaleString(), totBags.toLocaleString(), `FRw ${totEarn.toLocaleString()}`, '']);
+      autoTable(doc, {
+        startY: y,
+        head: [['Worker', 'ID', 'Days', 'Bags', 'Earnings', 'Avg/Day']],
+        body: rows,
+        theme: 'striped',
+        headStyles: { fillColor: [6, 95, 70], fontSize: 7, halign: 'center' },
+        bodyStyles: { fontSize: 7, halign: 'center' },
+        columnStyles: { 0: { halign: 'left' } },
+        margin: { left: margin, right: margin },
+        didParseCell: (d) => { if (d.row.index === rows.length - 1 && d.section === 'body') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [240, 253, 244]; } },
+      });
+
     } else if (activeTab === 'daily') {
-      tableHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Workers On Site</th>
-              <th>Active Sessions</th>
-              <th>Bags Completed</th>
-              <th>Exporters Active</th>
-              <th>Labor Cost (RWF)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredDailyOperations.map(r => `
-              <tr>
-                <td>${new Date(r.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
-                <td class="num">${r.workersOnSite}</td>
-                <td class="num">${r.activeSessions}</td>
-                <td class="num">${r.bagsCompleted}</td>
-                <td>${r.exportersActive.join(', ') || '—'}</td>
-                <td class="num">${r.totalLaborCost.toLocaleString()}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td><strong>Totals</strong></td>
-              <td class="num"><strong>${filteredDailyOperations.reduce((s, r) => s + r.workersOnSite, 0)}</strong></td>
-              <td class="num"><strong>${filteredDailyOperations.reduce((s, r) => s + r.activeSessions, 0)}</strong></td>
-              <td class="num"><strong>${filteredDailyOperations.reduce((s, r) => s + r.bagsCompleted, 0)}</strong></td>
-              <td>—</td>
-              <td class="num"><strong>${filteredDailyOperations.reduce((s, r) => s + r.totalLaborCost, 0).toLocaleString()}</strong></td>
-            </tr>
-          </tfoot>
-        </table>`;
+      const sorted = [...filteredDailyOperations].sort((a, b) => a.date.localeCompare(b.date));
+      drawSummaryBar(sorted.slice(-20).map(r => ({ label: r.date.slice(5), value: r.bagsCompleted })), 'Bags Completed per Day', [16, 185, 129]);
+      drawSummaryBar(sorted.slice(-20).map(r => ({ label: r.date.slice(5), value: r.activeSessions })), 'Sessions per Day', [59, 130, 246]);
+
+      const totW = filteredDailyOperations.reduce((s, r) => s + r.workersOnSite, 0);
+      const totS = filteredDailyOperations.reduce((s, r) => s + r.activeSessions, 0);
+      const totB = filteredDailyOperations.reduce((s, r) => s + r.bagsCompleted, 0);
+      const totC = filteredDailyOperations.reduce((s, r) => s + r.totalLaborCost, 0);
+
+      const rows = filteredDailyOperations.map(r => [
+        format(new Date(r.date), 'dd MMM yyyy'), r.workersOnSite.toString(), r.activeSessions.toString(),
+        r.bagsCompleted.toLocaleString(), r.exportersActive.join(', ') || '—', `FRw ${r.totalLaborCost.toLocaleString()}`
+      ]);
+      rows.push(['TOTAL', totW.toString(), totS.toString(), totB.toLocaleString(), '—', `FRw ${totC.toLocaleString()}`]);
+      autoTable(doc, {
+        startY: y,
+        head: [['Date', 'Workers', 'Sessions', 'Bags', 'Exporters', 'Labor Cost']],
+        body: rows,
+        theme: 'striped',
+        headStyles: { fillColor: [6, 95, 70], fontSize: 7, halign: 'center' },
+        bodyStyles: { fontSize: 7, halign: 'center' },
+        columnStyles: { 4: { halign: 'left' } },
+        margin: { left: margin, right: margin },
+        didParseCell: (d) => { if (d.row.index === rows.length - 1 && d.section === 'body') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [240, 253, 244]; } },
+      });
+
     } else {
-      tableHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Worker Name</th>
-              <th>Worker ID</th>
-              <th>Exporter</th>
-              <th>Business Reg / TIN</th>
-              <th>Bag ID</th>
-              <th>Session Ref</th>
-              <th>Check In</th>
-              <th>Check Out</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredAuditTrails.map(r => `
-              <tr>
-                <td>${new Date(r.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
-                <td>${r.workerName}</td>
-                <td>${r.workerId}</td>
-                <td>${r.exporterName}</td>
-                <td>${r.exporterId}</td>
-                <td>${r.bagId}</td>
-                <td>${r.sessionId}</td>
-                <td class="num">${r.checkInTime}</td>
-                <td class="num">${r.checkOutTime}</td>
-                <td><span class="badge badge-${r.status}">${r.status}</span></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>`;
+      const rows = filteredAuditTrails.map(r => [
+        format(new Date(r.date), 'dd MMM'), r.workerName, r.workerId, r.exporterName,
+        r.bagId, r.checkInTime, r.checkOutTime, r.status
+      ]);
+      autoTable(doc, {
+        startY: y,
+        head: [['Date', 'Worker', 'ID', 'Exporter', 'Bag', 'In', 'Out', 'Status']],
+        body: rows,
+        theme: 'striped',
+        headStyles: { fillColor: [6, 95, 70], fontSize: 7, halign: 'center' },
+        bodyStyles: { fontSize: 6, halign: 'center' },
+        columnStyles: { 1: { halign: 'left' }, 3: { halign: 'left' } },
+        margin: { left: margin, right: margin },
+      });
     }
 
-    const totalRows = activeTab === 'exporter' ? filteredExporterReports.length
-      : activeTab === 'worker' ? filteredWorkerReports.length
-      : activeTab === 'daily' ? filteredDailyOperations.length
-      : filteredAuditTrails.length;
-
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>CWMS – ${tabLabels[activeTab]}</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #1a1a2e; background: #fff; }
-
-    /* ── Header ── */
-    .header { background: linear-gradient(135deg, #059669, #0d9488); color: #fff; padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; }
-    .header-left { display: flex; flex-direction: column; gap: 4px; }
-    .org { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
-    .sub { font-size: 11px; opacity: 0.85; }
-    .header-right { text-align: right; font-size: 10px; opacity: 0.9; line-height: 1.6; }
-
-    /* ── Report meta ── */
-    .meta { padding: 16px 32px; background: #f0fdf4; border-bottom: 2px solid #d1fae5; display: flex; align-items: center; justify-content: space-between; }
-    .meta-title { font-size: 15px; font-weight: 700; color: #065f46; }
-    .meta-badges { display: flex; gap: 8px; }
-    .badge-meta { background: #fff; border: 1px solid #a7f3d0; color: #065f46; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; }
-
-    /* ── Table ── */
-    .table-wrap { padding: 24px 32px 12px; }
-    table { width: 100%; border-collapse: collapse; }
-    thead tr { background: #065f46; color: #fff; }
-    thead th { padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
-    tbody tr { border-bottom: 1px solid #e5e7eb; }
-    tbody tr:nth-child(even) { background: #f9fafb; }
-    tbody tr:hover { background: #ecfdf5; }
-    tbody td { padding: 8px 12px; font-size: 10.5px; color: #374151; }
-    tfoot tr { background: #ecfdf5; border-top: 2px solid #059669; }
-    tfoot td { padding: 9px 12px; font-size: 10.5px; color: #065f46; font-weight: 700; }
-    td.num, th.num { text-align: right; }
-
-    /* ── Status badges ── */
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 9.5px; font-weight: 700; text-transform: capitalize; }
-    .badge-completed { background: #d1fae5; color: #065f46; }
-    .badge-active    { background: #dbeafe; color: #1e40af; }
-    .badge-pending   { background: #fef3c7; color: #92400e; }
-
-    /* ── Summary cards ── */
-    .summary { display: flex; gap: 12px; padding: 0 32px 20px; }
-    .card { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; }
-    .card-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #6b7280; font-weight: 600; margin-bottom: 4px; }
-    .card-value { font-size: 18px; font-weight: 800; color: #065f46; }
-
-    /* ── Footer ── */
-    .footer { margin: 8px 32px 0; border-top: 1px solid #e5e7eb; padding: 10px 0 24px; display: flex; justify-content: space-between; font-size: 9px; color: #9ca3af; }
-
-    @media print {
-      @page { size: A4 landscape; margin: 0; }
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .no-print { display: none; }
+    // ── Footer ──
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Page ${i} of ${pageCount}  ·  ${format(new Date(), 'dd MMM yyyy HH:mm')}`, pageWidth / 2, pageH - 12, { align: 'center' });
+      doc.setFontSize(8);
+      doc.setTextColor(6, 95, 70);
+      doc.text('Akazi Rwanda Ltd by Umucyo Women Cooperative', pageWidth / 2, pageH - 6, { align: 'center' });
     }
-  </style>
-</head>
-<body>
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="org">Coffee Worker Management System</div>
-      <div class="sub">Ikawa — Operational Intelligence Platform</div>
-    </div>
-    <div class="header-right">
-      Generated: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br/>
-      ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-    </div>
-  </div>
 
-  <!-- Report meta -->
-  <div class="meta">
-    <div class="meta-title">${tabLabels[activeTab]}</div>
-    <div class="meta-badges">
-      <span class="badge-meta">📅 ${dateRangeLabel}</span>
-      <span class="badge-meta">📊 ${totalRows} record${totalRows !== 1 ? 's' : ''}</span>
-    </div>
-  </div>
-
-  <!-- Table -->
-  <div class="table-wrap">
-    ${tableHTML}
-  </div>
-
-  <!-- Footer -->
-  <div class="footer">
-    <span>CWMS – Confidential operational report</span>
-    <span>Printed by authorized admin · ${new Date().toISOString()}</span>
-  </div>
-
-  <script>window.onload = () => { window.print(); }<\/script>
-</body>
-</html>`;
-
-    const win = window.open('', '_blank', 'width=1100,height=800');
-    if (!win) { toast.error('Please allow pop-ups to export PDF'); return; }
-    win.document.write(html);
-    win.document.close();
-    toast.success(`${tabLabels[activeTab]} ready — save as PDF from the print dialog`);
+    doc.save(`akazi_${activeTab}_report_${format(new Date(), 'yyyyMMdd_HHmmss')}.pdf`);
+    toast.success(`${tabLabels[activeTab]} downloaded`);
   };
 
   const filteredExporterReports = exporterReports.filter(report =>

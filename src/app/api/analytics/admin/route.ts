@@ -96,10 +96,6 @@ export async function GET(request: NextRequest) {
 
         const { exporterDailyRate: DEFAULT_DAILY_RATE, workerDailyWage: WORKER_DAILY_WAGE } = await getSettings();
 
-        const allExporters = await prisma.exporter.findMany({
-            select: { id: true, companyTradingName: true, exporterCode: true },
-        });
-
         const totalKilograms = totalWeightAgg._sum.weight ?? totalBags * 60;
         const totalKilogramsToday = todayWeightAgg._sum.weight ?? bagsToday * 60;
 
@@ -229,7 +225,7 @@ export async function GET(request: NextRequest) {
             prisma.$queryRaw<{ day: string; count: bigint }[]>`
                 SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
                 FROM "Bag"
-                WHERE status IN ('completed', 'validated', 'locked')
+                WHERE status IN ('in_progress', 'completed', 'validated', 'locked')
                     AND date >= ${trendStart}
                     AND date <= ${endOfDay}
                 GROUP BY day`,
