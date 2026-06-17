@@ -88,6 +88,8 @@ export default function OperationsPage() {
     const [showQrScanner, setShowQrScanner] = useState(false);
     const [qrScannerMode, setQrScannerMode] = useState<'checkin' | 'checkout'>('checkin');
     const [checkoutExporterFilter, setCheckoutExporterFilter] = useState('');
+    const [assignExporterId, setAssignExporterId] = useState('');
+    const [selectedWorkerIds, setSelectedWorkerIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         // Set initial time and update every second
@@ -293,6 +295,32 @@ export default function OperationsPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleBulkAssign = async () => {
+        if (!assignExporterId || selectedWorkerIds.size === 0) return;
+        setLoading(true);
+        let assigned = 0;
+        let failed = 0;
+        for (const attId of selectedWorkerIds) {
+            try {
+                const res = await fetch('/api/sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ attendanceId: attId, exporterId: assignExporterId }),
+                });
+                if (res.ok) assigned++;
+                else failed++;
+            } catch {
+                failed++;
+            }
+        }
+        setSelectedWorkerIds(new Set());
+        fetchSessions();
+        fetchOperationsMetrics();
+        setLoading(false);
+        if (assigned > 0) toast.success(`${assigned} worker${assigned > 1 ? 's' : ''} assigned`);
+        if (failed > 0) toast.error(`${failed} assignment${failed > 1 ? 's' : ''} failed`);
     };
 
     // Bag Recording State
@@ -779,7 +807,7 @@ export default function OperationsPage() {
                                         Assign Workers to Exporters
                                     </h3>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        STEP 2: Create sorting session - Link worker → exporter (one active session per worker)
+                                        STEP 2: Select an exporter, tick workers, then assign all at once
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm">
@@ -793,73 +821,124 @@ export default function OperationsPage() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full table-compact">
-                                    <thead className="bg-gray-50 border-b border-gray-200">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker ID</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-in Time</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Exporter Assignment</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {availableForAssignment.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                                    No available workers. Check-in workers first or all on-site workers are already assigned.
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            availableForAssignment.map((att) => {
-                                                return (
-                                                    <tr key={att._id} className="hover:bg-gray-50">
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="font-medium text-gray-900">{att.workerId.fullName}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <span className="text-sm font-mono font-semibold text-gray-700">{att.workerId.workerId}</span>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                                <Clock className="w-4 h-4" />
-                                                                {new Date(att.checkInTime).toLocaleTimeString('en-US', {
-                                                                    hour: '2-digit',
-                                                                    minute: '2-digit'
-                                                                })}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                                                                On-site - Available
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <select
-                                                                onChange={(e) =>
-                                                                    e.target.value && handleAssignExporter(att._id, e.target.value)
-                                                                }
-                                                                className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-400 focus:border-transparent bg-white text-gray-900 font-medium"
-                                                                disabled={loading}
-                                                            >
-                                                                <option value="">Select Exporter</option>
-                                                                {exporters.map((exp) => (
-                                                                    <option key={exp._id} value={exp._id}>
-                                                                        {exp.companyTradingName}
-                                                                    </option>
-                                                                ))}
-                                                            </select>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                        )}
-                                    </tbody>
-                                </table>
+
+                            {/* Exporter picker + assign button */}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                <div className="flex items-center gap-2 flex-1">
+                                    <Building2 className="w-5 h-5 text-indigo-600 shrink-0" />
+                                    <select
+                                        value={assignExporterId}
+                                        onChange={e => { setAssignExporterId(e.target.value); setSelectedWorkerIds(new Set()); }}
+                                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-400 focus:border-transparent bg-white text-gray-900 font-medium text-sm"
+                                    >
+                                        <option value="">Select Exporter</option>
+                                        {exporters.map((exp) => (
+                                            <option key={exp._id} value={exp._id}>{exp.companyTradingName}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <button
+                                    onClick={handleBulkAssign}
+                                    disabled={loading || !assignExporterId || selectedWorkerIds.size === 0}
+                                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm whitespace-nowrap"
+                                >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Assign {selectedWorkerIds.size > 0 ? `${selectedWorkerIds.size} Worker${selectedWorkerIds.size > 1 ? 's' : ''}` : 'Selected'}
+                                </button>
                             </div>
+
+                            {!assignExporterId ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-center">
+                                    <Building2 className="w-12 h-12 text-gray-200 mb-4" />
+                                    <p className="font-medium text-gray-500">Select an exporter above</p>
+                                    <p className="text-sm text-gray-400 mt-1">Then pick workers to assign to that exporter</p>
+                                </div>
+                            ) : availableForAssignment.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-center">
+                                    <Users className="w-12 h-12 text-gray-200 mb-4" />
+                                    <p className="font-medium text-gray-500">No available workers</p>
+                                    <p className="text-sm text-gray-400 mt-1">Check-in workers first or all on-site workers are already assigned</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full table-compact">
+                                        <thead className="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left w-10">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={availableForAssignment.length > 0 && selectedWorkerIds.size === availableForAssignment.length}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setSelectedWorkerIds(new Set(availableForAssignment.map(a => a._id)));
+                                                            } else {
+                                                                setSelectedWorkerIds(new Set());
+                                                            }
+                                                        }}
+                                                        className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                                    />
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker ID</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-in Time</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200">
+                                            {availableForAssignment.map((att) => (
+                                                <tr
+                                                    key={att._id}
+                                                    className={`hover:bg-gray-50 cursor-pointer transition-colors ${selectedWorkerIds.has(att._id) ? 'bg-emerald-50' : ''}`}
+                                                    onClick={() => {
+                                                        setSelectedWorkerIds(prev => {
+                                                            const next = new Set(prev);
+                                                            if (next.has(att._id)) next.delete(att._id);
+                                                            else next.add(att._id);
+                                                            return next;
+                                                        });
+                                                    }}
+                                                >
+                                                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedWorkerIds.has(att._id)}
+                                                            onChange={() => {
+                                                                setSelectedWorkerIds(prev => {
+                                                                    const next = new Set(prev);
+                                                                    if (next.has(att._id)) next.delete(att._id);
+                                                                    else next.add(att._id);
+                                                                    return next;
+                                                                });
+                                                            }}
+                                                            className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                                        />
+                                                    </td>
+                                                    <td className="px-6 py-3">
+                                                        <span className="font-medium text-gray-900">{att.workerId.fullName}</span>
+                                                    </td>
+                                                    <td className="px-6 py-3">
+                                                        <span className="text-sm font-mono font-semibold text-gray-700">{att.workerId.workerId}</span>
+                                                    </td>
+                                                    <td className="px-6 py-3">
+                                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                            <Clock className="w-4 h-4" />
+                                                            {new Date(att.checkInTime).toLocaleTimeString('en-US', {
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-3">
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                                                            Available
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     )}
 
