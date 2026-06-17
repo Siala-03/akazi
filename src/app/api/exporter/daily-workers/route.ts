@@ -13,6 +13,7 @@ type SessionRow = {
         id: string;
         workerId: string;
         fullName: string;
+        phone: string;
     };
     attendance: {
         checkInTime: Date;
@@ -79,6 +80,7 @@ export async function GET(request: NextRequest) {
                         id: true,
                         workerId: true,
                         fullName: true,
+                        phone: true,
                     },
                 },
                 attendance: {
@@ -110,6 +112,7 @@ export async function GET(request: NextRequest) {
             {
                 workerName: string;
                 workerId: string;
+                phone: string;
                 checkInTime: Date;
                 assignmentTime: Date;
                 checkoutTime: Date | null;
@@ -126,6 +129,7 @@ export async function GET(request: NextRequest) {
                 workerMap.set(key, {
                     workerName: session.worker.fullName,
                     workerId: session.worker.workerId,
+                    phone: session.worker.phone,
                     checkInTime: session.attendance.checkInTime,
                     assignmentTime: session.startTime,
                     checkoutTime: session.attendance.checkOutTime,
@@ -161,6 +165,7 @@ export async function GET(request: NextRequest) {
                 return {
                     workerName: row.workerName,
                     workerId: row.workerId,
+                    phone: row.phone,
                     checkInTime: row.checkInTime.toISOString(),
                     assignmentTime: row.assignmentTime.toISOString(),
                     checkoutTime: row.checkoutTime ? row.checkoutTime.toISOString() : null,

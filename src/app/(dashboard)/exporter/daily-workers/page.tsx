@@ -6,6 +6,7 @@ import { Calendar, Download, RefreshCw, Users, Package, DollarSign } from 'lucid
 type DailyWorkerRow = {
     workerName: string;
     workerId: string;
+    phone: string;
     checkInTime: string;
     assignmentTime: string;
     checkoutTime: string | null;
@@ -298,6 +299,7 @@ export default function ExporterDailyWorkersPage() {
                             <tr>
                                 <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Worker Name</th>
                                 <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Worker ID</th>
+                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Phone</th>
                                 <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Check-in Time</th>
                                 <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Assignment Time</th>
                                 <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Checkout Time</th>
@@ -309,13 +311,13 @@ export default function ExporterDailyWorkersPage() {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={8} className="px-4 py-6 text-center text-sm text-gray-500">
+                                    <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500">
                                         Loading worker report...
                                     </td>
                                 </tr>
                             ) : data.workers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-4 py-6 text-center text-sm text-gray-500">
+                                    <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500">
                                         No worker activity found for this selection.
                                     </td>
                                 </tr>
@@ -324,6 +326,7 @@ export default function ExporterDailyWorkersPage() {
                                     <tr key={`${row.workerId}-${row.assignmentTime}`} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/30">
                                         <td className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">{row.workerName}</td>
                                         <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 font-mono">{row.workerId}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">{row.phone || '—'}</td>
                                         <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.checkInTime)}</td>
                                         <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.assignmentTime)}</td>
                                         <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.checkoutTime)}</td>
