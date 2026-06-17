@@ -10,7 +10,6 @@ import {
     Activity,
     Building2,
     ArrowRight,
-    DollarSign,
     Weight,
     RefreshCw,
     UserCheck,
@@ -227,6 +226,12 @@ export default function AdminDashboard() {
                     </div>
                     <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
                     <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-indigo-600" />
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{analytics?.activeExporters || 0}</span>
+                        <span className="text-gray-600 dark:text-gray-400">active exporters</span>
+                    </div>
+                    <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+                    <div className="flex items-center gap-2">
                         <Package className="w-4 h-4 text-purple-600" />
                         <span className="font-semibold text-gray-900 dark:text-gray-100">{analytics?.totalBags || 0}</span>
                         <span className="text-gray-600 dark:text-gray-400">bags all time</span>
@@ -269,53 +274,53 @@ export default function AdminDashboard() {
             </div>
 
             {/* Financial Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Revenue Today</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
                         FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {analytics?.sessionsTodayCount || analytics?.workerDaysToday || 0} sessions billed
+                        {analytics?.workerDaysToday || 0} workers · per-exporter rates
                     </p>
                 </div>
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Billed to Exporters</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
                         FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Today · FRw ${(analytics?.exporterDailyRate || 2000).toLocaleString()}/session
+                        Today · {analytics?.workerDaysToday || 0} worker-days
                     </p>
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
                         <span className="text-gray-500 dark:text-gray-400">This week</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-200">FRw {(analytics?.weeklyCostToExporters || 0).toLocaleString()}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">FRw {(analytics?.weeklyCostToExporters || 0).toLocaleString()}</span>
                     </div>
                 </div>
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Worker Wages</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
                         FRw {(analytics?.dailyWorkerWages || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Today · FRw ${(analytics?.workerDailyWage || 1700).toLocaleString()}/session · paid Fri
+                        Today · FRw {(analytics?.workerDailyWage || 1700).toLocaleString()}/worker · paid Fri
                     </p>
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
                         <span className="text-gray-500 dark:text-gray-400">This week</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-200">FRw {(analytics?.weeklyWorkerWages || 0).toLocaleString()}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">FRw {(analytics?.weeklyWorkerWages || 0).toLocaleString()}</span>
                     </div>
                 </div>
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Cooperative Margin</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
                         FRw {(analytics?.dailyCoopMargin || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Today · FRw ${(analytics?.coopMarginPerDay || 300).toLocaleString()}/session
+                        Today · revenue minus wages
                     </p>
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
                         <span className="text-gray-500 dark:text-gray-400">Cumulative</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-200">FRw {((analytics?.cumulativeCostToExporters || 0) - (analytics?.cumulativeWorkerWages || 0)).toLocaleString()}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">FRw {((analytics?.cumulativeCostToExporters || 0) - (analytics?.cumulativeWorkerWages || 0)).toLocaleString()}</span>
                     </div>
                 </div>
             </div>
@@ -385,103 +390,6 @@ export default function AdminDashboard() {
                         </ResponsiveContainer>
                     )}
                 </div>
-            </div>
-
-            {/* Today's Exporter Activity */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                            <Building2 className="w-5 h-5 text-indigo-600" />
-                            Today&apos;s Exporter Activity
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                            {analytics?.exporterBreakdown?.length || 0} exporter{(analytics?.exporterBreakdown?.length || 0) !== 1 ? 's' : ''} active today
-                        </p>
-                    </div>
-                    <Link href="/admin/exporters" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
-                        Manage <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                </div>
-                {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                    </div>
-                ) : !analytics?.exporterBreakdown?.length ? (
-                    <div className="text-center py-12">
-                        <Building2 className="w-12 h-12 mx-auto mb-3 text-gray-200 dark:text-gray-600" />
-                        <p className="text-gray-500 dark:text-gray-400 font-medium">No exporter activity today</p>
-                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Bags recorded today will appear here</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full">
-                            <thead>
-                                <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Exporter</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags Today</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight (kg)</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Billed Today</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                {(analytics?.exporterBreakdown || []).map((exp: any, i: number) => (
-                                    <tr key={exp.exporterId} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
-                                                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{i + 1}</span>
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{exp.name}</p>
-                                                    <p className="text-xs text-gray-400 font-mono">{exp.code}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-bold">
-                                                {exp.bagsToday}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                                {(exp.weightToday || 0).toLocaleString()}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                                {exp.sessionsTodayCount ?? exp.workerDaysToday ?? 0}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <span className={`text-sm font-bold ${exp.costToday > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`}>
-                                                {exp.costToday > 0 ? `FRw ${exp.costToday.toLocaleString()}` : '—'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                            <tfoot>
-                                <tr className="bg-gray-50 dark:bg-gray-800/50 border-t-2 border-gray-200 dark:border-gray-700">
-                                    <td className="px-6 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Total</td>
-                                    <td className="px-6 py-3 text-right text-sm font-bold text-purple-700 dark:text-purple-300">
-                                        {(analytics?.bagsToday || 0)}
-                                    </td>
-                                    <td className="px-6 py-3 text-right text-sm font-bold text-gray-700 dark:text-gray-300">
-                                        {(analytics?.totalKilogramsToday || 0).toLocaleString()}
-                                    </td>
-                                    <td className="px-6 py-3 text-right text-sm font-bold text-gray-700 dark:text-gray-300">
-                                        {(analytics?.sessionsTodayCount || analytics?.workerDaysToday || 0)}
-                                    </td>
-                                    <td className="px-6 py-3 text-right text-sm font-bold text-blue-600 dark:text-blue-400">
-                                        FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                )}
             </div>
 
             {/* Quick Actions */}

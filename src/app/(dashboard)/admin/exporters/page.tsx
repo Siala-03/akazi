@@ -18,15 +18,8 @@ interface Exporter {
     contactPerson: string;
     phone: string;
     email: string;
+    dailyRate: number | null;
     isActive: boolean;
-}
-
-interface RateCard {
-    _id: string;
-    exporterId: string | { _id: string; companyTradingName: string };
-    ratePerBag: number;
-    isActive: boolean;
-    effectiveFrom: string;
 }
 
 const emptyForm = {
@@ -41,7 +34,6 @@ const emptyForm = {
 
 export default function AdminExportersPage() {
     const [exporters, setExporters] = useState<Exporter[]>([]);
-    const [rateCards, setRateCards] = useState<Record<string, RateCard>>({});
     const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingExporter, setEditingExporter] = useState<Exporter | null>(null);
@@ -54,9 +46,9 @@ export default function AdminExportersPage() {
     useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
     const [showRateModal, setShowRateModal] = useState(false);
     const [rateExporter, setRateExporter] = useState<Exporter | null>(null);
-    const [ratePerBag, setRatePerBag] = useState('');
+    const [dailyRateInput, setDailyRateInput] = useState('');
 
-    useEffect(() => { fetchExporters(); fetchRateCards(); }, []);
+    useEffect(() => { fetchExporters(); }, []);
 
     const fetchExporters = async () => {
         try {
@@ -71,26 +63,9 @@ export default function AdminExportersPage() {
         }
     };
 
-    const fetchRateCards = async () => {
-        try {
-            const res = await fetch('/api/rate-cards');
-            const data = await res.json();
-            const cards: Record<string, RateCard> = {};
-            (data.rateCards || []).forEach((rc: RateCard) => {
-                if (rc.isActive) {
-                    const eid = typeof rc.exporterId === 'string' ? rc.exporterId : rc.exporterId._id;
-                    cards[eid] = rc;
-                }
-            });
-            setRateCards(cards);
-        } catch {
-            // silently fail
-        }
-    };
-
     const openRateModal = (exp: Exporter) => {
         setRateExporter(exp);
-        setRatePerBag(rateCards[exp._id]?.ratePerBag?.toString() || '');
+        setDailyRateInput(exp.dailyRate?.toString() || '');
         setShowRateModal(true);
     };
 
@@ -98,16 +73,16 @@ export default function AdminExportersPage() {
         e.preventDefault();
         if (!rateExporter) return;
         try {
-            const res = await fetch('/api/rate-cards', {
-                method: 'POST',
+            const res = await fetch(`/api/exporters/${rateExporter._id}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ exporterId: rateExporter._id, ratePerBag: Number(ratePerBag) }),
+                body: JSON.stringify({ dailyRate: Number(dailyRateInput) }),
             });
             if (!res.ok) throw new Error('Failed to set rate');
-            toast.success(`Rate set to FRw ${ratePerBag}/bag for ${rateExporter.companyTradingName}`);
+            toast.success(`Daily rate set to FRw ${Number(dailyRateInput).toLocaleString()}/worker for ${rateExporter.companyTradingName}`);
             setShowRateModal(false);
             setRateExporter(null);
-            fetchRateCards();
+            fetchExporters();
         } catch {
             toast.error('Failed to set rate');
         }
@@ -320,7 +295,7 @@ export default function AdminExportersPage() {
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Phone</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Email</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Location Address</th>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Rate/Bag</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Daily Rate</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                     <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -345,20 +320,20 @@ export default function AdminExportersPage() {
                                         <td className="px-4 sm:px-6 py-4 text-sm text-gray-700">{exp.email}</td>
                                         <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 min-w-[220px]">{exp.companyAddress}</td>
                                         <td className="px-4 sm:px-6 py-4">
-                                            {rateCards[exp._id] ? (
+                                            {exp.dailyRate ? (
                                                 <button
                                                     onClick={() => openRateModal(exp)}
                                                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors cursor-pointer"
-                                                    title="Click to update rate"
+                                                    title="Click to update daily rate"
                                                 >
                                                     <DollarSign className="w-3 h-3" />
-                                                    FRw {rateCards[exp._id].ratePerBag.toLocaleString()}
+                                                    FRw {exp.dailyRate.toLocaleString()}/day
                                                 </button>
                                             ) : (
                                                 <button
                                                     onClick={() => openRateModal(exp)}
                                                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors cursor-pointer"
-                                                    title="Set rate per bag"
+                                                    title="Set daily rate per worker"
                                                 >
                                                     <DollarSign className="w-3 h-3" />
                                                     Set Rate
@@ -428,7 +403,7 @@ export default function AdminExportersPage() {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-gray-100">
                         <div className="flex items-center justify-between p-6 border-b border-gray-200">
                             <div>
-                                <h2 className="text-lg font-bold text-gray-900">Set Rate Per Bag</h2>
+                                <h2 className="text-lg font-bold text-gray-900">Set Daily Rate Per Worker</h2>
                                 <p className="text-sm text-gray-500 mt-0.5">{rateExporter.companyTradingName}</p>
                             </div>
                             <button onClick={() => { setShowRateModal(false); setRateExporter(null); }} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -438,21 +413,21 @@ export default function AdminExportersPage() {
                         <form onSubmit={handleSetRate} className="p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                    <span className="flex items-center gap-1.5"><DollarSign className="w-3.5 h-3.5 text-emerald-600" />Rate Per Bag (FRw)</span>
+                                    <span className="flex items-center gap-1.5"><DollarSign className="w-3.5 h-3.5 text-emerald-600" />Daily Rate Per Worker (FRw)</span>
                                 </label>
                                 <input
                                     type="number"
                                     required
                                     min="0"
                                     step="1"
-                                    value={ratePerBag}
-                                    onChange={e => setRatePerBag(e.target.value)}
+                                    value={dailyRateInput}
+                                    onChange={e => setDailyRateInput(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
-                                    placeholder="e.g. 150"
+                                    placeholder="e.g. 2000"
                                 />
-                                {rateCards[rateExporter._id] && (
+                                {rateExporter.dailyRate && (
                                     <p className="text-xs text-gray-400 mt-1">
-                                        Current rate: FRw {rateCards[rateExporter._id].ratePerBag.toLocaleString()}/bag
+                                        Current rate: FRw {rateExporter.dailyRate.toLocaleString()}/worker/day
                                     </p>
                                 )}
                             </div>

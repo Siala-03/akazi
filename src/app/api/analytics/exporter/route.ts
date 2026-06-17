@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { exporterDailyRate: EXPORTER_DAILY_RATE, workerDailyWage: WORKER_DAILY_WAGE } = await getSettings();
+        const { exporterDailyRate: DEFAULT_DAILY_RATE, workerDailyWage: WORKER_DAILY_WAGE } = await getSettings();
 
         if (!currentUser.exporterId) {
             return NextResponse.json({
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
                     periodWorkerWages: 0,
                     periodCoopMargin: 0,
                     dailyBreakdown: [],
-                    ratePerWorkerDay: EXPORTER_DAILY_RATE,
+                    ratePerWorkerDay: DEFAULT_DAILY_RATE,
                     workerDailyWage: WORKER_DAILY_WAGE,
                     trends: { bags: [], weight: [] },
                 },
@@ -43,6 +43,10 @@ export async function GET(request: NextRequest) {
         }
 
         const exporterId = currentUser.exporterId;
+
+        // Fetch this exporter's custom rate (fallback to global default)
+        const exporterRecord = await prisma.exporter.findUnique({ where: { id: exporterId } });
+        const EXPORTER_RATE = (exporterRecord as any)?.dailyRate ?? DEFAULT_DAILY_RATE;
         const today = new Date();
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
@@ -220,9 +224,9 @@ export async function GET(request: NextRequest) {
         const workerDaysWeek = Number(workerDaysWeekRows[0]?.count ?? 0);
         const workerDaysCumulative = Number(workerDaysCumulativeRows[0]?.count ?? 0);
 
-        const dailyCost = workerDaysToday * EXPORTER_DAILY_RATE;
-        const weeklyCost = workerDaysWeek * EXPORTER_DAILY_RATE;
-        const cumulativeCost = workerDaysCumulative * EXPORTER_DAILY_RATE;
+        const dailyCost = workerDaysToday * EXPORTER_RATE;
+        const weeklyCost = workerDaysWeek * EXPORTER_RATE;
+        const cumulativeCost = workerDaysCumulative * EXPORTER_RATE;
 
         const dailyWorkerWages = workerDaysToday * WORKER_DAILY_WAGE;
         const weeklyWorkerWages = workerDaysWeek * WORKER_DAILY_WAGE;
@@ -237,7 +241,7 @@ export async function GET(request: NextRequest) {
         const periodAvgBagsPerDay = periodBags / periodDays;
 
         const periodSessionsCount = workerDaysToday;
-        const periodCostToExporter = periodSessionsCount * EXPORTER_DAILY_RATE;
+        const periodCostToExporter = periodSessionsCount * EXPORTER_RATE;
         const periodWorkerWages = periodSessionsCount * WORKER_DAILY_WAGE;
         const periodCoopMargin = periodCostToExporter - periodWorkerWages;
 
@@ -317,7 +321,7 @@ export async function GET(request: NextRequest) {
             const day = cursor.toISOString().split('T')[0];
             const sessions = dailySessionsMap.get(day) ?? 0;
             const bagData = dailyBagsMap.get(day) ?? { bags: 0, weight: 0 };
-            const costToExporter = sessions * EXPORTER_DAILY_RATE;
+            const costToExporter = sessions * EXPORTER_RATE;
             const workerWages = sessions * WORKER_DAILY_WAGE;
 
             dailyBreakdown.push({
@@ -367,9 +371,9 @@ export async function GET(request: NextRequest) {
                 dailyWorkerWages,
                 weeklyWorkerWages,
                 cumulativeWorkerWages,
-                ratePerWorkerDay: EXPORTER_DAILY_RATE,
+                ratePerWorkerDay: EXPORTER_RATE,
                 workerDailyWage: WORKER_DAILY_WAGE,
-                coopMarginPerDay: EXPORTER_DAILY_RATE - WORKER_DAILY_WAGE,
+                coopMarginPerDay: EXPORTER_RATE - WORKER_DAILY_WAGE,
                 trends: { bags: trendData, weight: trendData },
             },
         });
