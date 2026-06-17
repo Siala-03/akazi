@@ -40,14 +40,12 @@ function fmtDate(iso: string) {
 }
 
 export default function ExporterDashboard() {
-    const [bags, setBags] = useState<any[]>([]);
     const [analytics, setAnalytics] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
-    const [exporterInfo, setExporterInfo] = useState({ name: 'Exporter', code: 'EXP' });
-    const [currentPage, setCurrentPage] = useState(1);
+    const [exporterInfo] = useState({ name: 'Exporter', code: 'EXP' });
     const [breakdownPage, setBreakdownPage] = useState(1);
     const [breakdownPageSize, setBreakdownPageSize] = useState(10);
     const [selectedWeek, setSelectedWeek] = useState(getWeekStart(new Date()));
@@ -55,7 +53,6 @@ export default function ExporterDashboard() {
     const [filterMode, setFilterMode] = useState<'week' | 'month' | 'custom'>('week');
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
-    const ITEMS_PER_PAGE = 10;
 
     const fetchData = useCallback(async () => {
         try {
@@ -89,18 +86,8 @@ export default function ExporterDashboard() {
             }
 
             const analyticsData = await analyticsRes.json();
-            const myBags: any[] = [];
-
-            setBags(myBags);
             setAnalytics(analyticsData.analytics || {});
             setLastUpdated(new Date());
-
-            if (myBags.length > 0 && myBags[0].exporterId) {
-                setExporterInfo({
-                    name: myBags[0].exporterId.companyTradingName || 'Exporter',
-                    code: myBags[0].exporterId.exporterCode || 'EXP'
-                });
-            }
         } catch (error) {
             console.error('Error fetching data:', error);
             setLoadError(error instanceof Error ? error.message : 'Failed to load dashboard analytics');
@@ -160,17 +147,9 @@ export default function ExporterDashboard() {
     };
 
     const getExportData = (): ExportData => {
-        const exportBags = bags.slice(0, 100).map(bag => ({
-            bagNumber: bag.bagNumber,
-            weight: bag.weight || 60,
-            date: new Date(bag.date),
-            worker: bag.workers[0]?.workerId?.name || 'Unknown'
-        }));
-
         return {
             exporterName: exporterInfo.name,
             exporterCode: exporterInfo.code,
-            bags: exportBags,
             summary: {
                 totalBags: analytics?.periodBags || 0,
                 totalWeight: analytics?.periodWeight || 0,
@@ -537,105 +516,120 @@ export default function ExporterDashboard() {
                 })()}
             </div>
 
-            {/* Recent Bags */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50">
-                <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Bags</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Latest processed bags</p>
+            {/* Analytics Summary */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                {/* Bags Analysis */}
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700/50 p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Package className="w-5 h-5 text-blue-600" />
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Bags Analysis</h3>
                     </div>
-                    {bags.length > 0 && (
-                        <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-semibold">
-                            {bags.length.toLocaleString()} total bags
-                        </span>
-                    )}
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Period bags</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodBags || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">All-time bags</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.totalBags || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Period weight</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodWeight || 0).toLocaleString()} kg</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">All-time weight</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.totalWeight || 0).toLocaleString()} kg</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Avg per day</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{analytics?.periodAvgBagsPerDay || 0} bags</span>
+                        </div>
+                        {analytics?.periodBags > 0 && analytics?.periodWeight > 0 && (
+                            <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Avg bag weight</span>
+                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics.periodWeight / analytics.periodBags).toFixed(1)} kg</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div className="p-6">
-                    {loading ? (
-                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                            <p className="text-sm">Loading data...</p>
-                        </div>
-                    ) : bags.length === 0 ? (
-                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                            <Package className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                            <p className="font-medium">No bags processed yet</p>
-                            <p className="text-sm mt-1">Bag records will appear here once processing begins</p>
-                        </div>
-                    ) : (() => {
-                        const totalPages = Math.ceil(bags.length / ITEMS_PER_PAGE);
-                        const pageBags = bags.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-                        return (
-                            <>
-                                <div className="space-y-3">
-                                    {pageBags.map((bag, idx) => (
-                                        <div key={bag._id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all gap-3 sm:gap-0 bg-white dark:bg-[#1e293b]">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                    <Package className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-semibold text-gray-900 dark:text-gray-100">{bag.bagNumber}</p>
-                                                        <span className="text-xs text-gray-400 dark:text-gray-500"># {(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</span>
-                                                    </div>
-                                                    <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                                        <span className="flex items-center gap-1">
-                                                            <Calendar className="w-3 h-3" />
-                                                            {new Date(bag.date).toLocaleDateString()}
-                                                        </span>
-                                                        <span>•</span>
-                                                        <span className="flex items-center gap-1">
-                                                            <Users className="w-3 h-3" />
-                                                            {bag.workers.length} worker{bag.workers.length !== 1 ? 's' : ''}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between sm:justify-end gap-4">
-                                                <div className="text-left sm:text-right">
-                                                    <p className="font-bold text-gray-900 dark:text-gray-100 text-lg">{bag.weight} kg</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{bag.status}</p>
-                                                </div>
-                                                <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                                    bag.status === 'completed'
-                                                        ? 'bg-emerald-600 text-white'
-                                                        : 'bg-amber-500 text-white'
-                                                }`}>
-                                                    {bag.status === 'completed' ? 'Complete' : 'Pending'}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
 
-                                {totalPages > 1 && (
-                                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                                            Showing <span className="font-semibold text-gray-900 dark:text-gray-100">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span>–<span className="font-semibold text-gray-900 dark:text-gray-100">{Math.min(currentPage * ITEMS_PER_PAGE, bags.length)}</span> of <span className="font-semibold text-gray-900 dark:text-gray-100">{bags.length.toLocaleString()}</span> bags
-                                        </p>
-                                        <div className="flex items-center gap-1">
-                                            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">«</button>
-                                            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                                                <ChevronLeft className="w-4 h-4" /> Prev
-                                            </button>
-                                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                                const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
-                                                const page = start + i;
-                                                return page <= totalPages ? (
-                                                    <button key={page} onClick={() => setCurrentPage(page)} className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${currentPage === page ? 'bg-blue-600 text-white shadow' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{page}</button>
-                                                ) : null;
-                                            })}
-                                            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                                                Next <ChevronRight className="w-4 h-4" />
-                                            </button>
-                                            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">»</button>
-                                        </div>
-                                    </div>
-                                )}
+                {/* Workers Analysis */}
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700/50 p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Users className="w-5 h-5 text-purple-600" />
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Workers Analysis</h3>
+                    </div>
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Workers in period</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodWorkersEngaged || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">All-time workers</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.workersEngaged || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Period sessions</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodSessionsCount || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">All-time sessions</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.sessionsCumulativeCount || 0).toLocaleString()}</span>
+                        </div>
+                        {analytics?.periodWorkersEngaged > 0 && analytics?.periodBags > 0 && (
+                            <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Bags per worker</span>
+                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics.periodBags / analytics.periodWorkersEngaged).toFixed(1)}</span>
+                            </div>
+                        )}
+                        {analytics?.periodSessionsCount > 0 && analytics?.periodDays > 0 && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Sessions per day</span>
+                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics.periodSessionsCount / analytics.periodDays).toFixed(1)}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Cost Breakdown */}
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700/50 p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                        <DollarSign className="w-5 h-5 text-green-600" />
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Cost Breakdown</h3>
+                    </div>
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Period cost</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(analytics?.periodCostToExporter || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">This week</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(analytics?.weeklyCost || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">All-time cost</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(analytics?.cumulativeCost || 0)}</span>
+                        </div>
+                        {analytics?.periodSessionsCount > 0 && (
+                            <>
+                                <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">Avg cost per session</span>
+                                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(Math.round((analytics.periodCostToExporter || 0) / analytics.periodSessionsCount))}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">Avg cost per day</span>
+                                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(Math.round((analytics.periodCostToExporter || 0) / (analytics.periodDays || 1)))}</span>
+                                </div>
                             </>
-                        );
-                    })()}
+                        )}
+                        {analytics?.periodBags > 0 && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Cost per bag</span>
+                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(Math.round((analytics.periodCostToExporter || 0) / analytics.periodBags))}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
