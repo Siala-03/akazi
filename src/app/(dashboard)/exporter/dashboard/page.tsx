@@ -634,13 +634,18 @@ export default function ExporterDashboard() {
                         {analytics?.periodSessionsCount > 0 && (
                             <>
                                 <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
-                                    <span className="text-sm text-gray-500 dark:text-gray-400">Avg cost per session</span>
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">Cost per worker-day</span>
                                     <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(Math.round((analytics.periodCostToExporter || 0) / analytics.periodSessionsCount))}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-500 dark:text-gray-400">Avg cost per day</span>
-                                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(Math.round((analytics.periodCostToExporter || 0) / (analytics.periodDays || 1)))}</span>
-                                </div>
+                                {(() => {
+                                    const activeDays = (analytics.dailyBreakdown || []).filter((d: any) => d.sessions > 0).length;
+                                    return activeDays > 0 ? (
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-500 dark:text-gray-400">Avg daily spend</span>
+                                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(Math.round((analytics.periodCostToExporter || 0) / activeDays))}</span>
+                                        </div>
+                                    ) : null;
+                                })()}
                             </>
                         )}
                         {analytics?.periodBags > 0 && (

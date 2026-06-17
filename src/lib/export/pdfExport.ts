@@ -128,8 +128,9 @@ export async function exportToPDF(data: ExportData): Promise<void> {
         if (a.periodSessionsCount > 0) {
             costRows.push(['Avg Cost / Session', fmtFRw(Math.round((a.periodCostToExporter || 0) / a.periodSessionsCount))]);
         }
-        if (a.periodDays > 0) {
-            costRows.push(['Avg Cost / Day', fmtFRw(Math.round((a.periodCostToExporter || 0) / a.periodDays))]);
+        const activeDays = (a.dailyBreakdown || []).filter((d: any) => d.sessions > 0).length;
+        if (activeDays > 0) {
+            costRows.push(['Avg Daily Spend', fmtFRw(Math.round((a.periodCostToExporter || 0) / activeDays))]);
         }
         if (a.periodBags > 0) {
             costRows.push(['Cost / Bag', fmtFRw(Math.round((a.periodCostToExporter || 0) / a.periodBags))]);
