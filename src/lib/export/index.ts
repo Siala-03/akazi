@@ -20,6 +20,30 @@ export interface ExportData {
     totalWorkers: number;
     averageWeight: number;
   };
+  analytics?: {
+    periodBags: number;
+    periodWeight: number;
+    periodWorkersEngaged: number;
+    periodSessionsCount: number;
+    periodCostToExporter: number;
+    periodAvgBagsPerDay: number;
+    periodDays: number;
+    totalBags: number;
+    totalWeight: number;
+    workersEngaged: number;
+    cumulativeCost: number;
+    sessionsCumulativeCount: number;
+    dailyBreakdown: Array<{
+      date: string;
+      sessions: number;
+      bags: number;
+      weight: number;
+      costToExporter: number;
+    }>;
+    trends?: {
+      bags: Array<{ date: string; bags: number; weight: number }>;
+    };
+  };
 }
 
 export async function exportData(

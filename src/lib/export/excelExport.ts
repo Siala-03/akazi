@@ -1,91 +1,87 @@
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
-
-interface ExportData {
-  exporterName: string;
-  exporterCode: string;
-  dateRange?: { start: Date; end: Date };
-  bags?: Array<{
-    bagNumber: string;
-    weight: number;
-    date: Date;
-    worker?: string;
-  }>;
-  summary?: {
-    totalBags: number;
-    totalWeight: number;
-    totalWorkers: number;
-    averageWeight: number;
-  };
-}
+import { ExportData } from './index';
 
 export async function exportToExcel(data: ExportData): Promise<void> {
   const workbook = XLSX.utils.book_new();
-  
-  // Create Summary Sheet
-  if (data.summary) {
-    const summaryData = [
-      ['Akazi Rwanda Ltd - Export Report'],
+  const a = data.analytics;
+
+  // ── Summary Sheet ──
+  const summaryRows: any[][] = [
+    ['Akazi Rwanda Ltd - Exporter Report'],
+    [],
+    ['Exporter:', data.exporterName],
+    ['Code:', data.exporterCode],
+    ...(data.dateRange ? [['Period:', `${format(data.dateRange.start, 'dd MMM yyyy')} – ${format(data.dateRange.end, 'dd MMM yyyy')}`]] : []),
+    ['Generated:', format(new Date(), 'dd MMM yyyy HH:mm')],
+    [],
+  ];
+
+  if (a) {
+    summaryRows.push(
+      ['KEY FIGURES', '', 'ALL-TIME', ''],
+      ['Metric', 'Period Value', 'Metric', 'All-Time Value'],
+      ['Bags Processed', a.periodBags || 0, 'Total Bags', a.totalBags || 0],
+      ['Total Weight (kg)', a.periodWeight || 0, 'Total Weight (kg)', a.totalWeight || 0],
+      ['Workers Engaged', a.periodWorkersEngaged || 0, 'All-Time Workers', a.workersEngaged || 0],
+      ['Sessions', a.periodSessionsCount || 0, 'All-Time Sessions', a.sessionsCumulativeCount || 0],
+      ['Avg Bags/Day', a.periodAvgBagsPerDay || 0, 'Period Days', a.periodDays || 0],
       [],
-      ['Exporter:', data.exporterName],
-      ['Code:', data.exporterCode],
-      ...(data.dateRange ? [['Period:', `${format(data.dateRange.start, 'MMM dd, yyyy')} - ${format(data.dateRange.end, 'MMM dd, yyyy')}`]] : []),
-      ['Generated:', format(new Date(), 'MMM dd, yyyy HH:mm')],
-      [],
+      ['COST SUMMARY'],
+      ['Metric', 'Amount (FRw)'],
+      ['Period Cost', a.periodCostToExporter || 0],
+      ['All-Time Cost', a.cumulativeCost || 0],
+    );
+    if (a.periodSessionsCount > 0) {
+      summaryRows.push(['Avg Cost / Session', Math.round((a.periodCostToExporter || 0) / a.periodSessionsCount)]);
+    }
+    if (a.periodBags > 0) {
+      summaryRows.push(['Cost / Bag', Math.round((a.periodCostToExporter || 0) / a.periodBags)]);
+    }
+  } else if (data.summary) {
+    summaryRows.push(
       ['Summary'],
       ['Metric', 'Value'],
       ['Total Bags', data.summary.totalBags],
-      ['Total Weight (kg)', data.summary.totalWeight.toFixed(2)],
+      ['Total Weight (kg)', data.summary.totalWeight],
       ['Total Workers', data.summary.totalWorkers],
-      ['Average Weight (kg)', data.summary.averageWeight.toFixed(2)],
-    ];
-    
-    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-    
-    // Set column widths
-    summarySheet['!cols'] = [{ wch: 20 }, { wch: 30 }];
-    
-    // Add styling for header
-    const range = XLSX.utils.decode_range(summarySheet['!ref'] || 'A1');
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const address = XLSX.utils.encode_col(C) + "1";
-      if (!summarySheet[address]) continue;
-      summarySheet[address].s = {
-        font: { bold: true, sz: 14 },
-        fill: { fgColor: { rgb: "2563EB" } },
-      };
-    }
-    
-    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+      ['Average Weight (kg)', data.summary.averageWeight],
+    );
   }
-  
-  // Create Bags Details Sheet
-  if (data.bags && data.bags.length > 0) {
-    const bagsData = [
-      ['Bag Number', 'Weight (kg)', 'Date', 'Worker'],
-      ...data.bags.map((bag) => [
-        bag.bagNumber,
-        bag.weight,
-        format(new Date(bag.date), 'MMM dd, yyyy'),
-        bag.worker || 'N/A',
+
+  const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+  summarySheet['!cols'] = [{ wch: 22 }, { wch: 18 }, { wch: 22 }, { wch: 18 }];
+  XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+
+  // ── Daily Breakdown Sheet ──
+  if (a?.dailyBreakdown && a.dailyBreakdown.length > 0) {
+    const breakdownRows: any[][] = [
+      ['Date', 'Sessions', 'Bags', 'Weight (kg)', 'Cost (FRw)'],
+      ...a.dailyBreakdown.map((r: any) => [
+        r.date,
+        r.sessions,
+        r.bags,
+        r.weight || 0,
+        r.costToExporter || 0,
       ]),
     ];
-    
-    const bagsSheet = XLSX.utils.aoa_to_sheet(bagsData);
-    
-    // Set column widths
-    bagsSheet['!cols'] = [{ wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 20 }];
-    
-    // Add auto filter
-    const range = XLSX.utils.decode_range(bagsSheet['!ref'] || 'A1');
-    bagsSheet['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
-    
-    XLSX.utils.book_append_sheet(workbook, bagsSheet, 'Bags Details');
+
+    const totals = a.dailyBreakdown.reduce((acc: any, r: any) => ({
+      sessions: acc.sessions + r.sessions,
+      bags: acc.bags + r.bags,
+      weight: acc.weight + (r.weight || 0),
+      cost: acc.cost + (r.costToExporter || 0),
+    }), { sessions: 0, bags: 0, weight: 0, cost: 0 });
+
+    breakdownRows.push(['TOTAL', totals.sessions, totals.bags, totals.weight, totals.cost]);
+
+    const breakdownSheet = XLSX.utils.aoa_to_sheet(breakdownRows);
+    breakdownSheet['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 16 }];
+    const range = XLSX.utils.decode_range(breakdownSheet['!ref'] || 'A1');
+    breakdownSheet['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+    XLSX.utils.book_append_sheet(workbook, breakdownSheet, 'Daily Breakdown');
   }
-  
-  // Generate filename
-  const fileName = `${data.exporterCode}_export_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`;
-  
-  // Write file
+
+  const fileName = `${data.exporterCode}_report_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`;
   XLSX.writeFile(workbook, fileName);
 }

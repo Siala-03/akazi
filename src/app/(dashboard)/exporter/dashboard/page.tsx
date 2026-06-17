@@ -147,15 +147,35 @@ export default function ExporterDashboard() {
     };
 
     const getExportData = (): ExportData => {
+        const periodStart = analytics?.periodStart ? new Date(analytics.periodStart) : undefined;
+        const periodEnd = analytics?.periodEnd ? new Date(analytics.periodEnd) : undefined;
+
         return {
             exporterName: exporterInfo.name,
             exporterCode: exporterInfo.code,
+            dateRange: periodStart && periodEnd ? { start: periodStart, end: periodEnd } : undefined,
             summary: {
                 totalBags: analytics?.periodBags || 0,
                 totalWeight: analytics?.periodWeight || 0,
                 totalWorkers: analytics?.periodWorkersEngaged || 0,
                 averageWeight: analytics?.periodBags > 0 ? analytics.periodWeight / analytics.periodBags : 0
-            }
+            },
+            analytics: analytics ? {
+                periodBags: analytics.periodBags || 0,
+                periodWeight: analytics.periodWeight || 0,
+                periodWorkersEngaged: analytics.periodWorkersEngaged || 0,
+                periodSessionsCount: analytics.periodSessionsCount || 0,
+                periodCostToExporter: analytics.periodCostToExporter || 0,
+                periodAvgBagsPerDay: analytics.periodAvgBagsPerDay || 0,
+                periodDays: analytics.periodDays || 0,
+                totalBags: analytics.totalBags || 0,
+                totalWeight: analytics.totalWeight || 0,
+                workersEngaged: analytics.workersEngaged || 0,
+                cumulativeCost: analytics.cumulativeCost || 0,
+                sessionsCumulativeCount: analytics.sessionsCumulativeCount || 0,
+                dailyBreakdown: analytics.dailyBreakdown || [],
+                trends: analytics.trends,
+            } : undefined,
         };
     };
 
