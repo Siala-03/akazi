@@ -36,3 +36,30 @@ export async function PUT(
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
+
+export async function DELETE(
+    _request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || currentUser.role !== 'admin') {
+            return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 401 });
+        }
+
+        const { id } = await params;
+        const existing = await prisma.session.findUnique({ where: { id } });
+        if (!existing) {
+            return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+        }
+
+        // Remove linked BagWorker records first, then the session
+        await prisma.bagWorker.deleteMany({ where: { sessionId: id } });
+        await prisma.session.delete({ where: { id } });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Delete session error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}
