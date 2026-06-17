@@ -652,11 +652,7 @@ export default function AdminReportsPage() {
     };
 
     if (activeTab === 'exporter') {
-      // Summary chart
-      const top = filteredExporterReports.slice(0, 15);
-      drawSummaryBar(top.map(r => ({ label: r.exporterName, value: r.bagsSorted })), 'Bags by Exporter', [59, 130, 246]);
-
-      // Summary stats
+      // Summary stats first
       const totBags = filteredExporterReports.reduce((s, r) => s + r.bagsSorted, 0);
       const totWorkers = filteredExporterReports.reduce((s, r) => s + r.workersInvolved, 0);
       const totCost = filteredExporterReports.reduce((s, r) => s + r.totalLaborCost, 0);
@@ -685,11 +681,13 @@ export default function AdminReportsPage() {
         margin: { left: margin, right: margin },
         didParseCell: (d) => { if (d.row.index === rows.length - 1 && d.section === 'body') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [240, 253, 244]; } },
       });
+      y = (doc as any).lastAutoTable.finalY + 10;
+
+      // Chart at the bottom
+      const top = filteredExporterReports.slice(0, 15);
+      drawSummaryBar(top.map(r => ({ label: r.exporterName, value: r.bagsSorted })), 'Bags by Exporter', [59, 130, 246]);
 
     } else if (activeTab === 'worker') {
-      const top = filteredWorkerReports.filter(r => r.bagsContributed > 0).sort((a, b) => b.bagsContributed - a.bagsContributed).slice(0, 15);
-      drawSummaryBar(top.map(r => ({ label: r.workerName, value: r.bagsContributed })), 'Top Workers by Bags', [139, 92, 246]);
-
       const totDays = filteredWorkerReports.reduce((s, r) => s + r.daysWorked, 0);
       const totBags = filteredWorkerReports.reduce((s, r) => s + r.bagsContributed, 0);
       const totEarn = filteredWorkerReports.reduce((s, r) => s + r.totalEarnings, 0);
@@ -717,12 +715,13 @@ export default function AdminReportsPage() {
         margin: { left: margin, right: margin },
         didParseCell: (d) => { if (d.row.index === rows.length - 1 && d.section === 'body') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [240, 253, 244]; } },
       });
+      y = (doc as any).lastAutoTable.finalY + 10;
+
+      // Chart after the table
+      const top = filteredWorkerReports.filter(r => r.bagsContributed > 0).sort((a, b) => b.bagsContributed - a.bagsContributed).slice(0, 15);
+      drawSummaryBar(top.map(r => ({ label: r.workerName, value: r.bagsContributed })), 'Top Workers by Bags', [139, 92, 246]);
 
     } else if (activeTab === 'daily') {
-      const sorted = [...filteredDailyOperations].sort((a, b) => a.date.localeCompare(b.date));
-      drawSummaryBar(sorted.slice(-20).map(r => ({ label: r.date.slice(5), value: r.bagsCompleted })), 'Bags Completed per Day', [16, 185, 129]);
-      drawSummaryBar(sorted.slice(-20).map(r => ({ label: r.date.slice(5), value: r.activeSessions })), 'Sessions per Day', [59, 130, 246]);
-
       const totW = filteredDailyOperations.reduce((s, r) => s + r.workersOnSite, 0);
       const totS = filteredDailyOperations.reduce((s, r) => s + r.activeSessions, 0);
       const totB = filteredDailyOperations.reduce((s, r) => s + r.bagsCompleted, 0);
@@ -744,6 +743,12 @@ export default function AdminReportsPage() {
         margin: { left: margin, right: margin },
         didParseCell: (d) => { if (d.row.index === rows.length - 1 && d.section === 'body') { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [240, 253, 244]; } },
       });
+      y = (doc as any).lastAutoTable.finalY + 10;
+
+      // Charts after the table
+      const sorted = [...filteredDailyOperations].sort((a, b) => a.date.localeCompare(b.date));
+      drawSummaryBar(sorted.slice(-20).map(r => ({ label: r.date.slice(5), value: r.bagsCompleted })), 'Bags Completed per Day', [16, 185, 129]);
+      drawSummaryBar(sorted.slice(-20).map(r => ({ label: r.date.slice(5), value: r.activeSessions })), 'Sessions per Day', [59, 130, 246]);
 
     } else {
       const rows = filteredAuditTrails.map(r => [

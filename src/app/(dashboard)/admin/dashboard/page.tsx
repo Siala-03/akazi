@@ -61,8 +61,14 @@ export default function AdminDashboard() {
     };
 
     const getExportData = (): ExportData => {
+        const trendBags = (analytics?.trends?.bags || []).map((d: any) => ({
+            date: d.date,
+            bags: d.bags || 0,
+            weight: 0,
+        }));
+
         return {
-            exporterName: 'Admin',
+            exporterName: 'Akazi Rwanda Ltd',
             exporterCode: 'ADMIN',
             summary: {
                 totalBags: analytics?.totalBags || 0,
@@ -70,6 +76,28 @@ export default function AdminDashboard() {
                 totalWorkers: analytics?.totalWorkers || 0,
                 averageWeight: analytics?.totalBags > 0 ? (analytics?.totalKilograms || 0) / analytics.totalBags : 0,
             },
+            analytics: analytics ? {
+                periodBags: analytics.bagsToday || 0,
+                periodWeight: analytics.totalKilogramsToday || 0,
+                periodWorkersEngaged: analytics.workersCheckedInToday || 0,
+                periodSessionsCount: analytics.workerDaysToday || 0,
+                periodCostToExporter: analytics.dailyCostToExporters || 0,
+                periodAvgBagsPerDay: analytics.avgBagsPerDay || 0,
+                periodDays: 1,
+                totalBags: analytics.totalBags || 0,
+                totalWeight: analytics.totalKilograms || 0,
+                workersEngaged: analytics.totalWorkers || 0,
+                cumulativeCost: analytics.cumulativeCostToExporters || 0,
+                sessionsCumulativeCount: analytics.workerDaysCumulative || 0,
+                dailyBreakdown: (analytics.trends?.bags || []).map((d: any) => ({
+                    date: d.date,
+                    sessions: d.sessions || 0,
+                    bags: d.bags || 0,
+                    weight: 0,
+                    costToExporter: d.cost || 0,
+                })),
+                trends: { bags: trendBags },
+            } : undefined,
         };
     };
 

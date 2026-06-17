@@ -150,24 +150,6 @@ export async function exportToPDF(data: ExportData): Promise<void> {
         y = (doc as any).lastAutoTable.finalY + 10;
     }
 
-    // ── Trend Charts ──
-    if (a?.trends?.bags && a.trends.bags.length > 0) {
-        if (y > 200) { doc.addPage(); y = 20; }
-
-        doc.setFontSize(12);
-        doc.setTextColor(6, 95, 70);
-        doc.text('7-Day Trends', margin, y);
-        y += 6;
-
-        const trendData = a.trends.bags;
-        const halfW = (pageWidth - margin * 3) / 2;
-
-        y = drawBarChart(doc, trendData.map(d => ({ label: d.date, value: d.bags })), margin, y, halfW, 50, 'Bags per Day', [59, 130, 246]);
-        const chartY = y - 50 - 10 + 6;
-        drawBarChart(doc, trendData.map(d => ({ label: d.date, value: Math.round(d.weight) })), margin + halfW + margin, chartY, halfW, 50, 'Weight per Day (kg)', [16, 185, 129]);
-        y = Math.max(y, chartY + 60);
-    }
-
     // ── Daily Breakdown Table ──
     if (a?.dailyBreakdown && a.dailyBreakdown.length > 0) {
         if (y > 200) { doc.addPage(); y = 20; }
@@ -219,7 +201,26 @@ export async function exportToPDF(data: ExportData): Promise<void> {
                     }
                 },
             });
+            y = (doc as any).lastAutoTable.finalY + 10;
         }
+    }
+
+    // ── Trend Charts (after tables) ──
+    if (a?.trends?.bags && a.trends.bags.length > 0) {
+        if (y > 200) { doc.addPage(); y = 20; }
+
+        doc.setFontSize(12);
+        doc.setTextColor(6, 95, 70);
+        doc.text('7-Day Trends', margin, y);
+        y += 6;
+
+        const trendData = a.trends.bags;
+        const halfW = (pageWidth - margin * 3) / 2;
+
+        y = drawBarChart(doc, trendData.map(d => ({ label: d.date, value: d.bags })), margin, y, halfW, 50, 'Bags per Day', [59, 130, 246]);
+        const chartY = y - 50 - 10 + 6;
+        drawBarChart(doc, trendData.map(d => ({ label: d.date, value: Math.round(d.weight) })), margin + halfW + margin, chartY, halfW, 50, 'Weight per Day (kg)', [16, 185, 129]);
+        y = Math.max(y, chartY + 60);
     }
 
     // ── Footer ──
