@@ -12,6 +12,8 @@ import {
     ChevronRight,
     AlertCircle,
     Download,
+    Building2,
+    Search,
 } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { exportPayrollToExcel } from '@/lib/export/payrollExport';
@@ -21,6 +23,8 @@ interface PayrollWorker {
     fullName: string;
     phone: string;
     nationalId: string;
+    exporterName: string;
+    exporterCode: string;
     numberOfBags: number;
     numberOfDays: number;
     dailyRate: number;
@@ -34,10 +38,15 @@ interface PayrollSummary {
     totalWorkerWages: number;
     totalCostToExporters: number;
     cooperativeMargin: number;
-    exporterDailyRate: number;
     workerDailyWage: number;
     weekStart: string;
     weekEnd: string;
+}
+
+interface Exporter {
+    _id: string;
+    companyTradingName: string;
+    exporterCode: string;
 }
 
 function getWeekStart(date: Date): string {
@@ -60,13 +69,25 @@ export default function PayrollPage() {
     const [error, setError] = useState('');
     const [selectedWeek, setSelectedWeek] = useState(getWeekStart(new Date()));
     const [currentPage, setCurrentPage] = useState(1);
+    const [exporters, setExporters] = useState<Exporter[]>([]);
+    const [selectedExporter, setSelectedExporter] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
     const ITEMS_PER_PAGE = 20;
+
+    useEffect(() => {
+        fetch('/api/exporters')
+            .then(res => res.json())
+            .then(data => setExporters(data.exporters || []))
+            .catch(() => {});
+    }, []);
 
     const fetchPayroll = useCallback(async () => {
         try {
             setLoading(true);
             setError('');
-            const res = await fetch(`/api/admin/payroll?weekStart=${selectedWeek}`);
+            const params = new URLSearchParams({ weekStart: selectedWeek });
+            if (selectedExporter) params.append('exporterId', selectedExporter);
+            const res = await fetch(`/api/admin/payroll?${params.toString()}`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to load payroll');
             setPayroll(data.payroll || []);
@@ -77,7 +98,7 @@ export default function PayrollPage() {
         } finally {
             setLoading(false);
         }
-    }, [selectedWeek]);
+    }, [selectedWeek, selectedExporter]);
 
     useEffect(() => { fetchPayroll(); }, [fetchPayroll]);
 
@@ -105,8 +126,17 @@ export default function PayrollPage() {
         ? `${fmtDate(summary.weekStart)} – ${fmtDate(summary.weekEnd)}`
         : '';
 
-    const totalPages = Math.ceil(payroll.length / ITEMS_PER_PAGE);
-    const pageRows = payroll.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const filtered = payroll.filter(w => {
+        if (!searchTerm) return true;
+        const q = searchTerm.toLowerCase();
+        return w.fullName.toLowerCase().includes(q) ||
+            w.exporterName.toLowerCase().includes(q) ||
+            w.phone?.toLowerCase().includes(q) ||
+            w.nationalId?.toLowerCase().includes(q);
+    });
+
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+    const pageRows = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     return (
         <div className="space-y-5">
@@ -138,7 +168,7 @@ export default function PayrollPage() {
                 }
             />
 
-            {/* ── Week picker ── */}
+            {/* Filters */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm">
                 <div className="flex items-center gap-2 shrink-0">
                     <Calendar className="w-4 h-4 text-emerald-500" />
@@ -171,10 +201,26 @@ export default function PayrollPage() {
                             </>
                         );
                     })()}
+
+                    <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 hidden sm:block" />
+
+                    <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-indigo-500" />
+                        <select
+                            value={selectedExporter}
+                            onChange={e => setSelectedExporter(e.target.value)}
+                            className="px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-shadow"
+                        >
+                            <option value="">All Exporters</option>
+                            {exporters.map(exp => (
+                                <option key={exp._id} value={exp._id}>{exp.companyTradingName}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            {/* ── Error ── */}
+            {/* Error */}
             {error && (
                 <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl px-4 py-3">
                     <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
@@ -182,7 +228,7 @@ export default function PayrollPage() {
                 </div>
             )}
 
-            {/* ── Stat cards ── */}
+            {/* Stat cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                     {
@@ -212,7 +258,7 @@ export default function PayrollPage() {
                     {
                         label: 'Coop margin',
                         value: summary?.cooperativeMargin ?? 0,
-                        sub: `revenue − wages`,
+                        sub: 'revenue − wages',
                         icon: TrendingUp,
                         format: 'currency',
                         accent: 'teal',
@@ -233,27 +279,39 @@ export default function PayrollPage() {
                 ))}
             </div>
 
-            {/* ── Payroll table ── */}
+            {/* Payroll table */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 shadow-sm overflow-hidden">
 
                 {/* Table header bar */}
-                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between gap-4">
+                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h2 className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">Wage Disbursement List</h2>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {loading ? 'Loading…' : `${payroll.length} worker${payroll.length !== 1 ? 's' : ''}${weekLabel ? ` · ${weekLabel}` : ''}`}
+                            {loading ? 'Loading…' : `${filtered.length} worker${filtered.length !== 1 ? 's' : ''}${weekLabel ? ` · ${weekLabel}` : ''}`}
                         </p>
                     </div>
-                    {payroll.length > 0 && (
-                        <button
-                            onClick={handleExportExcel}
-                            disabled={exporting}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
-                        >
-                            <Download className="w-3.5 h-3.5" />
-                            Download Excel
-                        </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search workers…"
+                                value={searchTerm}
+                                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                className="pl-9 pr-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent w-44 sm:w-56"
+                            />
+                        </div>
+                        {payroll.length > 0 && (
+                            <button
+                                onClick={handleExportExcel}
+                                disabled={exporting}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                                Download Excel
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {loading ? (
@@ -261,11 +319,15 @@ export default function PayrollPage() {
                         <div className="w-7 h-7 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                         <p className="text-xs text-gray-500 dark:text-gray-400">Loading payroll data…</p>
                     </div>
-                ) : payroll.length === 0 ? (
+                ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-2">
                         <FileSpreadsheet className="w-10 h-10 text-gray-200 dark:text-gray-700" />
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No attendance data for this week</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Select a different week or verify worker check-ins</p>
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            {searchTerm ? 'No workers match your search' : 'No attendance data for this week'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {searchTerm ? 'Try adjusting your search term' : 'Select a different week or verify worker check-ins'}
+                        </p>
                     </div>
                 ) : (
                     <>
@@ -275,6 +337,7 @@ export default function PayrollPage() {
                                     <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">#</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Worker</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Exporter</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Phone</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">National ID</th>
                                         <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags</th>
@@ -286,7 +349,7 @@ export default function PayrollPage() {
                                 <tbody>
                                     {pageRows.map((worker, i) => (
                                         <tr
-                                            key={worker.workerId}
+                                            key={`${worker.workerId}-${worker.exporterCode}-${i}`}
                                             className="group hover:bg-emerald-50/30 dark:hover:bg-emerald-900/5 transition-colors"
                                         >
                                             <td className="px-6 py-3.5 text-xs text-gray-500 dark:text-gray-400 tabular-nums">
@@ -294,6 +357,12 @@ export default function PayrollPage() {
                                             </td>
                                             <td className="px-6 py-3.5">
                                                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-tight">{worker.fullName}</p>
+                                            </td>
+                                            <td className="px-6 py-3.5">
+                                                <div>
+                                                    <p className="text-sm text-gray-700 dark:text-gray-200">{worker.exporterName}</p>
+                                                    <p className="text-xs text-gray-400 font-mono">{worker.exporterCode}</p>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-3.5">
                                                 <span className="text-sm text-gray-700 dark:text-gray-200">{worker.phone || 'N/A'}</span>
@@ -324,24 +393,25 @@ export default function PayrollPage() {
                                     <tr className="border-t-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/60">
                                         <td className="px-6 py-4" />
                                         <td className="px-6 py-4">
-                                            <span className="text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Total — {payroll.length} workers</span>
+                                            <span className="text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Total — {filtered.length} workers</span>
                                         </td>
+                                        <td className="px-6 py-4" />
                                         <td className="px-6 py-4" />
                                         <td className="px-6 py-4" />
                                         <td className="px-6 py-4 text-center">
                                             <span className="text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">
-                                                {payroll.reduce((s, w) => s + w.numberOfBags, 0).toLocaleString()}
+                                                {filtered.reduce((s, w) => s + w.numberOfBags, 0).toLocaleString()}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">
-                                                {(summary?.totalDays ?? 0).toLocaleString()}
+                                                {filtered.reduce((s, w) => s + w.numberOfDays, 0).toLocaleString()}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4" />
                                         <td className="px-6 py-4 text-right">
                                             <span className="text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">
-                                                FRw {(summary?.totalWorkerWages ?? 0).toLocaleString()}
+                                                FRw {filtered.reduce((s, w) => s + w.totalWage, 0).toLocaleString()}
                                             </span>
                                         </td>
                                     </tr>
@@ -353,7 +423,7 @@ export default function PayrollPage() {
                         {totalPages > 1 && (
                             <div className="px-6 py-3.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between gap-4">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
-                                    {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, payroll.length)} of {payroll.length}
+                                    {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}
                                 </p>
                                 <div className="flex items-center gap-1">
                                     <button
@@ -394,7 +464,7 @@ export default function PayrollPage() {
                 )}
             </div>
 
-            {/* ── Cost reconciliation ── */}
+            {/* Cost reconciliation */}
             {summary && summary.totalDays > 0 && (
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 shadow-sm overflow-hidden">
                     <div className="px-6 py-3.5 border-b border-gray-100 dark:border-gray-700/60">
