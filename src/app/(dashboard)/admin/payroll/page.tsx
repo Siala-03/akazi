@@ -115,9 +115,7 @@ export default function PayrollPage() {
                 icon={FileSpreadsheet}
                 iconBg="bg-transparent"
                 title="Weekly Payroll"
-                subtitle={weekLabel
-                    ? `${weekLabel} · FRw ${(summary?.workerDailyWage || 1700).toLocaleString()} / worker-day`
-                    : 'Loading rates…'}
+                subtitle={weekLabel || 'Loading rates…'}
                 action={
                     <div className="flex items-center gap-2">
                         <button
@@ -206,7 +204,7 @@ export default function PayrollPage() {
                     {
                         label: 'Total wages',
                         value: summary?.totalWorkerWages ?? 0,
-                        sub: `FRw ${(summary?.workerDailyWage || 1700).toLocaleString()} × days`,
+                        sub: `${summary?.totalDays ?? 0} worker-days`,
                         icon: Wallet,
                         format: 'currency',
                         accent: 'emerald',
@@ -214,7 +212,7 @@ export default function PayrollPage() {
                     {
                         label: 'Coop margin',
                         value: summary?.cooperativeMargin ?? 0,
-                        sub: `FRw ${((summary?.exporterDailyRate || 2000) - (summary?.workerDailyWage || 1700)).toLocaleString()} × days`,
+                        sub: `revenue − wages`,
                         icon: TrendingUp,
                         format: 'currency',
                         accent: 'teal',
@@ -406,17 +404,17 @@ export default function PayrollPage() {
                         <div className="px-6 py-5">
                             <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Collected from exporters</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">FRw {summary.totalCostToExporters.toLocaleString()}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">FRw {(summary.exporterDailyRate || 2000).toLocaleString()} × {summary.totalDays} days</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{summary.totalDays} worker-days (per-exporter rates)</p>
                         </div>
                         <div className="px-6 py-5">
                             <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Disbursed to workers</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">FRw {summary.totalWorkerWages.toLocaleString()}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">FRw {(summary.workerDailyWage || 1700).toLocaleString()} × {summary.totalDays} days</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{summary.totalDays} worker-days</p>
                         </div>
                         <div className="px-6 py-5">
                             <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Cooperative &amp; operations</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">FRw {summary.cooperativeMargin.toLocaleString()}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">FRw {((summary.exporterDailyRate || 2000) - (summary.workerDailyWage || 1700)).toLocaleString()} × {summary.totalDays} days</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">revenue − wages over {summary.totalDays} days</p>
                         </div>
                     </div>
                 </div>

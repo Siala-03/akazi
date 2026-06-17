@@ -140,7 +140,7 @@ export default function AdminReportsPage() {
       const exporters = exportersData.exporters || [];
       const bags = bagsData.bags || [];
       const sessions = sessionsData.sessions || [];
-      const workerDailyWage = settingsData.settings?.workerDailyWage || 1700;
+      const workerDailyWage = settingsData.settings?.workerDailyWage || 0;
 
       const exporterById = new Map<string, any>();
       exporters.forEach((exp: any) => {
@@ -243,7 +243,7 @@ export default function AdminReportsPage() {
       const bags = bagsData.bags || [];
       const attendance = attendanceData.attendance || [];
       const sessions = sessionsData.sessions || [];
-      const workerDailyWage = settingsData.settings?.workerDailyWage || 1700;
+      const workerDailyWage = settingsData.settings?.workerDailyWage || 0;
 
       const exporterNameById = new Map<string, string>();
       bags.forEach((bag: any) => {
@@ -362,7 +362,7 @@ export default function AdminReportsPage() {
       const sessions = sessionsData.sessions || [];
       const allBags = bagsData.bags || [];
       const exporters = exportersData.exporters || [];
-      const workerDailyWage = settingsData.settings?.workerDailyWage || 1700;
+      const workerDailyWage = settingsData.settings?.workerDailyWage || 0;
 
       // Group data by date
       const dateMap = new Map<string, { date: string; workerIds: Set<string>; activeSessions: number; bagsCompleted: number; exporterIds: Set<string>; totalLaborCost: number }>();

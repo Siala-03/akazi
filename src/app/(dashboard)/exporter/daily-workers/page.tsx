@@ -91,7 +91,7 @@ export default function ExporterDailyWorkersPage() {
     const [data, setData] = useState<DailyWorkersResponse>({
         rangeStart: null,
         rangeEnd: null,
-        exporterDailyRate: 2000,
+        exporterDailyRate: 0,
         totals: { workers: 0, totalBags: 0, totalPayout: 0 },
         workers: [],
     });
@@ -280,7 +280,7 @@ export default function ExporterDailyWorkersPage() {
                         {formatMoney(data.totals.totalPayout)}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Baseline: {formatMoney(data.exporterDailyRate)} per session-day
+                        {data.totals.workers} workers · {filterMode === 'day' ? 'today' : 'this week'}
                     </p>
                 </div>
             </div>

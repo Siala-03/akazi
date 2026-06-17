@@ -303,7 +303,7 @@ export default function AdminDashboard() {
                         FRw {(analytics?.dailyWorkerWages || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Today · FRw {(analytics?.workerDailyWage || 1700).toLocaleString()}/worker · paid Fri
+                        Today · {analytics?.workerDaysToday || 0} worker-days · paid Fri
                     </p>
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
                         <span className="text-gray-500 dark:text-gray-400">This week</span>

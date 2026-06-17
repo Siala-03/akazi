@@ -84,9 +84,9 @@ export function exportPayrollToExcel(workers: PayrollWorker[], summary: PayrollS
         ['Metric', 'Value'],
         ['Total Workers', summary.totalWorkers],
         ['Total Worker-Days', summary.totalDays],
-        ['Worker Wages (FRw 1,700/day)', summary.totalWorkerWages],
-        ['Exporter Charges (FRw 2,000/day)', summary.totalCostToExporters],
-        ['Cooperative & Software Margin', summary.cooperativeMargin],
+        ['Worker Wages', summary.totalWorkerWages],
+        ['Exporter Charges', summary.totalCostToExporters],
+        ['Cooperative Margin', summary.cooperativeMargin],
     ];
 
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
