@@ -87,6 +87,7 @@ export default function OperationsPage() {
     const [metricsError, setMetricsError] = useState<string | null>(null);
     const [showQrScanner, setShowQrScanner] = useState(false);
     const [qrScannerMode, setQrScannerMode] = useState<'checkin' | 'checkout'>('checkin');
+    const [checkoutExporterFilter, setCheckoutExporterFilter] = useState('');
 
     useEffect(() => {
         // Set initial time and update every second
@@ -1100,7 +1101,20 @@ export default function OperationsPage() {
                                         STEP 5: Record exit time and close sorting session
                                     </p>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <div className="flex items-center gap-2">
+                                        <Building2 className="w-4 h-4 text-indigo-500" />
+                                        <select
+                                            value={checkoutExporterFilter}
+                                            onChange={e => setCheckoutExporterFilter(e.target.value)}
+                                            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
+                                        >
+                                            <option value="">All Exporters</option>
+                                            {exporters.map(exp => (
+                                                <option key={exp._id} value={exp._id}>{exp.companyTradingName}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                     <div className="flex items-center gap-2 text-sm">
                                         <Clock className="w-4 h-4 text-gray-400" />
                                         <span className="font-medium text-gray-700">
@@ -1112,7 +1126,7 @@ export default function OperationsPage() {
                                         </span>
                                     </div>
                                     <span className="text-sm text-gray-500">
-                                        {onSiteWorkers.length} workers on-site
+                                        {onSiteWorkers.length} on-site
                                     </span>
                                 </div>
                             </div>
@@ -1126,83 +1140,88 @@ export default function OperationsPage() {
                                 <QrCode className="w-5 h-5" />
                                 Scan QR Badge to Check Out
                             </button>
-                            <div className="overflow-x-auto">
-                                <table className="w-full table-compact">
-                                    <thead className="bg-gray-50 border-b border-gray-200">
-                                        <tr>
-                                            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
-                                            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Worker ID</th>
-                                            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check-in Time</th>
-                                            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                                            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Session</th>
-                                            <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {onSiteWorkers.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                                                    No workers on-site to check-out
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            onSiteWorkers.map((att) => {
-                                                const hasSession = sessions.some(s => s.workerId._id === att.workerId._id);
-                                                const session = sessions.find(s => s.workerId._id === att.workerId._id);
-                                                const durationMins = Math.floor((Date.now() - new Date(att.checkInTime).getTime()) / 1000 / 60);
-                                                const durationDisplay = durationMins < 60 
-                                                    ? `${durationMins}m` 
-                                                    : `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`;
-                                                
-                                                return (
-                                                    <tr key={att._id} className="hover:bg-gray-50">
-                                                        <td className="px-6 py-2.5">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="font-medium text-gray-900">{att.workerId.fullName}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-2.5">
-                                                            <span className="text-sm font-mono font-semibold text-gray-700">{att.workerId.workerId}</span>
-                                                        </td>
-                                                        <td className="px-6 py-2.5">
-                                                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                                <Clock className="w-4 h-4 text-gray-400" />
-                                                                {new Date(att.checkInTime).toLocaleTimeString('en-US', {
-                                                                    hour: '2-digit',
-                                                                    minute: '2-digit'
-                                                                })}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-2.5">
-                                                            <span className="font-medium text-gray-700">{durationDisplay}</span>
-                                                        </td>
-                                                        <td className="px-6 py-2.5">
-                                                            {hasSession && session ? (
-                                                                <div className="flex flex-col gap-1">
-                                                                    <span className="text-sm font-medium text-gray-900">{session.exporterId.companyTradingName}</span>
-                                                                    <span className="text-xs text-gray-500">Close session on checkout</span>
-                                                                </div>
-                                                            ) : (
-                                                                <span className="text-sm text-gray-500 italic">No active session</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-6 py-2.5 text-right">
-                                                            <button
-                                                                onClick={() => handleCheckOut(att._id)}
-                                                                disabled={loading}
-                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium text-sm disabled:opacity-50 transition-colors"
-                                                            >
-                                                                <UserX className="w-4 h-4" />
-                                                                Check Out
-                                                            </button>
+                            {(() => {
+                                const filteredCheckout = checkoutExporterFilter
+                                    ? onSiteWorkers.filter(att => {
+                                        const session = sessions.find(s => s.workerId._id === att.workerId._id);
+                                        return session?.exporterId._id === checkoutExporterFilter;
+                                    })
+                                    : onSiteWorkers;
+
+                                return (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full table-compact">
+                                            <thead className="bg-gray-50 border-b border-gray-200">
+                                                <tr>
+                                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
+                                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Worker ID</th>
+                                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Exporter</th>
+                                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check-in Time</th>
+                                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                                                    <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                                {filteredCheckout.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                                            {checkoutExporterFilter ? 'No workers on-site for this exporter' : 'No workers on-site to check-out'}
                                                         </td>
                                                     </tr>
-                                                );
-                                            })
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                                ) : (
+                                                    filteredCheckout.map((att) => {
+                                                        const session = sessions.find(s => s.workerId._id === att.workerId._id);
+                                                        const durationMins = Math.floor((Date.now() - new Date(att.checkInTime).getTime()) / 1000 / 60);
+                                                        const durationDisplay = durationMins < 60
+                                                            ? `${durationMins}m`
+                                                            : `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`;
+
+                                                        return (
+                                                            <tr key={att._id} className="hover:bg-gray-50">
+                                                                <td className="px-6 py-2.5">
+                                                                    <span className="font-medium text-gray-900">{att.workerId.fullName}</span>
+                                                                </td>
+                                                                <td className="px-6 py-2.5">
+                                                                    <span className="text-sm font-mono font-semibold text-gray-700">{att.workerId.workerId}</span>
+                                                                </td>
+                                                                <td className="px-6 py-2.5">
+                                                                    {session ? (
+                                                                        <span className="text-sm font-medium text-gray-900">{session.exporterId.companyTradingName}</span>
+                                                                    ) : (
+                                                                        <span className="text-sm text-gray-400 italic">—</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-6 py-2.5">
+                                                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                                        <Clock className="w-4 h-4 text-gray-400" />
+                                                                        {new Date(att.checkInTime).toLocaleTimeString('en-US', {
+                                                                            hour: '2-digit',
+                                                                            minute: '2-digit'
+                                                                        })}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-6 py-2.5">
+                                                                    <span className="font-medium text-gray-700">{durationDisplay}</span>
+                                                                </td>
+                                                                <td className="px-6 py-2.5 text-right">
+                                                                    <button
+                                                                        onClick={() => handleCheckOut(att._id)}
+                                                                        disabled={loading}
+                                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium text-sm disabled:opacity-50 transition-colors"
+                                                                    >
+                                                                        <UserX className="w-4 h-4" />
+                                                                        Check Out
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     )}
                 </div>
