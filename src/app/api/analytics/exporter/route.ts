@@ -201,32 +201,34 @@ export async function GET(request: NextRequest) {
             periodWorkersEngagedRows = [{ count: 0 }];
         }
 
-        // ── Worker-day cost model (per-exporter) ──────────────────────────────
-        // When filtering by date range, calculate costs for that range
-        const [workerDaysTodayRows, workerDaysWeekRows, workerDaysCumulativeRows] = await Promise.all([
-            prisma.$queryRaw<{ count: bigint }[]>`
-                                SELECT COUNT(*)::bigint AS count
-                                FROM "Session"
-                                WHERE "exporterId" = ${exporterId}
-                                    AND date >= ${rangeStart} AND date <= ${rangeEnd}`,
-            prisma.$queryRaw<{ count: bigint }[]>`
-                                SELECT COUNT(*)::bigint AS count
-                                FROM "Session"
-                                WHERE "exporterId" = ${exporterId}
-                                    AND date >= ${weekStart} AND date <= ${weekEnd}`,
-            prisma.$queryRaw<{ count: bigint }[]>`
-                                SELECT COUNT(*)::bigint AS count
-                                FROM "Session"
-                                WHERE "exporterId" = ${exporterId}`,
+        // ── Session-based cost model (uses snapshotted dailyRate on each session) ──
+        const [costRangeRows, costWeekRows, costCumulativeRows] = await Promise.all([
+            prisma.$queryRaw<{ cnt: bigint; cost: number }[]>`
+                SELECT COUNT(*)::bigint AS cnt,
+                       SUM(COALESCE("dailyRate", ${EXPORTER_RATE}))::float AS cost
+                FROM "Session"
+                WHERE "exporterId" = ${exporterId}
+                    AND date >= ${rangeStart} AND date <= ${rangeEnd}`,
+            prisma.$queryRaw<{ cnt: bigint; cost: number }[]>`
+                SELECT COUNT(*)::bigint AS cnt,
+                       SUM(COALESCE("dailyRate", ${EXPORTER_RATE}))::float AS cost
+                FROM "Session"
+                WHERE "exporterId" = ${exporterId}
+                    AND date >= ${weekStart} AND date <= ${weekEnd}`,
+            prisma.$queryRaw<{ cnt: bigint; cost: number }[]>`
+                SELECT COUNT(*)::bigint AS cnt,
+                       SUM(COALESCE("dailyRate", ${EXPORTER_RATE}))::float AS cost
+                FROM "Session"
+                WHERE "exporterId" = ${exporterId}`,
         ]);
 
-        const workerDaysToday = Number(workerDaysTodayRows[0]?.count ?? 0);
-        const workerDaysWeek = Number(workerDaysWeekRows[0]?.count ?? 0);
-        const workerDaysCumulative = Number(workerDaysCumulativeRows[0]?.count ?? 0);
+        const workerDaysToday = Number(costRangeRows[0]?.cnt ?? 0);
+        const workerDaysWeek = Number(costWeekRows[0]?.cnt ?? 0);
+        const workerDaysCumulative = Number(costCumulativeRows[0]?.cnt ?? 0);
 
-        const dailyCost = workerDaysToday * EXPORTER_RATE;
-        const weeklyCost = workerDaysWeek * EXPORTER_RATE;
-        const cumulativeCost = workerDaysCumulative * EXPORTER_RATE;
+        const dailyCost = costRangeRows[0]?.cost ?? 0;
+        const weeklyCost = costWeekRows[0]?.cost ?? 0;
+        const cumulativeCost = costCumulativeRows[0]?.cost ?? 0;
 
         const dailyWorkerWages = workerDaysToday * WORKER_DAILY_WAGE;
         const weeklyWorkerWages = workerDaysWeek * WORKER_DAILY_WAGE;
@@ -241,7 +243,7 @@ export async function GET(request: NextRequest) {
         const periodAvgBagsPerDay = periodBags / periodDays;
 
         const periodSessionsCount = workerDaysToday;
-        const periodCostToExporter = periodSessionsCount * EXPORTER_RATE;
+        const periodCostToExporter = dailyCost;
         const periodWorkerWages = periodSessionsCount * WORKER_DAILY_WAGE;
         const periodCoopMargin = periodCostToExporter - periodWorkerWages;
 
@@ -281,9 +283,10 @@ export async function GET(request: NextRequest) {
                                 AND date <= ${rangeEnd}
             GROUP BY day`;
 
-        const dailySessionRows = await prisma.$queryRaw<{ day: string; sessions: bigint }[]>`
+        const dailySessionRows = await prisma.$queryRaw<{ day: string; sessions: bigint; cost: number }[]>`
             SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day,
-                   COUNT(*)::bigint AS sessions
+                   COUNT(*)::bigint AS sessions,
+                   SUM(COALESCE("dailyRate", ${EXPORTER_RATE}))::float AS cost
             FROM "Session"
             WHERE "exporterId" = ${exporterId}
                 AND date >= ${rangeStart} AND date <= ${rangeEnd}
@@ -305,7 +308,7 @@ export async function GET(request: NextRequest) {
         }
 
         const dailyBagsMap = new Map(dailyBagsRows.map(row => [row.day, { bags: Number(row.bags), weight: Number(row.weight ?? 0) }]));
-        const dailySessionsMap = new Map(dailySessionRows.map(row => [row.day, Number(row.sessions)]));
+        const dailySessionsMap = new Map(dailySessionRows.map(row => [row.day, { sessions: Number(row.sessions), cost: row.cost }]));
 
         const dailyBreakdown: Array<{
             date: string;
@@ -319,9 +322,10 @@ export async function GET(request: NextRequest) {
 
         for (let cursor = new Date(rangeStart); cursor <= rangeEnd; cursor.setDate(cursor.getDate() + 1)) {
             const day = cursor.toISOString().split('T')[0];
-            const sessions = dailySessionsMap.get(day) ?? 0;
+            const sessData = dailySessionsMap.get(day) ?? { sessions: 0, cost: 0 };
+            const sessions = sessData.sessions;
             const bagData = dailyBagsMap.get(day) ?? { bags: 0, weight: 0 };
-            const costToExporter = sessions * EXPORTER_RATE;
+            const costToExporter = sessData.cost;
             const workerWages = sessions * WORKER_DAILY_WAGE;
 
             dailyBreakdown.push({

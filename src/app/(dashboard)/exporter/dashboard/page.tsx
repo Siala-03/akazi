@@ -325,7 +325,6 @@ export default function ExporterDashboard() {
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Bags</p>
                     <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{(analytics?.periodBags || 0).toLocaleString()}</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Selected period</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -337,7 +336,6 @@ export default function ExporterDashboard() {
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Workers Engaged</p>
                     <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{(analytics?.periodWorkersEngaged || 0).toLocaleString()}</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Selected period</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-emerald-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -349,7 +347,6 @@ export default function ExporterDashboard() {
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Weight</p>
                     <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{(analytics?.periodWeight || 0).toLocaleString()} kg</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Selected period</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-amber-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -361,7 +358,6 @@ export default function ExporterDashboard() {
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Average</p>
                     <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{analytics?.periodAvgBagsPerDay?.toFixed(1) || 0} bags/day</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Selected period</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-green-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -373,7 +369,6 @@ export default function ExporterDashboard() {
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Cost</p>
                     <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{fmt(analytics?.periodCostToExporter || 0)}</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Selected period</p>
                 </div>
             </div>
 

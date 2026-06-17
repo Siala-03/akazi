@@ -214,6 +214,7 @@ model Session {
   workerId     String
   exporterId   String
   facilityId   String?
+  dailyRate    Int?
   date         DateTime
   startTime    DateTime
   endTime      DateTime?

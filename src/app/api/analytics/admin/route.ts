@@ -96,11 +96,9 @@ export async function GET(request: NextRequest) {
 
         const { exporterDailyRate: DEFAULT_DAILY_RATE, workerDailyWage: WORKER_DAILY_WAGE } = await getSettings();
 
-        // Load all exporters to get per-exporter dailyRate
         const allExporters = await prisma.exporter.findMany({
-            select: { id: true, dailyRate: true, companyTradingName: true, exporterCode: true },
+            select: { id: true, companyTradingName: true, exporterCode: true },
         });
-        const exporterRateMap = new Map(allExporters.map(e => [e.id, e.dailyRate ?? DEFAULT_DAILY_RATE]));
 
         const totalKilograms = totalWeightAgg._sum.weight ?? totalBags * 60;
         const totalKilogramsToday = todayWeightAgg._sum.weight ?? bagsToday * 60;
@@ -117,32 +115,41 @@ export async function GET(request: NextRequest) {
         const avgBagsPerDay = bagsLast7Days / 7;
         const avgBagsPerDayLast30 = bagsLast30Days / 30;
 
-        // ── Session-based cost model (per-exporter rates) ─────────────────────
-        const [workerDaysTodayRows, workerDaysWeekRows, workerDaysCumulativeRows] = await Promise.all([
-            prisma.$queryRaw<{ exporterId: string; count: bigint }[]>`
-                SELECT "exporterId", COUNT(*)::bigint AS count
-                FROM "Session"
-                WHERE date >= ${startOfDay} AND date <= ${endOfDay}
-                GROUP BY "exporterId"`,
-            prisma.$queryRaw<{ exporterId: string; count: bigint }[]>`
-                SELECT "exporterId", COUNT(*)::bigint AS count
-                FROM "Session"
-                WHERE date >= ${weekStart} AND date <= ${weekEnd}
-                GROUP BY "exporterId"`,
-            prisma.$queryRaw<{ exporterId: string; count: bigint }[]>`
-                SELECT "exporterId", COUNT(*)::bigint AS count
-                FROM "Session"
-                GROUP BY "exporterId"`,
+        // ── Session-based cost model (uses snapshotted dailyRate on each session) ──
+        // For old sessions without a dailyRate, fall back to the exporter's current rate or global default.
+        const [costTodayRows, costWeekRows, costCumulativeRows] = await Promise.all([
+            prisma.$queryRaw<{ exporterId: string; cnt: bigint; cost: number }[]>`
+                SELECT s."exporterId",
+                       COUNT(*)::bigint AS cnt,
+                       SUM(COALESCE(s."dailyRate", COALESCE(e."dailyRate", ${DEFAULT_DAILY_RATE})))::float AS cost
+                FROM "Session" s
+                LEFT JOIN "Exporter" e ON e.id = s."exporterId"
+                WHERE s.date >= ${startOfDay} AND s.date <= ${endOfDay}
+                GROUP BY s."exporterId"`,
+            prisma.$queryRaw<{ exporterId: string; cnt: bigint; cost: number }[]>`
+                SELECT s."exporterId",
+                       COUNT(*)::bigint AS cnt,
+                       SUM(COALESCE(s."dailyRate", COALESCE(e."dailyRate", ${DEFAULT_DAILY_RATE})))::float AS cost
+                FROM "Session" s
+                LEFT JOIN "Exporter" e ON e.id = s."exporterId"
+                WHERE s.date >= ${weekStart} AND s.date <= ${weekEnd}
+                GROUP BY s."exporterId"`,
+            prisma.$queryRaw<{ exporterId: string; cnt: bigint; cost: number }[]>`
+                SELECT s."exporterId",
+                       COUNT(*)::bigint AS cnt,
+                       SUM(COALESCE(s."dailyRate", COALESCE(e."dailyRate", ${DEFAULT_DAILY_RATE})))::float AS cost
+                FROM "Session" s
+                LEFT JOIN "Exporter" e ON e.id = s."exporterId"
+                GROUP BY s."exporterId"`,
         ]);
 
         let workerDaysToday = 0;
         let dailyCostToExporters = 0;
         let dailyWorkerWages = 0;
-        for (const row of workerDaysTodayRows) {
-            const days = Number(row.count);
-            const rate = exporterRateMap.get(row.exporterId) ?? DEFAULT_DAILY_RATE;
+        for (const row of costTodayRows) {
+            const days = Number(row.cnt);
             workerDaysToday += days;
-            dailyCostToExporters += days * rate;
+            dailyCostToExporters += row.cost;
             dailyWorkerWages += days * WORKER_DAILY_WAGE;
         }
         const dailyCoopMargin = dailyCostToExporters - dailyWorkerWages;
@@ -150,22 +157,20 @@ export async function GET(request: NextRequest) {
         let workerDaysWeek = 0;
         let weeklyCostToExporters = 0;
         let weeklyWorkerWages = 0;
-        for (const row of workerDaysWeekRows) {
-            const days = Number(row.count);
-            const rate = exporterRateMap.get(row.exporterId) ?? DEFAULT_DAILY_RATE;
+        for (const row of costWeekRows) {
+            const days = Number(row.cnt);
             workerDaysWeek += days;
-            weeklyCostToExporters += days * rate;
+            weeklyCostToExporters += row.cost;
             weeklyWorkerWages += days * WORKER_DAILY_WAGE;
         }
 
         let workerDaysCumulative = 0;
         let cumulativeCostToExporters = 0;
         let cumulativeWorkerWages = 0;
-        for (const row of workerDaysCumulativeRows) {
-            const days = Number(row.count);
-            const rate = exporterRateMap.get(row.exporterId) ?? DEFAULT_DAILY_RATE;
+        for (const row of costCumulativeRows) {
+            const days = Number(row.cnt);
             workerDaysCumulative += days;
-            cumulativeCostToExporters += days * rate;
+            cumulativeCostToExporters += row.cost;
             cumulativeWorkerWages += days * WORKER_DAILY_WAGE;
         }
 
@@ -177,7 +182,7 @@ export async function GET(request: NextRequest) {
         const exporterBreakdown: any[] = [];
 
         if (uniqueExporterIds.length > 0) {
-            const exporterWorkerDaysMap = new Map(workerDaysTodayRows.map(r => [r.exporterId, Number(r.count)]));
+            const exporterCostMap = new Map(costTodayRows.map(r => [r.exporterId, { days: Number(r.cnt), cost: r.cost }]));
 
             const exporterDataMap = new Map<string, { name: string; code: string; bags: number; weight: number }>();
             for (const bag of allBagsToday) {
@@ -196,21 +201,18 @@ export async function GET(request: NextRequest) {
             }
 
             exporterDataMap.forEach((entry, expId) => {
-                const wDays = exporterWorkerDaysMap.get(expId) ?? 0;
-                const rate = exporterRateMap.get(expId) ?? DEFAULT_DAILY_RATE;
-                const cost = wDays * rate;
-                const workerWages = wDays * WORKER_DAILY_WAGE;
+                const costData = exporterCostMap.get(expId) ?? { days: 0, cost: 0 };
+                const workerWages = costData.days * WORKER_DAILY_WAGE;
                 exporterBreakdown.push({
                     exporterId: expId,
                     name: entry.name,
                     code: entry.code,
                     bagsToday: entry.bags,
                     weightToday: entry.weight,
-                    workerDaysToday: wDays,
-                    dailyRate: rate,
-                    costToday: cost,
+                    workerDaysToday: costData.days,
+                    costToday: costData.cost,
                     workerWagesToday: workerWages,
-                    coopMarginToday: cost - workerWages,
+                    coopMarginToday: costData.cost - workerWages,
                 });
             });
             exporterBreakdown.sort((a, b) => b.bagsToday - a.bagsToday);
@@ -231,25 +233,22 @@ export async function GET(request: NextRequest) {
                     AND date >= ${trendStart}
                     AND date <= ${endOfDay}
                 GROUP BY day`,
-            prisma.$queryRaw<{ day: string; exporterId: string; count: bigint }[]>`
-                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day, "exporterId", COUNT(*)::bigint AS count
-                FROM "Session"
-                WHERE date >= ${trendStart} AND date <= ${endOfDay}
-                GROUP BY day, "exporterId"`,
+            prisma.$queryRaw<{ day: string; cnt: bigint; cost: number }[]>`
+                SELECT TO_CHAR(s.date, 'YYYY-MM-DD') AS day,
+                       COUNT(*)::bigint AS cnt,
+                       SUM(COALESCE(s."dailyRate", COALESCE(e."dailyRate", ${DEFAULT_DAILY_RATE})))::float AS cost
+                FROM "Session" s
+                LEFT JOIN "Exporter" e ON e.id = s."exporterId"
+                WHERE s.date >= ${trendStart} AND s.date <= ${endOfDay}
+                GROUP BY day`,
         ]);
 
         const attMap = new Map(attTrend.map(d => [d.day, Number(d.count)]));
         const bagsMap = new Map(bagsTrend.map(d => [d.day, Number(d.count)]));
 
-        // Aggregate session counts and costs per day using per-exporter rates
         const sessDayMap = new Map<string, { sessions: number; cost: number }>();
         for (const row of sessTrendByExporter) {
-            const days = Number(row.count);
-            const rate = exporterRateMap.get(row.exporterId) ?? DEFAULT_DAILY_RATE;
-            const existing = sessDayMap.get(row.day) || { sessions: 0, cost: 0 };
-            existing.sessions += days;
-            existing.cost += days * rate;
-            sessDayMap.set(row.day, existing);
+            sessDayMap.set(row.day, { sessions: Number(row.cnt), cost: row.cost });
         }
 
         const trendData = [];

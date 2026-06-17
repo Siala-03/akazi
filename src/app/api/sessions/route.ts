@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { toMongo } from '@/lib/serialize';
+import { getSettings } from '@/lib/settings';
 
 export async function POST(request: NextRequest) {
     try {
@@ -30,12 +31,17 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        const exporter = await prisma.exporter.findUnique({ where: { id: exporterId }, select: { dailyRate: true } });
+        const { exporterDailyRate: defaultRate } = await getSettings();
+        const snapshotRate = (exporter as any)?.dailyRate ?? defaultRate;
+
         const session = await prisma.session.create({
             data: {
                 attendanceId,
                 workerId: attendance.workerId,
                 exporterId,
                 facilityId: attendance.facilityId || null,
+                dailyRate: snapshotRate,
                 date: attendance.date,
                 startTime: new Date(),
                 status: 'active',

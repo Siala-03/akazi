@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
             select: {
                 workerId: true,
                 exporterId: true,
+                dailyRate: true,
                 date: true,
             },
         });
@@ -73,14 +74,20 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // Count distinct days per worker-exporter pair
-        const workerExporterDays = new Map<string, { workerId: string; exporterId: string; dates: Set<string> }>();
+        // Count distinct days per worker-exporter pair, summing snapshotted rates
+        const workerExporterDays = new Map<string, { workerId: string; exporterId: string; dates: Set<string>; totalRate: number }>();
         for (const s of sessions) {
             const key = `${s.workerId}::${s.exporterId}`;
             if (!workerExporterDays.has(key)) {
-                workerExporterDays.set(key, { workerId: s.workerId, exporterId: s.exporterId, dates: new Set() });
+                workerExporterDays.set(key, { workerId: s.workerId, exporterId: s.exporterId, dates: new Set(), totalRate: 0 });
             }
-            workerExporterDays.get(key)!.dates.add(s.date.toISOString().split('T')[0]);
+            const entry = workerExporterDays.get(key)!;
+            const dateKey = s.date.toISOString().split('T')[0];
+            if (!entry.dates.has(dateKey)) {
+                entry.dates.add(dateKey);
+                const exporter = exporterMap.get(s.exporterId);
+                entry.totalRate += (s as any).dailyRate ?? (exporter as any)?.dailyRate ?? DEFAULT_DAILY_RATE;
+            }
         }
 
         // Bags per worker in the period
@@ -124,9 +131,8 @@ export async function GET(request: NextRequest) {
             if (!worker) continue;
             const exporter = exporterMap.get(entry.exporterId);
             const days = entry.dates.size;
-            const exporterRate = (exporter as any)?.dailyRate ?? DEFAULT_DAILY_RATE;
             const totalWage = days * WORKER_DAILY_WAGE;
-            const exporterCharge = days * exporterRate;
+            const exporterCharge = entry.totalRate;
 
             totalDays += days;
             totalWorkerWages += totalWage;
