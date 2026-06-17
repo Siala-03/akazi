@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
         weekEnd.setDate(weekStart.getDate() + 6);
         weekEnd.setHours(23, 59, 59, 999);
 
-        const completedStatuses: Array<'completed' | 'validated' | 'locked'> = ['completed', 'validated', 'locked'];
+        const allBagStatuses: Array<'in_progress' | 'completed' | 'validated' | 'locked'> = ['in_progress', 'completed', 'validated', 'locked'];
 
         let bagsToday = 0,
             bagsThisWeek = 0,
@@ -126,34 +126,34 @@ export async function GET(request: NextRequest) {
                 prisma.bag.count({
                     where: {
                         exporterId,
-                        status: { in: completedStatuses },
+                        status: { in: allBagStatuses },
                         date: { gte: startOfDay, lte: endOfDay },
                     },
                 }),
                 prisma.bag.count({
                     where: {
                         exporterId,
-                        status: { in: completedStatuses },
+                        status: { in: allBagStatuses },
                         date: { gte: sevenDaysAgo, lte: endOfDay },
                     },
                 }),
                 prisma.bag.count({
                     where: {
                         exporterId,
-                        status: { in: completedStatuses },
+                        status: { in: allBagStatuses },
                         date: { gte: monthStart, lte: endOfDay },
                     },
                 }),
-                prisma.bag.count({ where: { exporterId, status: { in: completedStatuses } } }),
+                prisma.bag.count({ where: { exporterId, status: { in: allBagStatuses } } }),
                 prisma.session.findMany({
                     where: { exporterId, date: { gte: startOfDay, lte: endOfDay } },
                     select: { startTime: true, endTime: true, status: true },
                 }),
-                prisma.bag.aggregate({ where: { exporterId, status: { in: completedStatuses } }, _sum: { weight: true }, _min: { date: true } }),
+                prisma.bag.aggregate({ where: { exporterId, status: { in: allBagStatuses } }, _sum: { weight: true }, _min: { date: true } }),
                 prisma.bag.aggregate({
                     where: {
                         exporterId,
-                        status: { in: completedStatuses },
+                        status: { in: allBagStatuses },
                         date: { gte: startOfDay, lte: endOfDay },
                     },
                     _sum: { weight: true },
@@ -166,14 +166,14 @@ export async function GET(request: NextRequest) {
                 prisma.bag.count({
                     where: {
                         exporterId,
-                        status: { in: completedStatuses },
+                        status: { in: allBagStatuses },
                         date: { gte: rangeStart, lte: rangeEnd },
                     },
                 }),
                 prisma.bag.aggregate({
                     where: {
                         exporterId,
-                        status: { in: completedStatuses },
+                        status: { in: allBagStatuses },
                         date: { gte: rangeStart, lte: rangeEnd },
                     },
                     _sum: { weight: true },
@@ -265,7 +265,7 @@ export async function GET(request: NextRequest) {
                                      COALESCE(SUM(weight), 0)::float AS weight
             FROM "Bag"
             WHERE "exporterId" = ${exporterId}
-              AND status IN ('completed', 'validated', 'locked')
+              AND status IN ('in_progress', 'completed', 'validated', 'locked')
                             AND date >= ${trendStart}
                             AND date <= ${endOfDay}
             GROUP BY day`;
@@ -276,7 +276,7 @@ export async function GET(request: NextRequest) {
                    COALESCE(SUM(weight), 0)::float AS weight
             FROM "Bag"
             WHERE "exporterId" = ${exporterId}
-                AND status IN ('completed', 'validated', 'locked')
+                AND status IN ('in_progress', 'completed', 'validated', 'locked')
                                 AND date >= ${rangeStart}
                                 AND date <= ${rangeEnd}
             GROUP BY day`;

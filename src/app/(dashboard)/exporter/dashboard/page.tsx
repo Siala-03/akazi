@@ -49,6 +49,7 @@ export default function ExporterDashboard() {
     const [exporterInfo, setExporterInfo] = useState({ name: 'Exporter', code: 'EXP' });
     const [currentPage, setCurrentPage] = useState(1);
     const [breakdownPage, setBreakdownPage] = useState(1);
+    const [breakdownPageSize, setBreakdownPageSize] = useState(10);
     const [selectedWeek, setSelectedWeek] = useState(getWeekStart(new Date()));
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
     const [filterMode, setFilterMode] = useState<'week' | 'month' | 'custom'>('week');
@@ -466,9 +467,9 @@ export default function ExporterDashboard() {
 
                 {(() => {
                     const allRows = analytics?.dailyBreakdown || [];
-                    const totalBreakdownPages = Math.max(1, Math.ceil(allRows.length / ITEMS_PER_PAGE));
+                    const totalBreakdownPages = Math.max(1, Math.ceil(allRows.length / breakdownPageSize));
                     const safeBreakdownPage = Math.min(breakdownPage, totalBreakdownPages);
-                    const paginatedRows = allRows.slice((safeBreakdownPage - 1) * ITEMS_PER_PAGE, safeBreakdownPage * ITEMS_PER_PAGE);
+                    const paginatedRows = allRows.slice((safeBreakdownPage - 1) * breakdownPageSize, safeBreakdownPage * breakdownPageSize);
 
                     return (
                         <>
@@ -504,22 +505,36 @@ export default function ExporterDashboard() {
                                     </tbody>
                                 </table>
                             </div>
-                            {totalBreakdownPages > 1 && (
-                                <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        Showing {(safeBreakdownPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safeBreakdownPage * ITEMS_PER_PAGE, allRows.length)} of {allRows.length} days
-                                    </p>
-                                    <div className="flex items-center gap-1">
-                                        <button onClick={() => setBreakdownPage(1)} disabled={safeBreakdownPage === 1} className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">«</button>
-                                        <button onClick={() => setBreakdownPage(p => Math.max(1, p - 1))} disabled={safeBreakdownPage === 1} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                                            <ChevronLeft className="w-4 h-4" /> Prev
-                                        </button>
-                                        <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">{safeBreakdownPage} / {totalBreakdownPages}</span>
-                                        <button onClick={() => setBreakdownPage(p => Math.min(totalBreakdownPages, p + 1))} disabled={safeBreakdownPage === totalBreakdownPages} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                                            Next <ChevronRight className="w-4 h-4" />
-                                        </button>
-                                        <button onClick={() => setBreakdownPage(totalBreakdownPages)} disabled={safeBreakdownPage === totalBreakdownPages} className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">»</button>
+                            {allRows.length > 0 && (
+                                <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            Showing {(safeBreakdownPage - 1) * breakdownPageSize + 1}–{Math.min(safeBreakdownPage * breakdownPageSize, allRows.length)} of {allRows.length} days
+                                        </p>
+                                        <select
+                                            value={breakdownPageSize}
+                                            onChange={e => { setBreakdownPageSize(Number(e.target.value)); setBreakdownPage(1); }}
+                                            className="px-2 py-1 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                                        >
+                                            <option value={10}>10 / page</option>
+                                            <option value={25}>25 / page</option>
+                                            <option value={50}>50 / page</option>
+                                            <option value={100}>100 / page</option>
+                                        </select>
                                     </div>
+                                    {totalBreakdownPages > 1 && (
+                                        <div className="flex items-center gap-1">
+                                            <button onClick={() => setBreakdownPage(1)} disabled={safeBreakdownPage === 1} className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">«</button>
+                                            <button onClick={() => setBreakdownPage(p => Math.max(1, p - 1))} disabled={safeBreakdownPage === 1} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                                                <ChevronLeft className="w-4 h-4" /> Prev
+                                            </button>
+                                            <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">{safeBreakdownPage} / {totalBreakdownPages}</span>
+                                            <button onClick={() => setBreakdownPage(p => Math.min(totalBreakdownPages, p + 1))} disabled={safeBreakdownPage === totalBreakdownPages} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                                                Next <ChevronRight className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => setBreakdownPage(totalBreakdownPages)} disabled={safeBreakdownPage === totalBreakdownPages} className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">»</button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </>
