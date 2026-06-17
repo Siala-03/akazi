@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Download, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { exportData, ExportData, ExportFormat } from '@/lib/export';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -16,6 +16,18 @@ export function ExportButton({ data, label = 'Export', showFormatSelector = true
   const { settings } = useSettings();
   const [isExporting, setIsExporting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const btnRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (showMenu && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + 4,
+        left: Math.max(8, rect.right - 192),
+      });
+    }
+  }, [showMenu]);
 
   const buttonClass = variant === 'header'
     ? 'flex items-center gap-2 px-5 py-2.5 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-xl hover:bg-white/30 font-medium transition-all disabled:opacity-50 shadow-lg'
@@ -24,7 +36,7 @@ export function ExportButton({ data, label = 'Export', showFormatSelector = true
   const handleExport = async (format: ExportFormat) => {
     setIsExporting(true);
     setShowMenu(false);
-    
+
     try {
       await exportData(data, format);
     } catch (error) {
@@ -55,7 +67,7 @@ export function ExportButton({ data, label = 'Export', showFormatSelector = true
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={btnRef}>
       <button
         onClick={() => setShowMenu(!showMenu)}
         disabled={isExporting}
@@ -68,25 +80,23 @@ export function ExportButton({ data, label = 'Export', showFormatSelector = true
       {showMenu && (
         <>
           <div
-            className="fixed inset-0 z-10"
+            className="fixed inset-0 z-40"
             onClick={() => setShowMenu(false)}
           />
-          <div className="absolute right-0 mt-2 w-48 rounded-lg shadow-lg border z-20" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+          <div
+            className="fixed z-50 w-48 rounded-lg shadow-xl border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+            style={menuPos ? { top: menuPos.top, left: menuPos.left } : undefined}
+          >
             {exportFormats.map((format) => {
               const Icon = format.icon;
               return (
                 <button
                   key={format.value}
                   onClick={() => handleExport(format.value)}
-                  className="w-full flex items-center gap-3 px-4 py-3 transition-colors first:rounded-t-lg last:rounded-b-lg"
-                  style={{ color: 'var(--foreground)' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors first:rounded-t-lg last:rounded-b-lg"
                 >
                   <Icon className={`h-5 w-5 ${format.color}`} />
-                  <span className="font-medium">
-                    {format.label}
-                  </span>
+                  <span className="font-medium">{format.label}</span>
                 </button>
               );
             })}
