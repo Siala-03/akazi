@@ -13,7 +13,6 @@ import {
     ChevronLeft,
     ChevronRight,
     RefreshCw,
-    Info,
     Download,
 
 } from 'lucide-react';
@@ -49,6 +48,7 @@ export default function ExporterDashboard() {
     const [loadError, setLoadError] = useState<string | null>(null);
     const [exporterInfo, setExporterInfo] = useState({ name: 'Exporter', code: 'EXP' });
     const [currentPage, setCurrentPage] = useState(1);
+    const [breakdownPage, setBreakdownPage] = useState(1);
     const [selectedWeek, setSelectedWeek] = useState(getWeekStart(new Date()));
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
     const [filterMode, setFilterMode] = useState<'week' | 'month' | 'custom'>('week');
@@ -323,7 +323,7 @@ export default function ExporterDashboard() {
                         <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Bags</p>
-                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.periodBags || 0}</p>
+                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{(analytics?.periodBags || 0).toLocaleString()}</p>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Selected period</p>
                 </div>
 
@@ -335,8 +335,8 @@ export default function ExporterDashboard() {
                         <BarChart3 className="w-5 h-5 text-purple-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Workers Engaged</p>
-                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.periodWorkersEngaged || 0}</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Unique workers in period</p>
+                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{(analytics?.periodWorkersEngaged || 0).toLocaleString()}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Selected period</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-emerald-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -347,8 +347,8 @@ export default function ExporterDashboard() {
                         <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Weight</p>
-                    <p className="mt-2 text-xl font-bold text-gray-900 dark:text-gray-100 break-all">{analytics?.periodWeight?.toLocaleString() || 0} kg</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">selected period</p>
+                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{(analytics?.periodWeight || 0).toLocaleString()} kg</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Selected period</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-amber-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -359,8 +359,8 @@ export default function ExporterDashboard() {
                         <TrendingUp className="w-5 h-5 text-amber-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Average</p>
-                    <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.periodAvgBagsPerDay?.toFixed(1) || 0}</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">avg bags per day in period</p>
+                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{analytics?.periodAvgBagsPerDay?.toFixed(1) || 0} bags/day</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Selected period</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-green-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -371,8 +371,8 @@ export default function ExporterDashboard() {
                         <TrendingUp className="w-5 h-5 text-green-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Cost</p>
-                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 break-all">{fmt(analytics?.periodCostToExporter || 0)}</p>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">selected period</p>
+                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{fmt(analytics?.periodCostToExporter || 0)}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Selected period</p>
                 </div>
             </div>
 
@@ -396,20 +396,36 @@ export default function ExporterDashboard() {
                         <BarChart3 className="w-5 h-5 text-blue-600" />
                     </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                     <div className="bg-white dark:bg-[#1e293b] rounded-xl p-4 border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-3 mb-3">
                             <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                                 <Package className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Period Total</p>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics?.periodBags || 0}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Period Bags</p>
+                                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodBags || 0).toLocaleString()}</p>
                             </div>
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Bags processed</span>
+                            <span>{(analytics?.periodWeight || 0).toLocaleString()} kg</span>
                             <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.periodCostToExporter || 0)}</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-[#1e293b] rounded-xl p-4 border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+                                <Users className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Period Sessions</p>
+                                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodSessionsCount || 0).toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                            <span>Worker-days</span>
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">{(analytics?.periodWorkersEngaged || 0)} workers</span>
                         </div>
                     </div>
 
@@ -420,11 +436,11 @@ export default function ExporterDashboard() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">All Time</p>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics?.totalBags || 0}</p>
+                                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(analytics?.totalBags || 0).toLocaleString()}</p>
                             </div>
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Cumulative total</span>
+                            <span>Cumulative bags</span>
                             <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.cumulativeCost || 0)}</span>
                         </div>
                     </div>
@@ -448,38 +464,67 @@ export default function ExporterDashboard() {
                     </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-50 dark:bg-[#162032]">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight (kg)</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost (FRw)</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-[#1e293b] divide-y divide-gray-100 dark:divide-gray-700/40">
-                            {(analytics?.dailyBreakdown || []).length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                                        No data available for this period.
-                                    </td>
-                                </tr>
-                            ) : (
-                                (analytics?.dailyBreakdown || []).map((row: any) => (
-                                    <tr key={row.date}>
-                                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{fmtDate(row.date)}</td>
-                                        <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{row.sessions}</td>
-                                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{row.bags}</td>
-                                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.weight || 0).toLocaleString()}</td>
-                                        <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.costToExporter || 0).toLocaleString()}</td>
-                                    </tr>
-                                ))
+                {(() => {
+                    const allRows = analytics?.dailyBreakdown || [];
+                    const totalBreakdownPages = Math.max(1, Math.ceil(allRows.length / ITEMS_PER_PAGE));
+                    const safeBreakdownPage = Math.min(breakdownPage, totalBreakdownPages);
+                    const paginatedRows = allRows.slice((safeBreakdownPage - 1) * ITEMS_PER_PAGE, safeBreakdownPage * ITEMS_PER_PAGE);
+
+                    return (
+                        <>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead className="bg-gray-50 dark:bg-[#162032]">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight (kg)</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost (FRw)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white dark:bg-[#1e293b] divide-y divide-gray-100 dark:divide-gray-700/40">
+                                        {allRows.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                    No data available for this period.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            paginatedRows.map((row: any) => (
+                                                <tr key={row.date}>
+                                                    <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{fmtDate(row.date)}</td>
+                                                    <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{row.sessions}</td>
+                                                    <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{row.bags}</td>
+                                                    <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.weight || 0).toLocaleString()}</td>
+                                                    <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.costToExporter || 0).toLocaleString()}</td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {totalBreakdownPages > 1 && (
+                                <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        Showing {(safeBreakdownPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safeBreakdownPage * ITEMS_PER_PAGE, allRows.length)} of {allRows.length} days
+                                    </p>
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={() => setBreakdownPage(1)} disabled={safeBreakdownPage === 1} className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">«</button>
+                                        <button onClick={() => setBreakdownPage(p => Math.max(1, p - 1))} disabled={safeBreakdownPage === 1} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                                            <ChevronLeft className="w-4 h-4" /> Prev
+                                        </button>
+                                        <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">{safeBreakdownPage} / {totalBreakdownPages}</span>
+                                        <button onClick={() => setBreakdownPage(p => Math.min(totalBreakdownPages, p + 1))} disabled={safeBreakdownPage === totalBreakdownPages} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                                            Next <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => setBreakdownPage(totalBreakdownPages)} disabled={safeBreakdownPage === totalBreakdownPages} className="px-2 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">»</button>
+                                    </div>
+                                </div>
                             )}
-                        </tbody>
-                    </table>
-                </div>
+                        </>
+                    );
+                })()}
             </div>
 
             {/* Recent Bags */}
@@ -584,20 +629,6 @@ export default function ExporterDashboard() {
                 </div>
             </div>
 
-            {/* Info Card */}
-            <div className="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700/50 rounded-xl p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-5">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center">
-                        <Info className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Read-Only Access</h3>
-                </div>
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                    You have view-only access to your processing data. You cannot modify attendance,
-                    worker assignments, or bag records. For any data corrections or updates,
-                    please contact the system administrator.
-                </p>
-            </div>
         </div>
     );
 }
