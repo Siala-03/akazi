@@ -4,10 +4,12 @@ import { format } from 'date-fns';
 export interface PayrollWorker {
     fullName: string;
     nationalId: string;
+    exporterName?: string;
     numberOfBags: number;
     numberOfDays: number;
     dailyRate: number;
     totalWage: number;
+    paid?: boolean;
 }
 
 export interface PayrollSummary {
@@ -27,61 +29,88 @@ export function exportPayrollToExcel(workers: PayrollWorker[], summary: PayrollS
     const weekEndDate = new Date(summary.weekEnd);
     const weekLabel = `${format(weekStartDate, 'dd MMM yyyy')} – ${format(weekEndDate, 'dd MMM yyyy')}`;
 
-    // ── Payroll Sheet ─────────────────────────────────────────────────────────
+    // ── Payroll Sheet ──
     const headerRows: any[][] = [
-        ['IKAWA RWANDA LTD – WEEKLY WAGE DISBURSEMENT'],
-        [`Week: ${weekLabel}`],
+        ['AKAZI RWANDA LTD – PAYROLL'],
+        [`Period: ${weekLabel}`],
         [`Generated: ${format(new Date(), 'dd MMM yyyy, HH:mm')}`],
         [],
-        ['Full Name', 'National ID', 'Bags Processed', 'Days Worked', 'Daily Rate (FRw)', 'Total Wage (FRw)'],
+        ['Full Name', 'National ID', 'Exporter', 'Bags', 'Days', 'Daily Rate (FRw)', 'Total Wage (FRw)', 'Status'],
     ];
 
-    const dataRows = workers.map((w, i) => [
+    const dataRows = workers.map(w => [
         w.fullName,
         w.nationalId || '—',
+        w.exporterName || '—',
         w.numberOfBags,
         w.numberOfDays,
         w.dailyRate,
         w.totalWage,
+        w.paid ? 'Paid' : 'Pending',
     ]);
 
     const totalsRow = [
         'TOTAL',
         '',
+        '',
         workers.reduce((s, w) => s + w.numberOfBags, 0),
         summary.totalDays,
         '',
         summary.totalWorkerWages,
+        '',
     ];
 
     const allRows = [...headerRows, ...dataRows, [], totalsRow];
     const payrollSheet = XLSX.utils.aoa_to_sheet(allRows);
-
-    // Column widths
     payrollSheet['!cols'] = [
-        { wch: 28 }, // Full Name
-        { wch: 18 }, // National ID
-        { wch: 16 }, // Bags
-        { wch: 14 }, // Days
-        { wch: 18 }, // Daily Rate
-        { wch: 18 }, // Total Wage
+        { wch: 28 }, { wch: 18 }, { wch: 24 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 10 },
     ];
-
-    // Merge title cell A1 across all columns
     payrollSheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } },
-        { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } },
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } },
     ];
-
     XLSX.utils.book_append_sheet(workbook, payrollSheet, 'Payroll');
 
-    // ── Summary Sheet ─────────────────────────────────────────────────────────
-    const summaryRows: any[][] = [
-        ['PAYROLL SUMMARY'],
-        [`Week: ${weekLabel}`],
+    // ── Exporter Summary Sheet ──
+    const exporterMap = new Map<string, { workers: number; days: number; bags: number; wages: number }>();
+    workers.forEach(w => {
+        const name = w.exporterName || 'Unknown';
+        const existing = exporterMap.get(name);
+        if (existing) {
+            existing.workers++;
+            existing.days += w.numberOfDays;
+            existing.bags += w.numberOfBags;
+            existing.wages += w.totalWage;
+        } else {
+            exporterMap.set(name, { workers: 1, days: w.numberOfDays, bags: w.numberOfBags, wages: w.totalWage });
+        }
+    });
+
+    const expRows: any[][] = [
+        ['EXPORTER BREAKDOWN'],
+        [`Period: ${weekLabel}`],
         [],
-        ['Metric', 'Value'],
+        ['Exporter', 'Workers', 'Days', 'Bags', 'Total Wages (FRw)'],
+        ...Array.from(exporterMap.entries()).map(([name, d]) => [name, d.workers, d.days, d.bags, d.wages]),
+        [],
+        ['TOTAL', summary.totalWorkers, summary.totalDays, workers.reduce((s, w) => s + w.numberOfBags, 0), summary.totalWorkerWages],
+    ];
+
+    const expSheet = XLSX.utils.aoa_to_sheet(expRows);
+    expSheet['!cols'] = [{ wch: 28 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 18 }];
+    expSheet['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } },
+    ];
+    XLSX.utils.book_append_sheet(workbook, expSheet, 'By Exporter');
+
+    // ── Cost Summary Sheet ──
+    const summaryRows: any[][] = [
+        ['COST RECONCILIATION'],
+        [`Period: ${weekLabel}`],
+        [],
+        ['Metric', 'Amount (FRw)'],
         ['Total Workers', summary.totalWorkers],
         ['Total Worker-Days', summary.totalDays],
         ['Worker Wages', summary.totalWorkerWages],
@@ -90,13 +119,12 @@ export function exportPayrollToExcel(workers: PayrollWorker[], summary: PayrollS
     ];
 
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
-    summarySheet['!cols'] = [{ wch: 35 }, { wch: 20 }];
+    summarySheet['!cols'] = [{ wch: 28 }, { wch: 20 }];
     summarySheet['!merges'] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
         { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } },
     ];
-
-    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Cost Summary');
 
     const fileName = `payroll_${format(weekStartDate, 'yyyyMMdd')}_${format(weekEndDate, 'yyyyMMdd')}.xlsx`;
     XLSX.writeFile(workbook, fileName);

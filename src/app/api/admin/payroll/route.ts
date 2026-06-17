@@ -12,25 +12,35 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
         const exporterIdFilter = searchParams.get('exporterId') || null;
+        const startDateParam = searchParams.get('startDate');
+        const endDateParam = searchParams.get('endDate');
 
         const today = new Date();
         const dayOfWeek = today.getDay();
         const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
         let weekStart: Date;
-        const weekStartParam = searchParams.get('weekStart');
-        if (weekStartParam) {
-            weekStart = new Date(weekStartParam);
-            weekStart.setHours(0, 0, 0, 0);
-        } else {
-            weekStart = new Date(today);
-            weekStart.setDate(today.getDate() - daysFromMonday);
-            weekStart.setHours(0, 0, 0, 0);
-        }
+        let weekEnd: Date;
 
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        weekEnd.setHours(23, 59, 59, 999);
+        if (startDateParam && endDateParam) {
+            weekStart = new Date(startDateParam);
+            weekStart.setHours(0, 0, 0, 0);
+            weekEnd = new Date(endDateParam);
+            weekEnd.setHours(23, 59, 59, 999);
+        } else {
+            const weekStartParam = searchParams.get('weekStart');
+            if (weekStartParam) {
+                weekStart = new Date(weekStartParam);
+                weekStart.setHours(0, 0, 0, 0);
+            } else {
+                weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - daysFromMonday);
+                weekStart.setHours(0, 0, 0, 0);
+            }
+            weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            weekEnd.setHours(23, 59, 59, 999);
+        }
 
         const { workerDailyWage: WORKER_DAILY_WAGE, exporterDailyRate: DEFAULT_DAILY_RATE } = await getSettings();
 
