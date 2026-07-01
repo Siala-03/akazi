@@ -89,8 +89,6 @@ export default function OperationsPage() {
     const [qrScannerMode, setQrScannerMode] = useState<'checkin' | 'checkout'>('checkin');
     const [checkoutExporterFilter, setCheckoutExporterFilter] = useState('');
     const [checkinExporterId, setCheckinExporterId] = useState('');
-    const [assignExporterId, setAssignExporterId] = useState('');
-    const [selectedWorkerIds, setSelectedWorkerIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         // Set initial time and update every second
@@ -313,32 +311,6 @@ export default function OperationsPage() {
         }
     };
 
-    const handleBulkAssign = async () => {
-        if (!assignExporterId || selectedWorkerIds.size === 0) return;
-        setLoading(true);
-        let assigned = 0;
-        let failed = 0;
-        for (const attId of selectedWorkerIds) {
-            try {
-                const res = await fetch('/api/sessions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ attendanceId: attId, exporterId: assignExporterId }),
-                });
-                if (res.ok) assigned++;
-                else failed++;
-            } catch {
-                failed++;
-            }
-        }
-        setSelectedWorkerIds(new Set());
-        fetchSessions();
-        fetchOperationsMetrics();
-        setLoading(false);
-        if (assigned > 0) toast.success(`${assigned} worker${assigned > 1 ? 's' : ''} assigned`);
-        if (failed > 0) toast.error(`${failed} assignment${failed > 1 ? 's' : ''} failed`);
-    };
-
     // Bag Recording State
     const [bagFormData, setBagFormData] = useState({
         exporterId: '',
@@ -404,10 +376,6 @@ export default function OperationsPage() {
     };
 
     const onSiteWorkers = attendance.filter((a) => a.status === 'on-site');
-    // Workers available for exporter assignment (on-site and no active session yet)
-    const availableForAssignment = onSiteWorkers.filter(
-        (a) => !sessions.some((s) => s.workerId._id === a.workerId._id)
-    );
     const selectedExporterName = exporters.find((e) => e._id === bagFormData.exporterId)?.companyTradingName;
     const bagCandidates = sessions
         .filter((s) => s.exporterId._id === bagFormData.exporterId)
@@ -585,12 +553,11 @@ export default function OperationsPage() {
                 <div className="px-6 pt-5 pb-0">
                     <div className="flex items-center gap-0">
                         {[
-                            { id: 'checkin', step: 1, label: 'Check-in', icon: UserCheck, desc: 'Record arrival' },
-                            { id: 'assign', step: 2, label: 'Assign Exporter', icon: Link2, desc: 'Link to session' },
-                            { id: 'bags', step: 3, label: 'Record Bags', icon: Package, desc: 'Log completed bags' },
-                            { id: 'checkout', step: 4, label: 'Check-out', icon: UserX, desc: 'Close session' },
+                            { id: 'checkin', step: 1, label: 'Check-in & Assign', icon: UserCheck },
+                            { id: 'bags', step: 2, label: 'Record Bags', icon: Package },
+                            { id: 'checkout', step: 3, label: 'Check-out', icon: UserX },
                         ].map((step, i, arr) => {
-                            const tabOrder = ['checkin', 'assign', 'bags', 'checkout'];
+                            const tabOrder = ['checkin', 'bags', 'checkout'];
                             const activeIdx = tabOrder.indexOf(activeTab);
                             const isActive = activeTab === step.id;
                             const isDone = tabOrder.indexOf(step.id) < activeIdx;
@@ -604,7 +571,7 @@ export default function OperationsPage() {
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${isActive ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200' : isDone ? 'bg-gray-200 text-gray-500' : 'bg-gray-100 text-gray-400'}`}>
                                             {isDone ? '✓' : step.step}
                                         </div>
-                                        <span className={`text-[11px] font-semibold hidden sm:block truncate max-w-[80px] text-center ${isActive ? 'text-emerald-700' : 'text-gray-500'}`}>{step.label}</span>
+                                        <span className={`text-[11px] font-semibold hidden sm:block truncate max-w-[90px] text-center ${isActive ? 'text-emerald-700' : 'text-gray-500'}`}>{step.label}</span>
                                     </button>
                                     {i < arr.length - 1 && (
                                         <div className={`flex-1 h-0.5 mx-1 rounded-full transition-colors ${tabOrder.indexOf(arr[i + 1].id) <= activeIdx ? 'bg-emerald-300' : 'bg-gray-100'}`} />
@@ -617,9 +584,8 @@ export default function OperationsPage() {
                 <div className="border-b border-gray-200 mt-4">
                     <nav className="flex flex-wrap -mb-px">
                         {[
-                            { id: 'checkin', label: 'Check-in', icon: UserCheck },
-                            { id: 'assign', label: 'Assign Exporter', icon: Link2 },
-                            { id: 'bags', label: 'Assign Bags', icon: Package },
+                            { id: 'checkin', label: 'Check-in & Assign', icon: UserCheck },
+                            { id: 'bags', label: 'Record Bags', icon: Package },
                             { id: 'checkout', label: 'Check-out', icon: UserX },
                         ].map((tab) => {
                             const Icon = tab.icon;
@@ -654,7 +620,7 @@ export default function OperationsPage() {
                                         Worker Entry Check-in
                                     </h3>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        STEP 1: Select exporter, then check workers in — they are assigned immediately
+                                        Select an exporter, then check workers in — they are assigned immediately
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm">
@@ -815,151 +781,6 @@ export default function OperationsPage() {
                         </div>
                     )}
 
-                    {/* Assign Tab */}
-                    {activeTab === 'assign' && (
-                        <div>
-                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
-                                <div>
-                                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                                        <Link2 className="w-5 h-5 text-gray-700" />
-                                        Assign Workers to Exporters
-                                    </h3>
-                                    <p className="text-sm text-gray-600 mt-1">
-                                        STEP 2: Select an exporter, tick workers, then assign all at once
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-4 text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-gray-800"></div>
-                                        <span className="text-gray-700">{availableForAssignment.length} Available</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-                                        <span className="text-gray-700">{sessions.length} Assigned</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Exporter picker + assign button */}
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                <div className="flex items-center gap-2 flex-1">
-                                    <Building2 className="w-5 h-5 text-indigo-600 shrink-0" />
-                                    <select
-                                        value={assignExporterId}
-                                        onChange={e => { setAssignExporterId(e.target.value); setSelectedWorkerIds(new Set()); }}
-                                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-400 focus:border-transparent bg-white text-gray-900 font-medium text-sm"
-                                    >
-                                        <option value="">Select Exporter</option>
-                                        {exporters.map((exp) => (
-                                            <option key={exp._id} value={exp._id}>{exp.companyTradingName}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <button
-                                    onClick={handleBulkAssign}
-                                    disabled={loading || !assignExporterId || selectedWorkerIds.size === 0}
-                                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm whitespace-nowrap"
-                                >
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    Assign {selectedWorkerIds.size > 0 ? `${selectedWorkerIds.size} Worker${selectedWorkerIds.size > 1 ? 's' : ''}` : 'Selected'}
-                                </button>
-                            </div>
-
-                            {!assignExporterId ? (
-                                <div className="flex flex-col items-center justify-center py-16 text-center">
-                                    <Building2 className="w-12 h-12 text-gray-200 mb-4" />
-                                    <p className="font-medium text-gray-500">Select an exporter above</p>
-                                    <p className="text-sm text-gray-400 mt-1">Then pick workers to assign to that exporter</p>
-                                </div>
-                            ) : availableForAssignment.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-16 text-center">
-                                    <Users className="w-12 h-12 text-gray-200 mb-4" />
-                                    <p className="font-medium text-gray-500">No available workers</p>
-                                    <p className="text-sm text-gray-400 mt-1">Check-in workers first or all on-site workers are already assigned</p>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full table-compact">
-                                        <thead className="bg-gray-50 border-b border-gray-200">
-                                            <tr>
-                                                <th className="px-4 py-3 text-left w-10">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={availableForAssignment.length > 0 && selectedWorkerIds.size === availableForAssignment.length}
-                                                        onChange={(e) => {
-                                                            if (e.target.checked) {
-                                                                setSelectedWorkerIds(new Set(availableForAssignment.map(a => a._id)));
-                                                            } else {
-                                                                setSelectedWorkerIds(new Set());
-                                                            }
-                                                        }}
-                                                        className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                                                    />
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker ID</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-in Time</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-200">
-                                            {availableForAssignment.map((att) => (
-                                                <tr
-                                                    key={att._id}
-                                                    className={`hover:bg-gray-50 cursor-pointer transition-colors ${selectedWorkerIds.has(att._id) ? 'bg-emerald-50' : ''}`}
-                                                    onClick={() => {
-                                                        setSelectedWorkerIds(prev => {
-                                                            const next = new Set(prev);
-                                                            if (next.has(att._id)) next.delete(att._id);
-                                                            else next.add(att._id);
-                                                            return next;
-                                                        });
-                                                    }}
-                                                >
-                                                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedWorkerIds.has(att._id)}
-                                                            onChange={() => {
-                                                                setSelectedWorkerIds(prev => {
-                                                                    const next = new Set(prev);
-                                                                    if (next.has(att._id)) next.delete(att._id);
-                                                                    else next.add(att._id);
-                                                                    return next;
-                                                                });
-                                                            }}
-                                                            className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                                                        />
-                                                    </td>
-                                                    <td className="px-6 py-3">
-                                                        <span className="font-medium text-gray-900">{att.workerId.fullName}</span>
-                                                    </td>
-                                                    <td className="px-6 py-3">
-                                                        <span className="text-sm font-mono font-semibold text-gray-700">{att.workerId.workerId}</span>
-                                                    </td>
-                                                    <td className="px-6 py-3">
-                                                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                            <Clock className="w-4 h-4" />
-                                                            {new Date(att.checkInTime).toLocaleTimeString('en-US', {
-                                                                hour: '2-digit',
-                                                                minute: '2-digit'
-                                                            })}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-3">
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                                                            Available
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
                     {/* Bag Recording Tab */}
                     {activeTab === 'bags' && (
                         <div>
@@ -970,7 +791,7 @@ export default function OperationsPage() {
                                         Assign Bags (60kg)
                                     </h3>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        STEP 3: Select exporter, pick 2-4 workers with active sessions, then start a bag
+                                        Select exporter, pick 2-4 workers with active sessions, then start a bag
                                     </p>
                                 </div>
                                 <div className="text-right">
@@ -1195,7 +1016,7 @@ export default function OperationsPage() {
                                         Worker Exit Check-out
                                     </h3>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        STEP 5: Record exit time and close sorting session
+                                        Record exit time and close sorting session
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3 flex-wrap">
