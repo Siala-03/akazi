@@ -88,6 +88,7 @@ export default function OperationsPage() {
     const [showQrScanner, setShowQrScanner] = useState(false);
     const [qrScannerMode, setQrScannerMode] = useState<'checkin' | 'checkout'>('checkin');
     const [checkoutExporterFilter, setCheckoutExporterFilter] = useState('');
+    const [checkinExporterId, setCheckinExporterId] = useState('');
     const [assignExporterId, setAssignExporterId] = useState('');
     const [selectedWorkerIds, setSelectedWorkerIds] = useState<Set<string>>(new Set());
 
@@ -178,23 +179,42 @@ export default function OperationsPage() {
     };
 
     const handleCheckIn = async (workerId: string) => {
+        if (!checkinExporterId) {
+            toast.error('Select an exporter above before checking in');
+            return;
+        }
         setLoading(true);
         try {
-            const res = await fetch('/api/attendance/checkin', {
+            const checkinRes = await fetch('/api/attendance/checkin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ workerId }),
             });
-
-            if (!res.ok) {
-                const data = await res.json();
+            if (!checkinRes.ok) {
+                const data = await checkinRes.json();
                 throw new Error(data.error);
             }
+            const checkinData = await checkinRes.json();
+            const attendanceId = checkinData.attendance?._id;
 
-            toast.success('Worker checked in successfully');
+            if (attendanceId) {
+                const sessionRes = await fetch('/api/sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ attendanceId, exporterId: checkinExporterId }),
+                });
+                if (!sessionRes.ok) {
+                    const sd = await sessionRes.json();
+                    throw new Error(sd.error || 'Checked in but session assignment failed');
+                }
+            }
+
+            const exporterName = exporters.find(e => e._id === checkinExporterId)?.companyTradingName || 'exporter';
+            toast.success(`Worker checked in and assigned to ${exporterName}`);
             fetchAttendance();
+            fetchSessions();
             fetchOperationsMetrics();
-            setSearchWorkerId(''); // Clear search after successful check-in
+            setSearchWorkerId('');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Check-in failed');
         } finally {
@@ -204,9 +224,12 @@ export default function OperationsPage() {
 
     const handleQuickCheckIn = async () => {
         if (!searchWorkerId) return;
-        
-        // Find worker by ID, phone, or name
-        const worker = workers.find(w => 
+        if (!checkinExporterId) {
+            toast.error('Select an exporter above before checking in');
+            return;
+        }
+
+        const worker = workers.find(w =>
             w.workerId.toLowerCase() === searchWorkerId.toLowerCase() ||
             w.phone === searchWorkerId ||
             w.fullName.toLowerCase().includes(searchWorkerId.toLowerCase())
@@ -217,20 +240,13 @@ export default function OperationsPage() {
             return;
         }
 
-        // Check if worker is already checked in (on-site) or has checked out today
-        const onSiteWorkerIds = attendance
-            .filter(a => a.status === 'on-site')
-            .map(a => a.workerId._id);
-        
-        const checkedOutWorkerIds = attendance
-            .filter(a => a.status === 'checked-out')
-            .map(a => a.workerId._id);
-        
+        const onSiteWorkerIds = attendance.filter(a => a.status === 'on-site').map(a => a.workerId._id);
+        const checkedOutWorkerIds = attendance.filter(a => a.status === 'checked-out').map(a => a.workerId._id);
+
         if (onSiteWorkerIds.includes(worker._id)) {
             toast.error('Worker is already checked in and on-site.');
             return;
         }
-        
         if (checkedOutWorkerIds.includes(worker._id)) {
             toast.error('Worker has already completed their shift today.');
             return;
@@ -412,8 +428,22 @@ export default function OperationsPage() {
                 <QrScannerModal
                     mode={qrScannerMode}
                     onClose={() => setShowQrScanner(false)}
-                    onScanSuccess={(result) => {
-                        toast.success(`${result.workerName} checked ${qrScannerMode === 'checkin' ? 'in' : 'out'} via QR`);
+                    onScanSuccess={async (result) => {
+                        if (qrScannerMode === 'checkin' && checkinExporterId && result.attendanceId) {
+                            try {
+                                await fetch('/api/sessions', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ attendanceId: result.attendanceId, exporterId: checkinExporterId }),
+                                });
+                                const expName = exporters.find(e => e._id === checkinExporterId)?.companyTradingName || 'exporter';
+                                toast.success(`${result.workerName} checked in and assigned to ${expName}`);
+                            } catch {
+                                toast.success(`${result.workerName} checked in (assign manually)`);
+                            }
+                        } else {
+                            toast.success(`${result.workerName} checked ${qrScannerMode === 'checkin' ? 'in' : 'out'} via QR`);
+                        }
                         fetchAttendance();
                         fetchSessions();
                         fetchOperationsMetrics();
@@ -617,183 +647,171 @@ export default function OperationsPage() {
                     {/* Check-in Tab */}
                     {activeTab === 'checkin' && (
                         <div>
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                                 <div>
                                     <h3 className="text-lg font-semibold flex items-center gap-2">
                                         <UserCheck className="w-5 h-5 text-gray-600" />
                                         Worker Entry Check-in
                                     </h3>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        STEP 1: Identify worker via ID/Phone and record entry time
+                                        STEP 1: Select exporter, then check workers in — they are assigned immediately
                                     </p>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <Clock className="w-4 h-4 text-gray-400" />
-                                        <span className="font-medium text-gray-700">
-                                            {currentTime || '--:--:--'}
-                                        </span>
-                                    </div>
-                                    <span className="text-sm text-gray-500">
-                                        {(() => {
-                                            const onSiteIds = attendance.filter(a => a.status === 'on-site').map(a => a.workerId._id);
-                                            const checkedOutIds = attendance.filter(a => a.status === 'checked-out').map(a => a.workerId._id);
-                                            const available = workers.filter(w => !onSiteIds.includes(w._id) && !checkedOutIds.includes(w._id)).length;
-                                            return available;
-                                        })()} workers available
-                                    </span>
+                                <div className="flex items-center gap-3 text-sm">
+                                    <Clock className="w-4 h-4 text-gray-400" />
+                                    <span className="font-medium text-gray-700">{currentTime || '--:--:--'}</span>
                                 </div>
                             </div>
 
-                            {/* QR Scan Button */}
-                            <button
-                                onClick={() => {
-                                    setQrScannerMode('checkin');
-                                    setShowQrScanner(true);
-                                }}
-                                className="w-full mb-4 flex items-center justify-center gap-3 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-emerald-500/20"
-                            >
-                                <QrCode className="w-5 h-5" />
-                                Scan QR Badge to Check In
-                            </button>
-
-                            {/* Quick Search by Worker ID */}
-                            <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                                    <Search className="w-4 h-4 text-gray-700" />
-                                    Or check in manually: Worker ID or Phone
-                                </label>
-                                <div className="flex gap-3">
-                                    <input
-                                        suppressHydrationWarning
-                                        type="text"
-                                        value={searchWorkerId}
-                                        onChange={(e) => setSearchWorkerId(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleQuickCheckIn()}
-                                        placeholder="WORK001, 0788123456, or worker name..."
-                                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent bg-white font-medium"
-                                    />
-                                    <button
-                                        onClick={handleQuickCheckIn}
-                                        disabled={loading || !searchWorkerId}
-                                        className="px-6 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium disabled:opacity-50 transition-colors inline-flex items-center gap-2"
+                            {/* Exporter selector — required first step */}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                <div className="flex items-center gap-2 flex-1">
+                                    <Building2 className="w-5 h-5 text-indigo-600 shrink-0" />
+                                    <select
+                                        value={checkinExporterId}
+                                        onChange={e => setCheckinExporterId(e.target.value)}
+                                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-400 focus:border-transparent bg-white text-gray-900 font-medium text-sm"
                                     >
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        Check In
-                                    </button>
+                                        <option value="">— Select Exporter to begin —</option>
+                                        {exporters.map(exp => (
+                                            <option key={exp._id} value={exp._id}>{exp.companyTradingName}</option>
+                                        ))}
+                                    </select>
                                 </div>
+                                {checkinExporterId && (
+                                    <button
+                                        onClick={() => setCheckinExporterId('')}
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-sm font-semibold rounded-lg whitespace-nowrap transition-colors"
+                                    >
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                        Done with {exporters.find(e => e._id === checkinExporterId)?.companyTradingName}
+                                    </button>
+                                )}
                             </div>
 
-                            {/* Worker List Table */}
-                            <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                                <p className="text-sm font-medium text-gray-700 mb-2">Or select from list:</p>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full table-compact">
-                                    <thead className="bg-gray-50 border-b border-gray-200">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker ID</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {(() => {
-                                            // Get list of worker IDs who are currently on-site OR have already checked out today
-                                            const onSiteWorkerIds = attendance
-                                                .filter(a => a.status === 'on-site')
-                                                .map(a => a.workerId._id);
-                                            
-                                            const checkedOutWorkerIds = attendance
-                                                .filter(a => a.status === 'checked-out')
-                                                .map(a => a.workerId._id);
+                            {!checkinExporterId ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-center">
+                                    <Building2 className="w-12 h-12 text-gray-200 mb-4" />
+                                    <p className="font-medium text-gray-500">Select an exporter above to begin</p>
+                                    <p className="text-sm text-gray-400 mt-1">All check-ins will be assigned to that exporter automatically</p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* QR Scan Button */}
+                                    <button
+                                        onClick={() => {
+                                            setQrScannerMode('checkin');
+                                            setShowQrScanner(true);
+                                        }}
+                                        className="w-full mb-4 flex items-center justify-center gap-3 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-emerald-500/20"
+                                    >
+                                        <QrCode className="w-5 h-5" />
+                                        Scan QR Badge to Check In &amp; Assign
+                                    </button>
 
-                                            console.log('[Check-in List] On-site worker IDs:', onSiteWorkerIds);
-                                            console.log('[Check-in List] Checked-out worker IDs:', checkedOutWorkerIds);
-                                            console.log('[Check-in List] All workers:', workers.map(w => ({ id: w._id, name: w.fullName })));
+                                    {/* Quick Search */}
+                                    <div className="mb-5 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                            <Search className="w-4 h-4 text-gray-700" />
+                                            Manual check-in: Worker ID, Phone or Name
+                                        </label>
+                                        <div className="flex gap-3">
+                                            <input
+                                                suppressHydrationWarning
+                                                type="text"
+                                                value={searchWorkerId}
+                                                onChange={e => setSearchWorkerId(e.target.value)}
+                                                onKeyDown={e => e.key === 'Enter' && handleQuickCheckIn()}
+                                                placeholder="WORK001, 0788123456, or worker name..."
+                                                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent bg-white font-medium"
+                                            />
+                                            <button
+                                                onClick={handleQuickCheckIn}
+                                                disabled={loading || !searchWorkerId}
+                                                className="px-6 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium disabled:opacity-50 transition-colors inline-flex items-center gap-2"
+                                            >
+                                                <CheckCircle2 className="w-4 h-4" />
+                                                Check In
+                                            </button>
+                                        </div>
+                                    </div>
 
-                                            // Filter out workers who are already on-site OR have checked out today
-                                            const availableWorkers = workers.filter(w => {
-                                                // Check if worker is already checked in
-                                                const isOnSite = onSiteWorkerIds.includes(w._id);
-                                                if (isOnSite) {
-                                                    console.log('[Check-in List] Filtering out on-site worker:', w.fullName);
-                                                    return false;
-                                                }
-                                                
-                                                // Check if worker has already checked out today
-                                                const hasCheckedOut = checkedOutWorkerIds.includes(w._id);
-                                                if (hasCheckedOut) {
-                                                    console.log('[Check-in List] Filtering out checked-out worker:', w.fullName);
-                                                    return false;
-                                                }
-                                                
-                                                // Apply search filter
-                                                if (!searchWorkerId) return true;
-                                                const search = searchWorkerId.toLowerCase();
-                                                return w.fullName.toLowerCase().includes(search) ||
-                                                       w.workerId.toLowerCase().includes(search) ||
-                                                       w.phone.includes(search);
-                                            });
-
-                                            console.log('[Check-in List] Available workers:', availableWorkers.map(w => w.fullName));
-
-                                            if (workers.length === 0) {
-                                                return (
-                                                    <tr>
-                                                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                                            No workers registered yet. Add workers in the Workers section.
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            }
-
-                                            if (availableWorkers.length === 0) {
-                                                return (
-                                                    <tr>
-                                                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                                            {searchWorkerId 
-                                                                ? 'No workers found matching your search.'
-                                                                : 'All workers have been checked in or checked out for today.'}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            }
-
-                                            return availableWorkers.map((worker) => (
-                                                <tr key={worker._id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="font-medium text-gray-900">{worker.fullName}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="text-sm font-mono font-semibold text-gray-700">{worker.workerId}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-600">{worker.phone}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                            Available
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <button
-                                                            onClick={() => handleCheckIn(worker._id)}
-                                                            disabled={loading}
-                                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium disabled:opacity-50 transition-colors"
-                                                        >
-                                                            <CheckCircle2 className="w-4 h-4" />
-                                                            Check In
-                                                        </button>
-                                                    </td>
+                                    {/* Worker List */}
+                                    <p className="text-sm font-medium text-gray-600 mb-3">Or select from list:</p>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full table-compact">
+                                            <thead className="bg-gray-50 border-b border-gray-200">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker ID</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
                                                 </tr>
-                                            ));
-                                        })()}
-                                    </tbody>
-                                </table>
-                            </div>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                                {(() => {
+                                                    const onSiteWorkerIds = attendance.filter(a => a.status === 'on-site').map(a => a.workerId._id);
+                                                    const checkedOutWorkerIds = attendance.filter(a => a.status === 'checked-out').map(a => a.workerId._id);
+
+                                                    const availableWorkers = workers.filter(w => {
+                                                        if (onSiteWorkerIds.includes(w._id)) return false;
+                                                        if (checkedOutWorkerIds.includes(w._id)) return false;
+                                                        if (!searchWorkerId) return true;
+                                                        const search = searchWorkerId.toLowerCase();
+                                                        return w.fullName.toLowerCase().includes(search) ||
+                                                            w.workerId.toLowerCase().includes(search) ||
+                                                            w.phone.includes(search);
+                                                    });
+
+                                                    if (workers.length === 0) {
+                                                        return (
+                                                            <tr>
+                                                                <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                                                                    No workers registered yet. Add workers in the Workers section.
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    }
+
+                                                    if (availableWorkers.length === 0) {
+                                                        return (
+                                                            <tr>
+                                                                <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                                                                    {searchWorkerId
+                                                                        ? 'No workers found matching your search.'
+                                                                        : 'All workers have been checked in or checked out for today.'}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    }
+
+                                                    return availableWorkers.map(worker => (
+                                                        <tr key={worker._id} className="hover:bg-gray-50">
+                                                            <td className="px-6 py-4">
+                                                                <span className="font-medium text-gray-900">{worker.fullName}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <span className="text-sm font-mono font-semibold text-gray-700">{worker.workerId}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm text-gray-600">{worker.phone}</td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                <button
+                                                                    onClick={() => handleCheckIn(worker._id)}
+                                                                    disabled={loading}
+                                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium disabled:opacity-50 transition-colors"
+                                                                >
+                                                                    <CheckCircle2 className="w-4 h-4" />
+                                                                    Check In
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ));
+                                                })()}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
 

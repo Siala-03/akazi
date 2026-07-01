@@ -7,6 +7,7 @@ interface CheckInResult {
     workerName: string;
     workerId: string;
     photo?: string;
+    attendanceId?: string;
 }
 
 interface QrScannerModalProps {
@@ -149,6 +150,7 @@ export function QrScannerModal({ mode, onClose, onScanSuccess }: QrScannerModalP
                     workerName: data.worker.fullName,
                     workerId: data.worker.workerId,
                     photo: data.worker.photo,
+                    attendanceId: data.attendance?._id,
                 };
                 setLastResult(result);
                 setScanState('success');
