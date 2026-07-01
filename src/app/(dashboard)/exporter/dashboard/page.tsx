@@ -2,19 +2,15 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import {
-    Package,
     Users,
     TrendingUp,
     Calendar,
-    Weight,
     Clock,
-    BarChart3,
     DollarSign,
     ChevronLeft,
     ChevronRight,
     RefreshCw,
     Download,
-
 } from 'lucide-react';
 import { ExportButton } from '@/components/export/ExportButton';
 import { ExportData } from '@/lib/export';
@@ -117,12 +113,10 @@ export default function ExporterDashboard() {
             : 'Selected Period';
 
         const csvRows = [
-            ['Date', 'Sessions', 'Bags', 'Weight (kg)', 'Cost to Exporter (FRw)'],
+            ['Date', 'Sessions', 'Cost to Exporter (FRw)'],
             ...rows.map((row: any) => [
                 row.date,
                 row.sessions,
-                row.bags,
-                row.weight,
                 row.costToExporter,
             ]),
         ];
@@ -154,27 +148,15 @@ export default function ExporterDashboard() {
             exporterName: exporterInfo.name,
             exporterCode: exporterInfo.code,
             dateRange: periodStart && periodEnd ? { start: periodStart, end: periodEnd } : undefined,
-            summary: {
-                totalBags: analytics?.periodBags || 0,
-                totalWeight: analytics?.periodWeight || 0,
-                totalWorkers: analytics?.periodWorkersEngaged || 0,
-                averageWeight: analytics?.periodBags > 0 ? analytics.periodWeight / analytics.periodBags : 0
-            },
             analytics: analytics ? {
-                periodBags: analytics.periodBags || 0,
-                periodWeight: analytics.periodWeight || 0,
                 periodWorkersEngaged: analytics.periodWorkersEngaged || 0,
                 periodSessionsCount: analytics.periodSessionsCount || 0,
                 periodCostToExporter: analytics.periodCostToExporter || 0,
-                periodAvgBagsPerDay: analytics.periodAvgBagsPerDay || 0,
                 periodDays: analytics.periodDays || 0,
-                totalBags: analytics.totalBags || 0,
-                totalWeight: analytics.totalWeight || 0,
                 workersEngaged: analytics.workersEngaged || 0,
                 cumulativeCost: analytics.cumulativeCost || 0,
                 sessionsCumulativeCount: analytics.sessionsCumulativeCount || 0,
                 dailyBreakdown: analytics.dailyBreakdown || [],
-                trends: analytics.trends,
             } : undefined,
         };
     };
@@ -314,38 +296,16 @@ export default function ExporterDashboard() {
             </div>
 
             {/* Main Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
-                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
-                            <Package className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <TrendingUp className="w-5 h-5 text-emerald-500" />
-                    </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Bags</p>
-                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{(analytics?.periodBags || 0).toLocaleString()}</p>
-                </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="flex items-center justify-between mb-4">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                             <Users className="w-6 h-6 text-purple-600" />
                         </div>
-                        <BarChart3 className="w-5 h-5 text-purple-500" />
+                        <TrendingUp className="w-5 h-5 text-purple-500" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Workers Engaged</p>
                     <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{(analytics?.periodWorkersEngaged || 0).toLocaleString()}</p>
-                </div>
-
-                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-emerald-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
-                            <Weight className="w-6 h-6 text-emerald-600" />
-                        </div>
-                        <TrendingUp className="w-5 h-5 text-emerald-500" />
-                    </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Weight</p>
-                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{(analytics?.periodWeight || 0).toLocaleString()} kg</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-amber-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -355,8 +315,8 @@ export default function ExporterDashboard() {
                         </div>
                         <TrendingUp className="w-5 h-5 text-amber-500" />
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Average</p>
-                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{analytics?.periodAvgBagsPerDay?.toFixed(1) || 0} bags/day</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Period Sessions</p>
+                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{(analytics?.periodSessionsCount || 0).toLocaleString()} worker-days</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-green-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
@@ -392,22 +352,6 @@ export default function ExporterDashboard() {
                     </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                    <div className="bg-white dark:bg-[#1e293b] rounded-xl p-4 border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                                <Package className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Period Bags</p>
-                                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodBags || 0).toLocaleString()}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>{(analytics?.periodWeight || 0).toLocaleString()} kg</span>
-                            <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.periodCostToExporter || 0)}</span>
-                        </div>
-                    </div>
-
                     <div className="bg-white dark:bg-[#1e293b] rounded-xl p-4 border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-3 mb-3">
                             <div className="w-10 h-10 rounded-lg flex items-center justify-center">
@@ -431,11 +375,11 @@ export default function ExporterDashboard() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">All Time</p>
-                                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(analytics?.totalBags || 0).toLocaleString()}</p>
+                                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(analytics?.sessionsCumulativeCount || 0).toLocaleString()}</p>
                             </div>
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Cumulative bags</span>
+                            <span>Cumulative sessions</span>
                             <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.cumulativeCost || 0)}</span>
                         </div>
                     </div>
@@ -473,15 +417,13 @@ export default function ExporterDashboard() {
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bags</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight (kg)</th>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost (FRw)</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white dark:bg-[#1e293b] divide-y divide-gray-100 dark:divide-gray-700/40">
                                         {allRows.length === 0 ? (
                                             <tr>
-                                                <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                <td colSpan={3} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                                                     No data available for this period.
                                                 </td>
                                             </tr>
@@ -490,8 +432,6 @@ export default function ExporterDashboard() {
                                                 <tr key={row.date}>
                                                     <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{fmtDate(row.date)}</td>
                                                     <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{row.sessions}</td>
-                                                    <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{row.bags}</td>
-                                                    <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.weight || 0).toLocaleString()}</td>
                                                     <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{Number(row.costToExporter || 0).toLocaleString()}</td>
                                                 </tr>
                                             ))
@@ -537,43 +477,7 @@ export default function ExporterDashboard() {
             </div>
 
             {/* Analytics Summary */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                {/* Bags Analysis */}
-                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700/50 p-5">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Package className="w-5 h-5 text-blue-600" />
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Bags Analysis</h3>
-                    </div>
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">Period bags</span>
-                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodBags || 0).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">All-time bags</span>
-                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.totalBags || 0).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">Period weight</span>
-                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodWeight || 0).toLocaleString()} kg</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">All-time weight</span>
-                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.totalWeight || 0).toLocaleString()} kg</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">Avg per day</span>
-                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{analytics?.periodAvgBagsPerDay || 0} bags</span>
-                        </div>
-                        {analytics?.periodBags > 0 && analytics?.periodWeight > 0 && (
-                            <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
-                                <span className="text-sm text-gray-500 dark:text-gray-400">Avg bag weight</span>
-                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics.periodWeight / analytics.periodBags).toFixed(1)} kg</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* Workers Analysis */}
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700/50 p-5">
                     <div className="flex items-center gap-2 mb-4">
@@ -597,12 +501,6 @@ export default function ExporterDashboard() {
                             <span className="text-sm text-gray-500 dark:text-gray-400">All-time sessions</span>
                             <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.sessionsCumulativeCount || 0).toLocaleString()}</span>
                         </div>
-                        {analytics?.periodWorkersEngaged > 0 && analytics?.periodBags > 0 && (
-                            <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
-                                <span className="text-sm text-gray-500 dark:text-gray-400">Bags per worker</span>
-                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics.periodBags / analytics.periodWorkersEngaged).toFixed(1)}</span>
-                            </div>
-                        )}
                         {analytics?.periodSessionsCount > 0 && analytics?.periodDays > 0 && (
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-gray-500 dark:text-gray-400">Sessions per day</span>
@@ -647,12 +545,6 @@ export default function ExporterDashboard() {
                                     ) : null;
                                 })()}
                             </>
-                        )}
-                        {analytics?.periodBags > 0 && (
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-gray-500 dark:text-gray-400">Cost per bag</span>
-                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(Math.round((analytics.periodCostToExporter || 0) / analytics.periodBags))}</span>
-                            </div>
                         )}
                     </div>
                 </div>

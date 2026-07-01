@@ -5,7 +5,6 @@ import toast, { Toaster } from 'react-hot-toast';
 import {
     UserCheck,
     UserX,
-    Package,
     Link2,
     Activity,
     Users,
@@ -15,7 +14,6 @@ import {
     ChevronDown,
     ChevronUp,
     Search,
-    Weight,
     Building2,
     QrCode
 } from 'lucide-react';
@@ -434,47 +432,7 @@ export default function OperationsPage() {
             )}
 
             {/* Operations Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-                <div className="card rounded-xl p-4 sm:p-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
-                            <Package className="w-4 h-4 text-gray-600" />
-                        </div>
-                        <TrendingUp className="w-4 h-4 text-gray-400" />
-                    </div>
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Bags Today</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
-                        {operationsMetrics?.bagsToday || 0}
-                    </p>
-                </div>
-
-                <div className="card rounded-xl p-4 sm:p-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
-                            <Weight className="w-4 h-4 text-gray-600" />
-                        </div>
-                        <TrendingUp className="w-4 h-4 text-gray-400" />
-                    </div>
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total KG</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
-                        {operationsMetrics?.totalKilogramsToday?.toLocaleString() || 0}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">kg today</p>
-                </div>
-
-                <div className="card rounded-xl p-4 sm:p-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
-                            <Users className="w-4 h-4 text-gray-600" />
-                        </div>
-                    </div>
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Avg Workers/Bag</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
-                        {operationsMetrics?.avgWorkersPerBag?.toFixed(1) || 0}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">per bag</p>
-                </div>
-
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="card rounded-xl p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center">

@@ -14,47 +14,10 @@ export async function GET() {
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
-        const [bagsToday, sessionsToday] = await Promise.all([
-            prisma.bag.findMany({
-                where: {
-                    OR: [
-                        { date: { gte: startOfDay, lte: endOfDay } },
-                        {
-                            workers: {
-                                some: {
-                                    session: {
-                                        date: { gte: startOfDay, lte: endOfDay },
-                                    },
-                                },
-                            },
-                        },
-                    ],
-                },
-                select: {
-                    weight: true,
-                    workers: {
-                        where: {
-                            session: {
-                                date: { gte: startOfDay, lte: endOfDay },
-                            },
-                        },
-                        select: { id: true },
-                    },
-                },
-            }),
-            prisma.session.findMany({
-                where: { date: { gte: startOfDay, lte: endOfDay } },
-                select: { startTime: true, endTime: true, status: true, exporterId: true },
-            }),
-        ]);
-
-        const totalKilogramsToday = bagsToday.reduce((sum, bag) => sum + (bag.weight || 60), 0);
-
-        let avgWorkersPerBag = 0;
-        if (bagsToday.length > 0) {
-            const totalWorkersAcrossBags = bagsToday.reduce((sum, bag) => sum + (bag.workers?.length || 0), 0);
-            avgWorkersPerBag = totalWorkersAcrossBags / bagsToday.length;
-        }
+        const sessionsToday = await prisma.session.findMany({
+            where: { date: { gte: startOfDay, lte: endOfDay } },
+            select: { startTime: true, endTime: true, status: true, exporterId: true },
+        });
 
         let totalHoursToday = 0;
         for (const session of sessionsToday) {
@@ -69,10 +32,7 @@ export async function GET() {
 
         return NextResponse.json({
             metrics: {
-                bagsToday: bagsToday.length,
                 inProgressBags: 0,
-                totalKilogramsToday,
-                avgWorkersPerBag: Math.round(avgWorkersPerBag * 10) / 10,
                 totalHoursToday: Math.round(totalHoursToday * 10) / 10,
                 exportersServedToday,
             },

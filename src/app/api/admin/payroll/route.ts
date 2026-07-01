@@ -100,30 +100,6 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // Bags per worker in the period
-        const bagWhere: any = {
-            date: { gte: weekStart, lte: weekEnd },
-        };
-        if (exporterIdFilter) {
-            bagWhere.exporterId = exporterIdFilter;
-        }
-        const bagRows = exporterIdFilter
-            ? await prisma.$queryRaw<{ workerId: string; bag_count: bigint }[]>`
-                SELECT bw."workerId", COUNT(*)::bigint AS bag_count
-                FROM "BagWorker" bw
-                INNER JOIN "Bag" b ON b.id = bw."bagId"
-                WHERE b.date >= ${weekStart} AND b.date <= ${weekEnd}
-                  AND b."exporterId" = ${exporterIdFilter}
-                GROUP BY bw."workerId"`
-            : await prisma.$queryRaw<{ workerId: string; bag_count: bigint }[]>`
-                SELECT bw."workerId", COUNT(*)::bigint AS bag_count
-                FROM "BagWorker" bw
-                INNER JOIN "Bag" b ON b.id = bw."bagId"
-                WHERE b.date >= ${weekStart} AND b.date <= ${weekEnd}
-                GROUP BY bw."workerId"`;
-
-        const bagsMap = new Map(bagRows.map(r => [r.workerId, Number(r.bag_count)]));
-
         const workerIds = [...new Set([...workerExporterDays.values()].map(v => v.workerId))];
         const workers = await prisma.worker.findMany({
             where: { id: { in: workerIds } },
@@ -155,7 +131,6 @@ export async function GET(request: NextRequest) {
                 nationalId: worker.workerId,
                 exporterName: exporter?.companyTradingName || 'Unknown',
                 exporterCode: exporter?.exporterCode || '',
-                numberOfBags: bagsMap.get(entry.workerId) ?? 0,
                 numberOfDays: days,
                 dailyRate: WORKER_DAILY_WAGE,
                 totalWage,

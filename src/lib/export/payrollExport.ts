@@ -5,7 +5,6 @@ export interface PayrollWorker {
     fullName: string;
     nationalId: string;
     exporterName?: string;
-    numberOfBags: number;
     numberOfDays: number;
     dailyRate: number;
     totalWage: number;
@@ -35,14 +34,13 @@ export function exportPayrollToExcel(workers: PayrollWorker[], summary: PayrollS
         [`Period: ${weekLabel}`],
         [`Generated: ${format(new Date(), 'dd MMM yyyy, HH:mm')}`],
         [],
-        ['Full Name', 'National ID', 'Exporter', 'Bags', 'Days', 'Daily Rate (FRw)', 'Total Wage (FRw)', 'Status'],
+        ['Full Name', 'National ID', 'Exporter', 'Days', 'Daily Rate (FRw)', 'Total Wage (FRw)', 'Status'],
     ];
 
     const dataRows = workers.map(w => [
         w.fullName,
         w.nationalId || '—',
         w.exporterName || '—',
-        w.numberOfBags,
         w.numberOfDays,
         w.dailyRate,
         w.totalWage,
@@ -53,7 +51,6 @@ export function exportPayrollToExcel(workers: PayrollWorker[], summary: PayrollS
         'TOTAL',
         '',
         '',
-        workers.reduce((s, w) => s + w.numberOfBags, 0),
         summary.totalDays,
         '',
         summary.totalWorkerWages,
@@ -63,27 +60,26 @@ export function exportPayrollToExcel(workers: PayrollWorker[], summary: PayrollS
     const allRows = [...headerRows, ...dataRows, [], totalsRow];
     const payrollSheet = XLSX.utils.aoa_to_sheet(allRows);
     payrollSheet['!cols'] = [
-        { wch: 28 }, { wch: 18 }, { wch: 24 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 10 },
+        { wch: 28 }, { wch: 18 }, { wch: 24 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 10 },
     ];
     payrollSheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } },
-        { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } },
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
     ];
     XLSX.utils.book_append_sheet(workbook, payrollSheet, 'Payroll');
 
     // ── Exporter Summary Sheet ──
-    const exporterMap = new Map<string, { workers: number; days: number; bags: number; wages: number }>();
+    const exporterMap = new Map<string, { workers: number; days: number; wages: number }>();
     workers.forEach(w => {
         const name = w.exporterName || 'Unknown';
         const existing = exporterMap.get(name);
         if (existing) {
             existing.workers++;
             existing.days += w.numberOfDays;
-            existing.bags += w.numberOfBags;
             existing.wages += w.totalWage;
         } else {
-            exporterMap.set(name, { workers: 1, days: w.numberOfDays, bags: w.numberOfBags, wages: w.totalWage });
+            exporterMap.set(name, { workers: 1, days: w.numberOfDays, wages: w.totalWage });
         }
     });
 
@@ -91,17 +87,17 @@ export function exportPayrollToExcel(workers: PayrollWorker[], summary: PayrollS
         ['EXPORTER BREAKDOWN'],
         [`Period: ${weekLabel}`],
         [],
-        ['Exporter', 'Workers', 'Days', 'Bags', 'Total Wages (FRw)'],
-        ...Array.from(exporterMap.entries()).map(([name, d]) => [name, d.workers, d.days, d.bags, d.wages]),
+        ['Exporter', 'Workers', 'Days', 'Total Wages (FRw)'],
+        ...Array.from(exporterMap.entries()).map(([name, d]) => [name, d.workers, d.days, d.wages]),
         [],
-        ['TOTAL', summary.totalWorkers, summary.totalDays, workers.reduce((s, w) => s + w.numberOfBags, 0), summary.totalWorkerWages],
+        ['TOTAL', summary.totalWorkers, summary.totalDays, summary.totalWorkerWages],
     ];
 
     const expSheet = XLSX.utils.aoa_to_sheet(expRows);
-    expSheet['!cols'] = [{ wch: 28 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 18 }];
+    expSheet['!cols'] = [{ wch: 28 }, { wch: 12 }, { wch: 10 }, { wch: 18 }];
     expSheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } },
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } },
     ];
     XLSX.utils.book_append_sheet(workbook, expSheet, 'By Exporter');
 

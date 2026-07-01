@@ -6,14 +6,11 @@ import {
     FileText,
     TrendingUp,
     Users,
-    Package,
     Activity,
     Building2,
     ArrowRight,
-    Weight,
     RefreshCw,
     UserCheck,
-    BarChart3,
     ShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
@@ -61,42 +58,22 @@ export default function AdminDashboard() {
     };
 
     const getExportData = (): ExportData => {
-        const trendBags = (analytics?.trends?.bags || []).map((d: any) => ({
-            date: d.date,
-            bags: d.bags || 0,
-            weight: 0,
-        }));
-
         return {
             exporterName: 'Akazi Rwanda Ltd',
             exporterCode: 'ADMIN',
-            summary: {
-                totalBags: analytics?.totalBags || 0,
-                totalWeight: analytics?.totalKilograms || 0,
-                totalWorkers: analytics?.totalWorkers || 0,
-                averageWeight: analytics?.totalBags > 0 ? (analytics?.totalKilograms || 0) / analytics.totalBags : 0,
-            },
             analytics: analytics ? {
-                periodBags: analytics.bagsToday || 0,
-                periodWeight: analytics.totalKilogramsToday || 0,
                 periodWorkersEngaged: analytics.workersCheckedInToday || 0,
                 periodSessionsCount: analytics.workerDaysToday || 0,
                 periodCostToExporter: analytics.dailyCostToExporters || 0,
-                periodAvgBagsPerDay: analytics.avgBagsPerDay || 0,
                 periodDays: 1,
-                totalBags: analytics.totalBags || 0,
-                totalWeight: analytics.totalKilograms || 0,
                 workersEngaged: analytics.totalWorkers || 0,
                 cumulativeCost: analytics.cumulativeCostToExporters || 0,
                 sessionsCumulativeCount: analytics.workerDaysCumulative || 0,
-                dailyBreakdown: (analytics.trends?.bags || []).map((d: any) => ({
+                dailyBreakdown: (analytics.trends?.sessions || []).map((d: any) => ({
                     date: d.date,
                     sessions: d.sessions || 0,
-                    bags: d.bags || 0,
-                    weight: 0,
                     costToExporter: d.cost || 0,
                 })),
-                trends: { bags: trendBags },
             } : undefined,
         };
     };
@@ -181,16 +158,6 @@ export default function AdminDashboard() {
             pulse: (analytics?.activeSessions || 0) > 0,
         },
         {
-            label: 'Bags Today',
-            value: analytics?.bagsToday || 0,
-            sub: `${analytics?.totalKilogramsToday || 0} kg`,
-            icon: Package,
-            border: 'border-l-amber-500',
-            iconBg: '',
-            iconColor: 'text-amber-600',
-            subColor: 'text-amber-600 dark:text-amber-400',
-        },
-        {
             label: 'Total Exporters',
             value: analytics?.totalExporters || 0,
             sub: `${analytics?.activeExporters || 0} active`,
@@ -257,24 +224,6 @@ export default function AdminDashboard() {
                         <Building2 className="w-4 h-4 text-indigo-600" />
                         <span className="font-semibold text-gray-900 dark:text-gray-100">{analytics?.activeExporters || 0}</span>
                         <span className="text-gray-600 dark:text-gray-400">active exporters</span>
-                    </div>
-                    <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
-                    <div className="flex items-center gap-2">
-                        <Package className="w-4 h-4 text-purple-600" />
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">{analytics?.totalBags || 0}</span>
-                        <span className="text-gray-600 dark:text-gray-400">bags all time</span>
-                    </div>
-                    <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
-                    <div className="flex items-center gap-2">
-                        <Weight className="w-4 h-4 text-blue-600" />
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">{(analytics?.totalKilograms || 0).toLocaleString()}</span>
-                        <span className="text-gray-600 dark:text-gray-400">kg total</span>
-                    </div>
-                    <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
-                    <div className="flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-amber-600" />
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">{analytics?.avgBagsPerDay || 0}</span>
-                        <span className="text-gray-600 dark:text-gray-400">avg bags/day</span>
                     </div>
                 </div>
             </div>
@@ -387,15 +336,15 @@ export default function AdminDashboard() {
                     )}
                 </div>
 
-                {/* Bags Processed Trend */}
+                {/* Sessions Trend */}
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 p-6">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bags Processed</h3>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Sessions Trend</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Last 7 days</p>
                         </div>
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                            <Package className="w-5 h-5 text-purple-600" />
+                            <Activity className="w-5 h-5 text-purple-600" />
                         </div>
                     </div>
                     {loading ? (
@@ -404,7 +353,7 @@ export default function AdminDashboard() {
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height={250}>
-                            <BarChart data={analytics?.trends?.bags || []}>
+                            <BarChart data={analytics?.trends?.sessions || []}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                 <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
                                 <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
@@ -413,7 +362,7 @@ export default function AdminDashboard() {
                                     labelStyle={{ color: '#111827', fontWeight: 600 }}
                                     itemStyle={{ color: '#374151' }}
                                 />
-                                <Bar dataKey="bags" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+                                <Bar dataKey="sessions" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}

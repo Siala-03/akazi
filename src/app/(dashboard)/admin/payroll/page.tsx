@@ -29,7 +29,6 @@ interface PayrollWorker {
     nationalId: string;
     exporterName: string;
     exporterCode: string;
-    numberOfBags: number;
     numberOfDays: number;
     dailyRate: number;
     totalWage: number;
@@ -139,7 +138,6 @@ export default function PayrollPage() {
                     fullName: w.fullName,
                     nationalId: w.nationalId,
                     exporterName: w.exporterName,
-                    numberOfBags: w.numberOfBags,
                     numberOfDays: w.numberOfDays,
                     dailyRate: w.dailyRate,
                     totalWage: w.totalWage,
@@ -182,18 +180,17 @@ export default function PayrollPage() {
 
     // Exporter breakdown
     const exporterBreakdown = useMemo(() => {
-        const map = new Map<string, { name: string; code: string; workers: number; days: number; bags: number; wages: number; charge: number }>();
+        const map = new Map<string, { name: string; code: string; workers: number; days: number; wages: number; charge: number }>();
         for (const w of payroll) {
             const key = w.exporterCode || w.exporterName;
             const existing = map.get(key);
             if (existing) {
                 existing.workers++;
                 existing.days += w.numberOfDays;
-                existing.bags += w.numberOfBags;
                 existing.wages += w.totalWage;
                 existing.charge += w.exporterCharge;
             } else {
-                map.set(key, { name: w.exporterName, code: w.exporterCode, workers: 1, days: w.numberOfDays, bags: w.numberOfBags, wages: w.totalWage, charge: w.exporterCharge });
+                map.set(key, { name: w.exporterName, code: w.exporterCode, workers: 1, days: w.numberOfDays, wages: w.totalWage, charge: w.exporterCharge });
             }
         }
         return Array.from(map.values()).sort((a, b) => b.charge - a.charge);
@@ -345,7 +342,6 @@ export default function PayrollPage() {
                                         <th className="px-6 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Exporter</th>
                                         <th className="px-6 py-2.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Workers</th>
                                         <th className="px-6 py-2.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Days</th>
-                                        <th className="px-6 py-2.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Bags</th>
                                         <th className="px-6 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Worker Wages</th>
                                         <th className="px-6 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Billed to Exporter</th>
                                     </tr>
@@ -356,7 +352,6 @@ export default function PayrollPage() {
                                             <td className="px-6 py-2.5"><span className="text-sm font-medium text-gray-900 dark:text-gray-100">{exp.name}</span></td>
                                             <td className="px-6 py-2.5 text-center text-sm text-gray-700 dark:text-gray-300">{exp.workers}</td>
                                             <td className="px-6 py-2.5 text-center text-sm text-gray-700 dark:text-gray-300">{exp.days}</td>
-                                            <td className="px-6 py-2.5 text-center text-sm text-gray-700 dark:text-gray-300">{exp.bags}</td>
                                             <td className="px-6 py-2.5 text-right text-sm text-gray-700 dark:text-gray-300">FRw {exp.wages.toLocaleString()}</td>
                                             <td className="px-6 py-2.5 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">FRw {exp.charge.toLocaleString()}</td>
                                         </tr>
@@ -421,7 +416,6 @@ export default function PayrollPage() {
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Exporter</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Phone</th>
                                         <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Days</th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Bags</th>
                                         <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Wage</th>
                                         <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</th>
                                     </tr>
@@ -442,7 +436,6 @@ export default function PayrollPage() {
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">{worker.phone || '—'}</td>
                                                 <td className="px-4 py-3 text-center text-sm text-gray-700 dark:text-gray-200 tabular-nums">{worker.numberOfDays}</td>
-                                                <td className="px-4 py-3 text-center text-sm text-gray-700 dark:text-gray-200 tabular-nums">{worker.numberOfBags}</td>
                                                 <td className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-200 tabular-nums">FRw {worker.totalWage.toLocaleString()}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <button onClick={() => togglePaid(key)}
@@ -461,7 +454,6 @@ export default function PayrollPage() {
                                         <td className="px-4 py-3" />
                                         <td className="px-4 py-3" />
                                         <td className="px-4 py-3 text-center text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">{filtered.reduce((s, w) => s + w.numberOfDays, 0)}</td>
-                                        <td className="px-4 py-3 text-center text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">{filtered.reduce((s, w) => s + w.numberOfBags, 0)}</td>
                                         <td className="px-4 py-3 text-right text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">FRw {filtered.reduce((s, w) => s + w.totalWage, 0).toLocaleString()}</td>
                                         <td className="px-4 py-3" />
                                     </tr>

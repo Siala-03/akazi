@@ -15,14 +15,6 @@ export async function GET(request: NextRequest) {
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
-        const sevenDaysAgo = new Date(today);
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-        const thirtyDaysAgo = new Date(today);
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        const completedStatuses: Array<'completed' | 'validated' | 'locked'> = ['completed', 'validated', 'locked'];
-
         // Current week Mon–Fri
         const dayOfWeek = today.getDay();
         const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -41,14 +33,7 @@ export async function GET(request: NextRequest) {
             totalFacilities,
             workersCheckedInToday,
             activeSessions,
-            bagsToday,
-            bagsLast7Days,
-            bagsLast30Days,
-            totalBags,
             sessionsToday,
-            allBagsToday,
-            totalWeightAgg,
-            todayWeightAgg,
         ] = await Promise.all([
             prisma.worker.count(),
             prisma.worker.count({ where: { status: 'active' } }),
@@ -57,47 +42,10 @@ export async function GET(request: NextRequest) {
             prisma.facility.count({ where: { isActive: true } }),
             prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay }, status: 'on-site' } }),
             prisma.session.count({ where: { status: 'active' } }),
-            prisma.bag.count({
-                where: {
-                    status: { in: completedStatuses },
-                    date: { gte: startOfDay, lte: endOfDay },
-                },
-            }),
-            prisma.bag.count({
-                where: {
-                    status: { in: completedStatuses },
-                    date: { gte: sevenDaysAgo, lte: endOfDay },
-                },
-            }),
-            prisma.bag.count({
-                where: {
-                    status: { in: completedStatuses },
-                    date: { gte: thirtyDaysAgo, lte: endOfDay },
-                },
-            }),
-            prisma.bag.count(),
             prisma.session.findMany({ where: { date: { gte: startOfDay, lte: endOfDay } }, select: { startTime: true, endTime: true, status: true } }),
-            prisma.bag.findMany({
-                where: {
-                    status: { in: completedStatuses },
-                    date: { gte: startOfDay, lte: endOfDay },
-                },
-                select: { exporterId: true, weight: true, exporter: { select: { id: true, companyTradingName: true, exporterCode: true } } },
-            }),
-            prisma.bag.aggregate({ _sum: { weight: true } }),
-            prisma.bag.aggregate({
-                _sum: { weight: true },
-                where: {
-                    status: { in: completedStatuses },
-                    date: { gte: startOfDay, lte: endOfDay },
-                },
-            }),
         ]);
 
         const { exporterDailyRate: DEFAULT_DAILY_RATE, workerDailyWage: WORKER_DAILY_WAGE } = await getSettings();
-
-        const totalKilograms = totalWeightAgg._sum.weight ?? totalBags * 60;
-        const totalKilogramsToday = todayWeightAgg._sum.weight ?? bagsToday * 60;
 
         let totalHoursWorked = 0;
         for (const session of sessionsToday) {
@@ -108,11 +56,7 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        const avgBagsPerDay = bagsLast7Days / 7;
-        const avgBagsPerDayLast30 = bagsLast30Days / 30;
-
         // ── Session-based cost model (uses snapshotted dailyRate on each session) ──
-        // For old sessions without a dailyRate, fall back to the exporter's current rate or global default.
         const [costTodayRows, costWeekRows, costCumulativeRows] = await Promise.all([
             prisma.$queryRaw<{ exporterId: string; cnt: bigint; cost: number }[]>`
                 SELECT s."exporterId",
@@ -170,64 +114,44 @@ export async function GET(request: NextRequest) {
             cumulativeWorkerWages += days * WORKER_DAILY_WAGE;
         }
 
-        // ── Per-exporter breakdown (today) ────────────────────────────────────
-        const uniqueExporterIds = [...new Set(allBagsToday.map(b => b.exporterId).filter(Boolean))];
-        const exportersServedToday = uniqueExporterIds.length;
-
-        let totalCostsToday = dailyCostToExporters;
+        // ── Per-exporter breakdown (today, session-based) ──
+        const exportersServedToday = costTodayRows.length;
+        const totalCostsToday = dailyCostToExporters;
         const exporterBreakdown: any[] = [];
 
-        if (uniqueExporterIds.length > 0) {
-            const exporterCostMap = new Map(costTodayRows.map(r => [r.exporterId, { days: Number(r.cnt), cost: r.cost }]));
-
-            const exporterDataMap = new Map<string, { name: string; code: string; bags: number; weight: number }>();
-            for (const bag of allBagsToday) {
-                if (!bag.exporterId) continue;
-                if (!exporterDataMap.has(bag.exporterId)) {
-                    exporterDataMap.set(bag.exporterId, {
-                        name: bag.exporter?.companyTradingName || 'Unknown',
-                        code: bag.exporter?.exporterCode || '',
-                        bags: 0,
-                        weight: 0,
-                    });
-                }
-                const entry = exporterDataMap.get(bag.exporterId)!;
-                entry.bags++;
-                entry.weight += bag.weight || 60;
-            }
-
-            exporterDataMap.forEach((entry, expId) => {
-                const costData = exporterCostMap.get(expId) ?? { days: 0, cost: 0 };
-                const workerWages = costData.days * WORKER_DAILY_WAGE;
-                exporterBreakdown.push({
-                    exporterId: expId,
-                    name: entry.name,
-                    code: entry.code,
-                    bagsToday: entry.bags,
-                    weightToday: entry.weight,
-                    workerDaysToday: costData.days,
-                    costToday: costData.cost,
-                    workerWagesToday: workerWages,
-                    coopMarginToday: costData.cost - workerWages,
-                });
+        if (costTodayRows.length > 0) {
+            const exporterIds = costTodayRows.map(r => r.exporterId).filter(Boolean);
+            const exporterRecords = await prisma.exporter.findMany({
+                where: { id: { in: exporterIds } },
+                select: { id: true, companyTradingName: true, exporterCode: true },
             });
-            exporterBreakdown.sort((a, b) => b.bagsToday - a.bagsToday);
+            const exporterNameMap = new Map(exporterRecords.map(e => [e.id, e]));
+
+            for (const row of costTodayRows) {
+                if (!row.exporterId) continue;
+                const expRecord = exporterNameMap.get(row.exporterId);
+                const days = Number(row.cnt);
+                const workerWages = days * WORKER_DAILY_WAGE;
+                exporterBreakdown.push({
+                    exporterId: row.exporterId,
+                    name: expRecord?.companyTradingName || 'Unknown',
+                    code: expRecord?.exporterCode || '',
+                    workerDaysToday: days,
+                    costToday: row.cost,
+                    workerWagesToday: workerWages,
+                    coopMarginToday: row.cost - workerWages,
+                });
+            }
+            exporterBreakdown.sort((a, b) => b.costToday - a.costToday);
         }
 
         const trendStart = getStartOfDay(new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000));
 
-        const [attTrend, bagsTrend, sessTrendByExporter] = await Promise.all([
+        const [attTrend, sessTrendByExporter] = await Promise.all([
             prisma.$queryRaw<{ day: string; count: bigint }[]>`
                 SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
                 FROM "Attendance"
                 WHERE date >= ${trendStart} AND date <= ${endOfDay}
-                GROUP BY day`,
-            prisma.$queryRaw<{ day: string; count: bigint }[]>`
-                SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
-                FROM "Bag"
-                WHERE status IN ('in_progress', 'completed', 'validated', 'locked')
-                    AND date >= ${trendStart}
-                    AND date <= ${endOfDay}
                 GROUP BY day`,
             prisma.$queryRaw<{ day: string; cnt: bigint; cost: number }[]>`
                 SELECT TO_CHAR(s.date, 'YYYY-MM-DD') AS day,
@@ -240,8 +164,6 @@ export async function GET(request: NextRequest) {
         ]);
 
         const attMap = new Map(attTrend.map(d => [d.day, Number(d.count)]));
-        const bagsMap = new Map(bagsTrend.map(d => [d.day, Number(d.count)]));
-
         const sessDayMap = new Map<string, { sessions: number; cost: number }>();
         for (const row of sessTrendByExporter) {
             sessDayMap.set(row.day, { sessions: Number(row.cnt), cost: row.cost });
@@ -257,7 +179,6 @@ export async function GET(request: NextRequest) {
             trendData.push({
                 date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 workers: dayWorkers,
-                bags: bagsMap.get(dateStr) || 0,
                 sessions: sessDay.sessions,
                 cost: sessDay.cost,
             });
@@ -270,18 +191,10 @@ export async function GET(request: NextRequest) {
                 totalExporters,
                 activeExporters,
                 totalFacilities,
-                totalBags,
-                totalKilograms,
                 workersCheckedInToday,
                 activeSessions,
-                bagsToday,
-                totalKilogramsToday,
                 exportersServedToday,
                 totalHoursWorked: Math.round(totalHoursWorked * 10) / 10,
-                avgBagsPerDay: Math.round(avgBagsPerDay * 10) / 10,
-                avgBagsPerDayLast30: Math.round(avgBagsPerDayLast30 * 10) / 10,
-                bagsLast7Days,
-                bagsLast30Days,
                 // Worker-day cost model
                 workerDaysToday,
                 workerDaysWeek,
@@ -300,10 +213,9 @@ export async function GET(request: NextRequest) {
                 exporterDailyRate: DEFAULT_DAILY_RATE,
                 workerDailyWage: WORKER_DAILY_WAGE,
                 coopMarginPerDay: DEFAULT_DAILY_RATE - WORKER_DAILY_WAGE,
-                // Legacy (kept for compatibility)
                 totalCostsToday,
                 exporterBreakdown,
-                trends: { attendance: trendData, bags: trendData, sessions: trendData },
+                trends: { attendance: trendData, sessions: trendData },
             },
         });
     } catch (error) {

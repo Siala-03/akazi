@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
     Users,
     Activity,
-    Package,
     TrendingUp,
     Clock,
     UserPlus,
@@ -117,12 +116,6 @@ export default function SupervisorDashboard() {
                     </div>
                     <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
                     <div className="flex items-center gap-2">
-                        <Package className="w-4 h-4 text-purple-600" />
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">{analytics?.bagsToday || 0}</span>
-                        <span className="text-gray-600 dark:text-gray-400">bags processed</span>
-                    </div>
-                    <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
-                    <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-blue-600" />
                         <span className="font-semibold text-gray-900 dark:text-gray-100">{analytics?.totalHoursWorked || 0}</span>
                         <span className="text-gray-600 dark:text-gray-400">hours worked</span>
@@ -193,25 +186,6 @@ export default function SupervisorDashboard() {
                     </div>
                 </div>
 
-                {/* Bags Processed Today */}
-                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-amber-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center">
-                                <Package className="w-6 h-6 text-amber-600" />
-                            </div>
-                            <TrendingUp className="w-5 h-5 text-emerald-500" />
-                        </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Bags Processed</p>
-                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.bagsToday || 0}</p>
-                        {analytics?.bagsToday > 0 ? (
-                            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Today's output</p>
-                        ) : (
-                            <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">Ready to record bags!</p>
-                        )}
-                    </div>
-                </div>
-
                 {/* Exporters Served Today */}
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-teal-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="relative">
@@ -278,49 +252,37 @@ export default function SupervisorDashboard() {
                     )}
                 </div>
 
-                {/* Bags Processed Trend */}
+                {/* Hours Worked Trend */}
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 p-6">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bags Processed</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Last 7 days</p>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Attendance Today</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                {analytics?.totalHoursWorked || 0} hrs · {analytics?.exportersServedToday || 0} exporters served
+                            </p>
                         </div>
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                            <Package className="w-5 h-5 text-purple-600" />
+                            <Clock className="w-5 h-5 text-purple-600" />
                         </div>
                     </div>
-                    {loading ? (
-                        <div className="h-64 flex items-center justify-center text-gray-400">
-                            <div className="text-center">
-                                <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                                <p className="text-sm">Loading chart...</p>
-                            </div>
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Checked in</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{analytics?.workersCheckedInToday || 0}</span>
                         </div>
-                    ) : (
-                        <ResponsiveContainer width="100%" height={250}>
-                            <BarChart data={analytics?.trends?.bags || []}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                                <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                                <Tooltip 
-                                    contentStyle={{ 
-                                        backgroundColor: 'white', 
-                                        border: '1px solid #e5e7eb', 
-                                        borderRadius: '8px',
-                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                                        color: '#111827'
-                                    }}
-                                    labelStyle={{ color: '#111827', fontWeight: 600 }}
-                                    itemStyle={{ color: '#374151' }}
-                                />
-                                <Bar 
-                                    dataKey="bags" 
-                                    fill="#8b5cf6" 
-                                    radius={[8, 8, 0, 0]}
-                                />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    )}
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Checked out</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{analytics?.workersCheckedOutToday || 0}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Active sessions</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{analytics?.activeSessions || 0}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Total hours worked</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{analytics?.totalHoursWorked || 0} hrs</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 

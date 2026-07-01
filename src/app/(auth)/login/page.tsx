@@ -198,7 +198,7 @@ function LoginForm() {
                 {/* Footer Info */}
                 <div className="mt-6 text-center text-xs text-gray-500">
                     <p>For NAEB Coffee Sorting Facilities</p>
-                    <p className="mt-1">Powered by Iwacu Cooperative</p>
+                    <p className="mt-1">Powered by Umucyo Women Cooperative</p>
                 </div>
 
             </div>
