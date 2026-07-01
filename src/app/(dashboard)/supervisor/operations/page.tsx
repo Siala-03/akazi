@@ -15,7 +15,8 @@ import {
     ChevronUp,
     Search,
     Building2,
-    QrCode
+    QrCode,
+    Package
 } from 'lucide-react';
 import { QrScannerModal } from '@/components/qr/QrScannerModal';
 import { PageHeader } from '@/components/PageHeader';
