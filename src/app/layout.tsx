@@ -17,6 +17,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Akazi Rwanda Ltd",
   description: "Digital platform for managing workers at Akazi Rwanda Ltd",
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/logo.webp', type: 'image/webp', sizes: '192x192' },
+    ],
+    apple: { url: '/logo.webp', type: 'image/webp' },
+  },
 };
 
 export default function RootLayout({
