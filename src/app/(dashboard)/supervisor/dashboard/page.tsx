@@ -200,6 +200,21 @@ export default function SupervisorDashboard() {
                         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Today</p>
                     </div>
                 </div>
+
+                {/* Hours Worked Today */}
+                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-orange-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
+                    <div className="relative">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center">
+                                <Clock className="w-6 h-6 text-orange-600" />
+                            </div>
+                            <TrendingUp className="w-5 h-5 text-emerald-500" />
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Hours Worked</p>
+                        <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.totalHoursWorked || 0}</p>
+                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Today total</p>
+                    </div>
+                </div>
             </div>
 
             {/* Charts */}

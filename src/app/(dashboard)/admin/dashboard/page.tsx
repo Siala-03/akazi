@@ -167,6 +167,16 @@ export default function AdminDashboard() {
             iconColor: 'text-indigo-600',
             subColor: 'text-indigo-600 dark:text-indigo-400',
         },
+        {
+            label: 'Sessions Today',
+            value: analytics?.sessionsTodayCount || 0,
+            sub: 'Worker-days logged',
+            icon: TrendingUp,
+            border: 'border-l-teal-500',
+            iconBg: '',
+            iconColor: 'text-teal-600',
+            subColor: 'text-teal-600 dark:text-teal-400',
+        },
     ];
 
     return (
