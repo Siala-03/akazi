@@ -115,9 +115,18 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields', details: 'Full name and phone are required' }, { status: 400 });
         }
 
+        const cleanPhone = String(body.phone).replace(/\s/g, '');
+        if (!/^\d{10}$/.test(cleanPhone)) {
+            return NextResponse.json({ error: 'Phone number must be exactly 10 digits' }, { status: 400 });
+        }
+
         let workerId: string;
         if (body.workerId && String(body.workerId).trim()) {
-            workerId = String(body.workerId).trim().toUpperCase();
+            const rawId = String(body.workerId).trim();
+            if (!/^\d{16}$/.test(rawId)) {
+                return NextResponse.json({ error: 'National ID must be exactly 16 numerical digits' }, { status: 400 });
+            }
+            workerId = rawId;
             const existing = await prisma.worker.findUnique({ where: { workerId } });
             if (existing) {
                 return NextResponse.json({ error: 'A worker with this National ID is already registered' }, { status: 409 });

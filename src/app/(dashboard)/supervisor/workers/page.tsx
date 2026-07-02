@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { UserPlus, Users, Phone, Calendar, User, Filter, X, ChevronDown, Search, Clock, Package, Banknote, Award, TrendingUp, Eye, BarChart2, QrCode } from 'lucide-react';
+import { UserPlus, Users, Phone, Calendar, User, Filter, X, ChevronDown, Search, Clock, Banknote, Award, TrendingUp, Eye, BarChart2, QrCode } from 'lucide-react';
 import DataTable, { Column } from '@/components/DataTable';
 import { WorkerQrModal } from '@/components/qr/WorkerQrModal';
 import { PageHeader } from '@/components/PageHeader';
@@ -567,17 +567,6 @@ export default function WorkersPage() {
                                     </div>
                                     <p className="text-3xl font-bold text-gray-900">{workerDetails.totalHours.toFixed(1)}</p>
                                     <p className="text-sm text-gray-500 mt-1">Hours</p>
-                                </div>
-
-                                <div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-200">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
-                                            <Package className="w-5 h-5 text-gray-600" />
-                                        </div>
-                                        <p className="text-sm font-medium text-gray-700">Total Bags Processed</p>
-                                    </div>
-                                    <p className="text-3xl font-bold text-gray-900">{workerDetails.totalBags}</p>
-                                    <p className="text-sm text-gray-500 mt-1">Bags</p>
                                 </div>
 
                                 <div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-200">

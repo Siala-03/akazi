@@ -191,6 +191,15 @@ export default function AdminWorkersPage() {
             toast.error('Please select a cooperative');
             return;
         }
+        if (newWorker.workerId && !/^\d{16}$/.test(newWorker.workerId.trim())) {
+            toast.error('National ID must be exactly 16 numerical digits');
+            return;
+        }
+        const cleanPhone = newWorker.phone.replace(/\s/g, '');
+        if (!/^\d{10}$/.test(cleanPhone)) {
+            toast.error('Phone number must be exactly 10 digits');
+            return;
+        }
 
         setSubmitting(true);
         try {
@@ -571,8 +580,8 @@ export default function AdminWorkersPage() {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Worker ID (National ID)</label>
-                                    <input type="text" value={newWorker.workerId} onChange={e => setNewWorker({ ...newWorker, workerId: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" placeholder="Auto-generated if blank" />
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">National ID <span className="text-gray-400 font-normal">(16 digits)</span></label>
+                                    <input type="text" inputMode="numeric" maxLength={16} value={newWorker.workerId} onChange={e => setNewWorker({ ...newWorker, workerId: e.target.value.replace(/\D/g, '') })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white font-mono tracking-widest" placeholder="1199900000000000" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Gender *</label>
@@ -585,8 +594,8 @@ export default function AdminWorkersPage() {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Phone *</label>
-                                    <input type="tel" required value={newWorker.phone} onChange={e => setNewWorker({ ...newWorker, phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" placeholder="+250..." />
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Phone * <span className="text-gray-400 font-normal">(10 digits)</span></label>
+                                    <input type="tel" required inputMode="numeric" maxLength={10} value={newWorker.phone} onChange={e => setNewWorker({ ...newWorker, phone: e.target.value.replace(/\D/g, '') })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white font-mono" placeholder="0788000000" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email <span className="text-gray-400 font-normal">(optional)</span></label>
