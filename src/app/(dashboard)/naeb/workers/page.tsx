@@ -194,11 +194,7 @@ export default function NaebWorkersPage() {
                                             </div>
                                         </td>
                                         <td className="px-5 py-3.5 text-sm font-mono text-gray-600 dark:text-gray-400">{worker.workerId}</td>
-                                        <td className="px-5 py-3.5">
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${worker.gender === 'female' ? 'bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-200' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'}`}>
-                                                {worker.gender === 'female' ? 'Female' : worker.gender === 'male' ? 'Male' : 'Other'}
-                                            </span>
-                                        </td>
+                                        <td className="px-5 py-3.5 text-sm text-gray-700 dark:text-gray-300 capitalize">{worker.gender}</td>
                                         <td className="px-5 py-3.5">
                                             <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                                                 <Phone className="w-3.5 h-3.5 text-gray-400" />

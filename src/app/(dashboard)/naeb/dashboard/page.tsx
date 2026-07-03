@@ -212,12 +212,7 @@ export default function NaebDashboardPage() {
                                         <td className="px-5 py-4 text-sm text-gray-700 dark:text-gray-300 font-medium">{row.daysActive}</td>
                                         <td className="px-5 py-4 text-sm text-gray-700 dark:text-gray-300 font-medium">{row.sessionCount.toLocaleString()}</td>
                                         <td className="px-5 py-4 text-sm text-gray-700 dark:text-gray-300">{row.uniqueWorkers}</td>
-                                        <td className="px-5 py-4">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300">
-                                                <UserCheck className="w-3.5 h-3.5" />
-                                                {row.womenWorkers}
-                                            </span>
-                                        </td>
+                                        <td className="px-5 py-4 text-sm text-gray-700 dark:text-gray-300">{row.womenWorkers}</td>
                                         <td className="px-5 py-4 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                                             {fmt(Math.round(row.totalAmountPaid))}
                                         </td>
@@ -238,7 +233,7 @@ export default function NaebDashboardPage() {
                                     <td className="px-5 py-3.5 text-sm font-bold text-gray-900 dark:text-white">
                                         {analytics.exporterBreakdown.reduce((s, r) => s + r.uniqueWorkers, 0)}
                                     </td>
-                                    <td className="px-5 py-3.5 text-sm font-bold text-pink-700 dark:text-pink-300">
+                                    <td className="px-5 py-3.5 text-sm font-bold text-gray-900 dark:text-white">
                                         {analytics.exporterBreakdown.reduce((s, r) => s + r.womenWorkers, 0)}
                                     </td>
                                     <td className="px-5 py-3.5 text-sm font-bold text-emerald-700 dark:text-emerald-400">
