@@ -16,8 +16,8 @@ export async function POST(request: NextRequest) {
         if (!email || !name || !phone || !role) {
             return NextResponse.json({ error: 'Missing required fields: email, name, phone, role' }, { status: 400 });
         }
-        if (!['supervisor', 'exporter'].includes(role)) {
-            return NextResponse.json({ error: 'Role must be supervisor or exporter' }, { status: 400 });
+        if (!['supervisor', 'exporter', 'naeb'].includes(role)) {
+            return NextResponse.json({ error: 'Role must be supervisor, exporter, or naeb' }, { status: 400 });
         }
 
         const existingUser = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });

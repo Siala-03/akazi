@@ -13,7 +13,7 @@ function getJwtSecret(): string {
 export interface JWTPayload {
     userId: string;
     email: string;
-    role: 'supervisor' | 'admin' | 'exporter';
+    role: 'supervisor' | 'admin' | 'exporter' | 'naeb';
     exporterId?: string;
     facilityId?: string;
 }

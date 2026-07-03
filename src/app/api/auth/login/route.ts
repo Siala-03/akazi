@@ -37,7 +37,9 @@ export async function POST(request: NextRequest) {
                 ? '/supervisor/dashboard'
                 : user.role === 'admin'
                     ? '/admin/dashboard'
-                    : '/exporter/dashboard';
+                    : user.role === 'naeb'
+                        ? '/naeb/dashboard'
+                        : '/exporter/dashboard';
 
         const response = NextResponse.json({
             success: true,
