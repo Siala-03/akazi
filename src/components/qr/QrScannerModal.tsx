@@ -14,6 +14,7 @@ interface QrScannerModalProps {
     mode: 'checkin' | 'checkout';
     onClose: () => void;
     onScanSuccess: (result: CheckInResult) => void;
+    exporterId?: string;
 }
 
 type ScanState = 'scanning' | 'processing' | 'success' | 'error' | 'no-camera';
@@ -40,7 +41,7 @@ const safeStopAndClearScanner = async (scanner: any) => {
     }
 };
 
-export function QrScannerModal({ mode, onClose, onScanSuccess }: QrScannerModalProps) {
+export function QrScannerModal({ mode, onClose, onScanSuccess, exporterId }: QrScannerModalProps) {
     const scannerRef = useRef<any>(null);
     const containerId = 'qr-scanner-container';
     const [scanState, setScanState] = useState<ScanState>('scanning');
@@ -137,7 +138,7 @@ export function QrScannerModal({ mode, onClose, onScanSuccess }: QrScannerModalP
             const res = await fetch(mode === 'checkin' ? '/api/attendance/qr-checkin' : '/api/attendance/qr-checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ qrToken }),
+                body: JSON.stringify({ qrToken, ...(mode === 'checkin' && exporterId ? { exporterId } : {}) }),
             });
 
             const data = await res.json();

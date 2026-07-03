@@ -165,28 +165,14 @@ export default function OperationsPage() {
         }
         setLoading(true);
         try {
-            const checkinRes = await fetch('/api/attendance/checkin', {
+            const res = await fetch('/api/attendance/checkin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ workerId }),
+                body: JSON.stringify({ workerId, exporterId: checkinExporterId }),
             });
-            if (!checkinRes.ok) {
-                const data = await checkinRes.json();
+            if (!res.ok) {
+                const data = await res.json();
                 throw new Error(data.error);
-            }
-            const checkinData = await checkinRes.json();
-            const attendanceId = checkinData.attendance?._id;
-
-            if (attendanceId) {
-                const sessionRes = await fetch('/api/sessions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ attendanceId, exporterId: checkinExporterId }),
-                });
-                if (!sessionRes.ok) {
-                    const sd = await sessionRes.json();
-                    throw new Error(sd.error || 'Checked in but session assignment failed');
-                }
             }
 
             const exporterName = exporters.find(e => e._id === checkinExporterId)?.companyTradingName || 'exporter';
@@ -303,22 +289,19 @@ export default function OperationsPage() {
             {showQrScanner && (
                 <QrScannerModal
                     mode={qrScannerMode}
+                    exporterId={qrScannerMode === 'checkin' ? checkinExporterId : undefined}
                     onClose={() => setShowQrScanner(false)}
                     onScanSuccess={async (result) => {
-                        if (qrScannerMode === 'checkin' && checkinExporterId && result.attendanceId) {
-                            try {
-                                await fetch('/api/sessions', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ attendanceId: result.attendanceId, exporterId: checkinExporterId }),
-                                });
-                                const expName = exporters.find(e => e._id === checkinExporterId)?.companyTradingName || 'exporter';
-                                toast.success(`${result.workerName} checked in and assigned to ${expName}`);
-                            } catch {
-                                toast.success(`${result.workerName} checked in (assign manually)`);
-                            }
+                        if (qrScannerMode === 'checkin') {
+                            const expName = checkinExporterId
+                                ? exporters.find(e => e._id === checkinExporterId)?.companyTradingName || 'exporter'
+                                : null;
+                            toast.success(expName
+                                ? `${result.workerName} checked in and assigned to ${expName}`
+                                : `${result.workerName} checked in via QR`
+                            );
                         } else {
-                            toast.success(`${result.workerName} checked ${qrScannerMode === 'checkin' ? 'in' : 'out'} via QR`);
+                            toast.success(`${result.workerName} checked out via QR`);
                         }
                         fetchAttendance();
                         fetchSessions();

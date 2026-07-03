@@ -31,9 +31,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const exporter = await prisma.exporter.findUnique({ where: { id: exporterId }, select: { dailyRate: true } });
+        const exporter = await prisma.exporter.findUnique({ where: { id: exporterId }, select: { id: true, dailyRate: true } });
+        if (!exporter) {
+            return NextResponse.json({ error: 'Exporter not found' }, { status: 404 });
+        }
         const { exporterDailyRate: defaultRate } = await getSettings();
-        const snapshotRate = (exporter as any)?.dailyRate ?? defaultRate;
+        const snapshotRate = exporter.dailyRate ?? defaultRate;
 
         const session = await prisma.session.create({
             data: {

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfDay, getEndOfDay } from '@/lib/utils';
 import { toMongo } from '@/lib/serialize';
+import { getSettings } from '@/lib/settings';
 
 export async function POST(request: NextRequest) {
     try {
@@ -11,7 +13,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { workerId } = await request.json();
+        const { workerId, exporterId } = await request.json();
 
         const worker = await prisma.worker.findUnique({ where: { id: workerId } });
         if (!worker) {
@@ -31,16 +33,69 @@ export async function POST(request: NextRequest) {
 
         if (existingAttendance) {
             if (existingAttendance.status === 'on-site') {
-                return NextResponse.json({ error: 'Worker is already checked in and currently on-site' }, { status: 400 });
+                return NextResponse.json({ error: 'Worker is already checked in and on-site' }, { status: 409 });
             }
-            return NextResponse.json({ error: 'Worker has already completed attendance for today (checked in and out)' }, { status: 400 });
+            return NextResponse.json({ error: 'Worker has already completed attendance for today' }, { status: 409 });
         }
 
+        // If exporterId provided: validate exporter and create attendance + session atomically
+        if (exporterId) {
+            const exporter = await prisma.exporter.findUnique({
+                where: { id: exporterId },
+                select: { id: true, dailyRate: true },
+            });
+            if (!exporter) {
+                return NextResponse.json({ error: 'Exporter not found' }, { status: 404 });
+            }
+
+            const { exporterDailyRate: defaultRate } = await getSettings();
+            const snapshotRate = exporter.dailyRate ?? defaultRate;
+            const facilityId = worker.facilityId ?? null;
+
+            const { attendance, session } = await prisma.$transaction(async (tx) => {
+                const attendance = await tx.attendance.create({
+                    data: {
+                        workerId,
+                        facilityId,
+                        date: today,
+                        checkInTime: today,
+                        status: 'on-site',
+                        supervisorId: currentUser.userId,
+                    },
+                    include: { worker: true },
+                });
+
+                const session = await tx.session.create({
+                    data: {
+                        attendanceId: attendance.id,
+                        workerId,
+                        exporterId,
+                        facilityId,
+                        dailyRate: snapshotRate,
+                        date: today,
+                        startTime: today,
+                        status: 'active',
+                        supervisorId: currentUser.userId,
+                    },
+                    include: { worker: true, exporter: true, facility: true },
+                });
+
+                return { attendance, session };
+            });
+
+            return NextResponse.json({
+                attendance: toMongo(attendance, { worker: 'workerId' }),
+                session: toMongo(session, { worker: 'workerId', exporter: 'exporterId', facility: 'facilityId' }),
+            }, { status: 201 });
+        }
+
+        // No exporterId: create attendance only (assign exporter separately)
         const attendance = await prisma.attendance.create({
             data: {
                 workerId,
+                facilityId: worker.facilityId ?? null,
                 date: today,
-                checkInTime: new Date(),
+                checkInTime: today,
                 status: 'on-site',
                 supervisorId: currentUser.userId,
             },
@@ -49,6 +104,9 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ attendance: toMongo(attendance, { worker: 'workerId' }) }, { status: 201 });
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            return NextResponse.json({ error: 'Worker already checked in today' }, { status: 409 });
+        }
         console.error('[Check-in] Error:', error);
         return NextResponse.json(
             { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown' },
