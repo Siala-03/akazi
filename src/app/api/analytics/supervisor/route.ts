@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
             prisma.worker.count(),
             prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay }, status: 'on-site' } }),
             prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay }, status: 'checked-out' } }),
-            prisma.session.count({ where: { status: 'active' } }),
+            prisma.session.count({ where: { status: 'active', date: { gte: startOfDay, lte: endOfDay } } }),
             prisma.session.findMany({
                 where: { date: { gte: startOfDay, lte: endOfDay } },
                 select: { startTime: true, endTime: true, status: true, exporterId: true, workerId: true },

@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
             prisma.exporter.count({ where: { isActive: true } }),
             prisma.facility.count({ where: { isActive: true } }),
             prisma.attendance.count({ where: { date: { gte: startOfDay, lte: endOfDay }, status: 'on-site' } }),
-            prisma.session.count({ where: { status: 'active' } }),
+            prisma.session.count({ where: { status: 'active', date: { gte: startOfDay, lte: endOfDay } } }),
             prisma.session.findMany({ where: { date: { gte: startOfDay, lte: endOfDay } }, select: { startTime: true, endTime: true, status: true } }),
         ]);
 
