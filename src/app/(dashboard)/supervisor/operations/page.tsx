@@ -122,7 +122,8 @@ export default function OperationsPage() {
 
     const fetchSessions = async () => {
         try {
-            const res = await fetch('/api/sessions');
+            const today = new Date().toISOString().split('T')[0];
+            const res = await fetch(`/api/sessions?startDate=${today}&endDate=${today}`);
             const data = await res.json();
             setSessions(data.sessions || []);
         } catch (error) {
