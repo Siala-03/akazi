@@ -326,76 +326,51 @@ export default function OperationsPage() {
             )}
 
             {/* Operations Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div className="card rounded-xl p-4 sm:p-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
-                            <Clock className="w-4 h-4 text-gray-600" />
-                        </div>
+            {/* Stats — 5 cards in one row */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <Users className="w-4 h-4 text-emerald-600" />
                     </div>
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Hours Today</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
-                        {operationsMetrics?.totalHoursToday?.toFixed(1) || 0}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">hours worked</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">On-Site</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{onSiteWorkers.length}</p>
+                    <p className="text-xs text-gray-400 mt-1">workers</p>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 col-span-2 sm:col-span-1">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center">
-                            <Building2 className="w-4 h-4 text-gray-600" />
-                        </div>
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <Activity className="w-4 h-4 text-teal-600" />
                     </div>
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Exporters Served</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
-                        {operationsMetrics?.exportersServedToday || 0}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">Active today</p>
-                </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="card rounded-xl p-5">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600">On-Site Workers</p>
-                            <p className="mt-2 text-3xl font-bold text-gray-900">
-                                {onSiteWorkers.length}
-                            </p>
-                        </div>
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center">
-                            <Users className="w-5 h-5 text-gray-600" />
-                        </div>
-                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Sessions</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{sessions.length}</p>
+                    <p className="text-xs text-gray-400 mt-1">active today</p>
                 </div>
 
-                <div className="card rounded-xl p-5">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600">Active Sessions</p>
-                            <p className="mt-2 text-3xl font-bold text-gray-900">
-                                {sessions.length}
-                            </p>
-                        </div>
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center">
-                            <Activity className="w-5 h-5 text-gray-600" />
-                        </div>
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <TrendingUp className="w-4 h-4 text-orange-500" />
                     </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Check-ins</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{attendance.length}</p>
+                    <p className="text-xs text-gray-400 mt-1">total today</p>
                 </div>
 
-                <div className="card rounded-xl p-5">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600">Total Check-ins</p>
-                            <p className="mt-2 text-3xl font-bold text-gray-900">
-                                {attendance.length}
-                            </p>
-                        </div>
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center">
-                            <TrendingUp className="w-5 h-5 text-gray-600" />
-                        </div>
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <Clock className="w-4 h-4 text-purple-500" />
                     </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Hours</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{operationsMetrics?.totalHoursToday?.toFixed(1) || 0}</p>
+                    <p className="text-xs text-gray-400 mt-1">worked today</p>
+                </div>
+
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <Building2 className="w-4 h-4 text-indigo-500" />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Exporters</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{operationsMetrics?.exportersServedToday || 0}</p>
+                    <p className="text-xs text-gray-400 mt-1">active today</p>
                 </div>
             </div>
 
