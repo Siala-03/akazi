@@ -120,19 +120,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Phone number must be exactly 10 digits' }, { status: 400 });
         }
 
-        let workerId: string;
-        if (body.workerId && String(body.workerId).trim()) {
-            const rawId = String(body.workerId).trim();
-            if (!/^\d{16}$/.test(rawId)) {
-                return NextResponse.json({ error: 'National ID must be exactly 16 numerical digits' }, { status: 400 });
-            }
-            workerId = rawId;
-            const existing = await prisma.worker.findUnique({ where: { workerId } });
-            if (existing) {
-                return NextResponse.json({ error: 'A worker with this National ID is already registered' }, { status: 409 });
-            }
-        } else {
-            workerId = generateWorkerId();
+        if (!body.workerId || !String(body.workerId).trim()) {
+            return NextResponse.json({ error: 'National ID is required' }, { status: 400 });
+        }
+        const workerId = String(body.workerId).trim();
+        if (!/^\d{16}$/.test(workerId)) {
+            return NextResponse.json({ error: 'National ID must be exactly 16 numerical digits' }, { status: 400 });
+        }
+        const existing = await prisma.worker.findUnique({ where: { workerId } });
+        if (existing) {
+            return NextResponse.json({ error: 'A worker with this National ID is already registered' }, { status: 409 });
         }
 
         const trimmedDateOfBirth = typeof body.dateOfBirth === 'string' ? body.dateOfBirth.trim() : body.dateOfBirth;

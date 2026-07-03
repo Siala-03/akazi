@@ -34,8 +34,8 @@ function validate(step: number, data: FormData): Errors {
     const e: Errors = {};
     if (step >= 1) {
         if (!data.fullName.trim()) e.fullName = 'Full name is required';
-        if (data.workerId && !/^[A-Za-z0-9\-]{4,20}$/.test(data.workerId))
-            e.workerId = 'ID must be 4–20 alphanumeric characters';
+        if (!data.workerId.trim()) e.workerId = 'National ID is required';
+        else if (!/^\d{16}$/.test(data.workerId.trim())) e.workerId = 'National ID must be exactly 16 digits';
     }
     if (step >= 2) {
         if (!data.phone.trim()) e.phone = 'Phone number is required';
@@ -191,9 +191,9 @@ export default function OnboardingPage() {
                             {fieldError('fullName') && <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('fullName')}</p>}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Worker ID (National ID)</label>
-                            <input type="text" value={formData.workerId} onChange={e => set('workerId', e.target.value)} className={inputClass('workerId')} placeholder="Optional — auto-generated if blank" />
-                            {fieldError('workerId') ? <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('workerId')}</p> : <p className="mt-1 text-xs text-gray-400">Leave blank to auto-generate</p>}
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">National ID <span className="text-red-500">*</span></label>
+                            <input type="text" inputMode="numeric" maxLength={16} value={formData.workerId} onChange={e => set('workerId', e.target.value.replace(/\D/g, ''))} className={inputClass('workerId')} placeholder="1199900000000000" />
+                            {fieldError('workerId') ? <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('workerId')}</p> : <p className="mt-1 text-xs text-gray-400">16-digit Rwandan National ID</p>}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
