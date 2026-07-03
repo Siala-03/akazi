@@ -65,8 +65,6 @@ export default function OperationsPage() {
     const [showSessions, setShowSessions] = useState(true);
     const [searchWorkerId, setSearchWorkerId] = useState('');
     const [currentTime, setCurrentTime] = useState('');
-    const [operationsMetrics, setOperationsMetrics] = useState<any>(null);
-    const [metricsError, setMetricsError] = useState<string | null>(null);
     const [showQrScanner, setShowQrScanner] = useState(false);
     const [qrScannerMode, setQrScannerMode] = useState<'checkin' | 'checkout'>('checkin');
     const [checkoutExporterFilter, setCheckoutExporterFilter] = useState('');
@@ -96,7 +94,7 @@ export default function OperationsPage() {
         fetchAttendance();
         fetchSessions();
         fetchExporters();
-        fetchOperationsMetrics();
+
     }, []);
 
     const fetchWorkers = async () => {
@@ -141,23 +139,6 @@ export default function OperationsPage() {
         }
     };
 
-    const fetchOperationsMetrics = async () => {
-        try {
-            setMetricsError(null);
-            const metricsRes = await fetch('/api/operations/metrics');
-
-            if (!metricsRes.ok) {
-                const err = await metricsRes.json().catch(() => ({}));
-                throw new Error(err?.error || `Failed to load operations metrics (${metricsRes.status})`);
-            }
-
-            const data = await metricsRes.json();
-            setOperationsMetrics(data.metrics || {});
-        } catch (error) {
-            console.error('Error fetching operations metrics:', error);
-            setMetricsError(error instanceof Error ? error.message : 'Failed to load operations metrics');
-        }
-    };
 
     const handleCheckIn = async (workerId: string) => {
         if (!checkinExporterId) {
@@ -180,7 +161,7 @@ export default function OperationsPage() {
             toast.success(`Worker checked in and assigned to ${exporterName}`);
             fetchAttendance();
             fetchSessions();
-            fetchOperationsMetrics();
+    
             setSearchWorkerId('');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Check-in failed');
@@ -247,7 +228,7 @@ export default function OperationsPage() {
             
             fetchAttendance();
             fetchSessions();
-            fetchOperationsMetrics();
+    
         } catch (error) {
             console.error('Checkout error:', error);
             toast.error(error instanceof Error ? error.message : 'Check-out failed');
@@ -272,7 +253,7 @@ export default function OperationsPage() {
 
             toast.success('Worker assigned to exporter');
             fetchSessions();
-            fetchOperationsMetrics();
+    
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Assignment failed');
         } finally {
@@ -306,7 +287,7 @@ export default function OperationsPage() {
                         }
                         fetchAttendance();
                         fetchSessions();
-                        fetchOperationsMetrics();
+                
                     }}
                 />
             )}
@@ -318,61 +299,6 @@ export default function OperationsPage() {
                 title="Daily Operations"
                 subtitle="Manage worker check-in and exporter assignments"
             />
-
-            {metricsError && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 text-sm">
-                    {metricsError}. Metrics cards may show stale values.
-                </div>
-            )}
-
-            {/* Operations Metrics */}
-            {/* Stats — 5 cards in one row */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <Users className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">On-Site</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{onSiteWorkers.length}</p>
-                    <p className="text-xs text-gray-400 mt-1">workers</p>
-                </div>
-
-                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <Activity className="w-4 h-4 text-teal-600" />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Sessions</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{sessions.length}</p>
-                    <p className="text-xs text-gray-400 mt-1">active today</p>
-                </div>
-
-                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <TrendingUp className="w-4 h-4 text-orange-500" />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Check-ins</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{attendance.length}</p>
-                    <p className="text-xs text-gray-400 mt-1">total today</p>
-                </div>
-
-                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <Clock className="w-4 h-4 text-purple-500" />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Hours</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{operationsMetrics?.totalHoursToday?.toFixed(1) || 0}</p>
-                    <p className="text-xs text-gray-400 mt-1">worked today</p>
-                </div>
-
-                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <Building2 className="w-4 h-4 text-indigo-500" />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Exporters</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{operationsMetrics?.exportersServedToday || 0}</p>
-                    <p className="text-xs text-gray-400 mt-1">active today</p>
-                </div>
-            </div>
 
             {/* Tabs with workflow step indicator */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200">
