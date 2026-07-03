@@ -57,7 +57,6 @@ export default function NaebDashboardPage() {
 
     useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
 
-    // Auto-refresh every 60 seconds
     useEffect(() => {
         const interval = setInterval(() => fetchAnalytics(true), 60000);
         return () => clearInterval(interval);
@@ -69,9 +68,9 @@ export default function NaebDashboardPage() {
             value: analytics?.totalWorkers ?? 0,
             sub: 'Across all cooperatives',
             icon: Users,
-            border: 'border-l-blue-500',
-            iconColor: 'text-blue-600',
-            subColor: 'text-blue-600 dark:text-blue-400',
+            border: 'border-l-emerald-500',
+            iconColor: 'text-emerald-600',
+            subColor: 'text-emerald-600 dark:text-emerald-400',
         },
         {
             label: 'Women Employed',
@@ -87,39 +86,39 @@ export default function NaebDashboardPage() {
             value: analytics?.totalExporters ?? 0,
             sub: `${analytics?.activeExporters ?? 0} with recorded sessions`,
             icon: Building2,
-            border: 'border-l-indigo-500',
-            iconColor: 'text-indigo-600',
-            subColor: 'text-indigo-600 dark:text-indigo-400',
+            border: 'border-l-teal-500',
+            iconColor: 'text-teal-600',
+            subColor: 'text-teal-600 dark:text-teal-400',
         },
         {
             label: 'Total Worker-Days',
             value: analytics?.totalSessions ?? 0,
             sub: 'Cumulative sessions logged',
             icon: Activity,
-            border: 'border-l-teal-500',
-            iconColor: 'text-teal-600',
-            subColor: 'text-teal-600 dark:text-teal-400',
+            border: 'border-l-orange-500',
+            iconColor: 'text-orange-600',
+            subColor: 'text-orange-600 dark:text-orange-400',
         },
         {
             label: 'Total Wages Paid',
             value: fmt(analytics?.totalWagesPaid ?? 0),
             sub: 'Cumulative all time',
             icon: DollarSign,
-            border: 'border-l-emerald-500',
-            iconColor: 'text-emerald-600',
-            subColor: 'text-emerald-600 dark:text-emerald-400',
+            border: 'border-l-green-500',
+            iconColor: 'text-green-600',
+            subColor: 'text-green-600 dark:text-green-400',
         },
     ];
 
     return (
         <div className="space-y-6 sm:space-y-8">
             {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-800 rounded-2xl p-8 shadow-xl shadow-blue-500/20">
+            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 rounded-2xl p-8 shadow-xl shadow-emerald-500/20">
                 <div className="absolute inset-0 opacity-10">
                     <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                 </div>
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-indigo-300/20 rounded-full blur-3xl" />
+                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/20 rounded-full blur-3xl" />
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">NAEB Overview</h1>
@@ -166,7 +165,7 @@ export default function NaebDashboardPage() {
             {/* Exporter Breakdown Table */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
-                    <BarChart2 className="w-5 h-5 text-indigo-600" />
+                    <BarChart2 className="w-5 h-5 text-teal-600" />
                     <div>
                         <h3 className="text-base font-semibold text-gray-900 dark:text-white">Exporter Activity Breakdown</h3>
                         <p className="text-xs text-gray-500 mt-0.5">Frequency, workers, women, and amounts paid — all time</p>
@@ -201,11 +200,11 @@ export default function NaebDashboardPage() {
                                 </tr>
                             ) : (
                                 analytics?.exporterBreakdown.map((row) => (
-                                    <tr key={row.exporterId} className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors">
+                                    <tr key={row.exporterId} className="group bg-white dark:bg-[#1e293b] transition-all duration-150 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 hover:shadow-[inset_3px_0_0_0_#10b981]">
                                         <td className="px-5 py-4">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
-                                                    <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                                                    <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                                                 </div>
                                                 <span className="text-sm font-semibold text-gray-900 dark:text-white">{row.exporterName}</span>
                                             </div>

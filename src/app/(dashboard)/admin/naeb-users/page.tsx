@@ -137,7 +137,7 @@ export default function AdminNaebUsersPage() {
                 action={
                     <button
                         onClick={() => { setFormData(emptyForm); setShowForm(true); }}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
                     >
                         <Plus className="w-4 h-4" /> Add NAEB User
                     </button>
@@ -182,7 +182,7 @@ export default function AdminNaebUsersPage() {
                         {users.map(user => (
                             <div key={user._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
                                         {user.name.charAt(0).toUpperCase()}
                                     </div>
                                     <div>
@@ -246,36 +246,36 @@ export default function AdminNaebUsersPage() {
                         <form onSubmit={handleCreate} className="p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                    <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-blue-600" />Full Name</span>
+                                    <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-emerald-600" />Full Name</span>
                                 </label>
                                 <input type="text" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
                                     placeholder="Enter full name" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                    <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-blue-600" />Email</span>
+                                    <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-emerald-600" />Email</span>
                                 </label>
                                 <input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
                                     placeholder="name@naeb.gov.rw" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                    <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-blue-600" />Phone</span>
+                                    <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-emerald-600" />Phone</span>
                                 </label>
                                 <input type="tel" required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
                                     placeholder="0788000000" />
                             </div>
-                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-3">
-                                <p className="text-xs text-blue-700 dark:text-blue-400">
+                            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-lg p-3">
+                                <p className="text-xs text-emerald-700 dark:text-emerald-400">
                                     This user will have read-only access to the NAEB portal — workforce summary, exporter activity, and worker database. No operational access.
                                 </p>
                             </div>
                             <div className="flex gap-3 pt-1">
                                 <button type="submit" disabled={submitting}
-                                    className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors text-sm disabled:opacity-50">
+                                    className="flex-1 bg-emerald-600 text-white py-2.5 rounded-xl font-semibold hover:bg-emerald-700 transition-colors text-sm disabled:opacity-50">
                                     {submitting ? 'Creating...' : 'Create NAEB User'}
                                 </button>
                                 <button type="button" onClick={() => setShowForm(false)}

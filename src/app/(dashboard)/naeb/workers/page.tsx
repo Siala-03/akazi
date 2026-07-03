@@ -93,7 +93,7 @@ export default function NaebWorkersPage() {
                 action={
                     <button
                         onClick={handleExportCsv}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
                     >
                         <Download className="w-4 h-4" /> Export CSV
                     </button>
@@ -128,13 +128,13 @@ export default function NaebWorkersPage() {
                             placeholder="Search by name, ID, or phone..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
+                            className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
                         />
                     </div>
                     <select
                         value={genderFilter}
                         onChange={e => setGenderFilter(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
                     >
                         <option value="all">All Genders</option>
                         <option value="female">Women</option>
@@ -143,7 +143,7 @@ export default function NaebWorkersPage() {
                     <select
                         value={statusFilter}
                         onChange={e => setStatusFilter(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
                     >
                         <option value="all">All Statuses</option>
                         <option value="active">Active</option>
@@ -181,10 +181,10 @@ export default function NaebWorkersPage() {
                                         </td>
                                     </tr>
                                 ) : paginated.map(worker => (
-                                    <tr key={worker._id} className="hover:bg-blue-50/40 dark:hover:bg-blue-950/10 transition-colors">
+                                    <tr key={worker._id} className="group bg-white dark:bg-[#1e293b] transition-all duration-150 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 hover:shadow-[inset_3px_0_0_0_#10b981]">
                                         <td className="px-5 py-3.5">
                                             <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
                                                     {worker.fullName.charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
@@ -195,7 +195,7 @@ export default function NaebWorkersPage() {
                                         </td>
                                         <td className="px-5 py-3.5 text-sm font-mono text-gray-600 dark:text-gray-400">{worker.workerId}</td>
                                         <td className="px-5 py-3.5">
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${worker.gender === 'female' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}`}>
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${worker.gender === 'female' ? 'bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-200' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'}`}>
                                                 {worker.gender === 'female' ? 'Female' : worker.gender === 'male' ? 'Male' : 'Other'}
                                             </span>
                                         </td>

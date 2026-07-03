@@ -33,9 +33,9 @@ export default function NaebLayout({ children }: { children: ReactNode }) {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:bg-[#0f172a]">
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:bg-[#0f172a]">
             {/* Top Navigation */}
-            <nav className="bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 sticky top-0 z-50 shadow-md">
+            <nav className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 dark:from-emerald-700 dark:via-teal-700 dark:to-emerald-800 sticky top-0 z-50 shadow-md">
                 <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex items-center gap-4">
@@ -91,17 +91,17 @@ export default function NaebLayout({ children }: { children: ReactNode }) {
                                     key={item.name}
                                     href={item.href}
                                     onClick={() => setSidebarOpen(false)}
-                                    className={`group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${isActive ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-800 dark:hover:text-gray-200'}`}
+                                    className={`group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${isActive ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-800 dark:hover:text-gray-200'}`}
                                 >
                                     {isActive && (
-                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-500 dark:bg-blue-400 rounded-r-full" />
+                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-emerald-500 dark:bg-emerald-400 rounded-r-full" />
                                     )}
                                     <span className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0">
-                                        <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500 group-hover:text-blue-500'}`} />
+                                        <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500 group-hover:text-emerald-500'}`} />
                                     </span>
                                     <span className="truncate">{item.name}</span>
                                     {isActive && (
-                                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 shrink-0" />
+                                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
                                     )}
                                 </Link>
                             );
@@ -110,7 +110,7 @@ export default function NaebLayout({ children }: { children: ReactNode }) {
                     <SidebarProfile profileHref="/naeb/dashboard" onSettingsClick={() => {}} />
                 </aside>
 
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:bg-[#0f172a]">
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto min-h-[calc(100vh-4rem)] bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:bg-[#0f172a]">
                     <div className="max-w-7xl mx-auto">
                         <Breadcrumb />
                         {children}
