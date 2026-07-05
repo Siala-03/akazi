@@ -1,16 +1,19 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Calendar, Download, RefreshCw, Users, Package, DollarSign } from 'lucide-react';
+import { Calendar, Download, RefreshCw, Users, DollarSign, QrCode, MousePointer } from 'lucide-react';
+import Image from 'next/image';
 
 type DailyWorkerRow = {
     workerName: string;
     workerId: string;
     phone: string;
+    photo: string;
     checkInTime: string;
     assignmentTime: string;
     checkoutTime: string | null;
     sessionStatus: string;
+    checkInMethod: string;
     totalBags: number;
     totalPayout: number;
     sessionCount: number;
@@ -68,11 +71,8 @@ function weekRangeFromInput(weekValue: string) {
 }
 
 function formatTime(iso: string | null) {
-    if (!iso) return '-';
-    return new Date(iso).toLocaleTimeString('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    if (!iso) return '—';
+    return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
 function formatMoney(value: number) {
@@ -108,9 +108,7 @@ export default function ExporterDailyWorkersPage() {
             const params = new URLSearchParams();
             if (filterMode === 'week') {
                 const range = weekRangeFromInput(selectedWeek);
-                if (!range) {
-                    throw new Error('Invalid week selected');
-                }
+                if (!range) throw new Error('Invalid week selected');
                 params.set('startDate', range.startDate);
                 params.set('endDate', range.endDate);
             } else {
@@ -143,14 +141,19 @@ export default function ExporterDailyWorkersPage() {
         setRefreshing(false);
     };
 
+    const qrCount = data.workers.filter((w) => w.checkInMethod === 'qr').length;
+    const manualCount = data.workers.filter((w) => w.checkInMethod === 'manual').length;
+
     const csvContent = useMemo(() => {
-        const header = 'Worker Name,Worker ID,Check-in Time,Assignment Time,Checkout Time,Session Status,Session Count,Total Bags,Total Payout (RWF)';
+        const header = 'Worker Name,Worker ID,Phone,Check-in Time,Assignment Time,Checkout Time,Check-in Method,Session Status,Session Count,Total Bags,Total Payout (RWF)';
         const rows = data.workers.map((row) => [
             row.workerName,
             row.workerId,
+            row.phone,
             formatTime(row.checkInTime),
             formatTime(row.assignmentTime),
             formatTime(row.checkoutTime),
+            row.checkInMethod,
             row.sessionStatus,
             String(row.sessionCount),
             String(row.totalBags),
@@ -162,7 +165,6 @@ export default function ExporterDailyWorkersPage() {
 
     const exportCsv = () => {
         if (data.workers.length === 0) return;
-
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -176,12 +178,13 @@ export default function ExporterDailyWorkersPage() {
 
     return (
         <div className="space-y-6">
+            {/* Header card */}
             <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700/60 p-6 shadow-sm">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Daily Workers</h1>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Worker activity and payout summary for your exporter.
+                            Worker activity and payout summary — including check-in method for fraud verification.
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                             Period: {formatRange(data.rangeStart, data.rangeEnd)}
@@ -192,21 +195,13 @@ export default function ExporterDailyWorkersPage() {
                         <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
                             <button
                                 onClick={() => setFilterMode('day')}
-                                className={`px-3 py-2 text-sm font-medium ${
-                                    filterMode === 'day'
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200'
-                                }`}
+                                className={`px-3 py-2 text-sm font-medium ${filterMode === 'day' ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
                             >
                                 Day
                             </button>
                             <button
                                 onClick={() => setFilterMode('week')}
-                                className={`px-3 py-2 text-sm font-medium ${
-                                    filterMode === 'week'
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200'
-                                }`}
+                                className={`px-3 py-2 text-sm font-medium ${filterMode === 'week' ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
                             >
                                 Week
                             </button>
@@ -255,36 +250,53 @@ export default function ExporterDailyWorkersPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Stat cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-4">
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Total Workers</p>
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Workers</p>
                         <Users className="w-4 h-4 text-emerald-500" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">{data.totals.workers}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{data.totals.workers}</p>
                 </div>
 
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-4">
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Total Bags</p>
-                        <Package className="w-4 h-4 text-emerald-500" />
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">{data.totals.totalBags}</p>
-                </div>
-
-                <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-4">
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Total Payout</p>
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Total Cost</p>
                         <DollarSign className="w-4 h-4 text-emerald-500" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-                        {formatMoney(data.totals.totalPayout)}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {data.totals.workers} workers · {filterMode === 'day' ? 'today' : 'this week'}
-                    </p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{formatMoney(data.totals.totalPayout)}</p>
+                </div>
+
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">QR Verified</p>
+                        <QrCode className="w-4 h-4 text-teal-500" />
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : qrCount}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">of {data.totals.workers} workers</p>
+                </div>
+
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Manual Entry</p>
+                        <MousePointer className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : manualCount}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">supervisor entered</p>
                 </div>
             </div>
+
+            {/* Manual entry notice */}
+            {!loading && manualCount > 0 && (
+                <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 flex items-start gap-3">
+                    <MousePointer className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <p className="text-sm text-amber-800 dark:text-amber-300">
+                        <span className="font-semibold">{manualCount} worker{manualCount > 1 ? 's were' : ' was'} checked in manually</span> by the supervisor.
+                        QR scan check-ins are cryptographically verified — manual entries should be cross-checked against attendance sheets.
+                    </p>
+                </div>
+            )}
 
             {error && (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -292,23 +304,24 @@ export default function ExporterDailyWorkersPage() {
                 </div>
             )}
 
+            {/* Workers table */}
             <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700/60 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full table-compact">
                         <thead className="bg-gray-50 dark:bg-gray-800/70">
                             <tr>
-                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Worker Name</th>
-                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Worker ID</th>
-                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Phone</th>
-                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Check-in Time</th>
-                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Assignment Time</th>
-                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Checkout Time</th>
-                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Session Status</th>
-                                <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Total Bags</th>
-                                <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Total Payout</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Worker</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Worker ID</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Phone</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Check-in</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Assigned</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Checkout</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Method</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                                <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Payout</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700/40">
                             {loading ? (
                                 <tr>
                                     <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500">
@@ -323,26 +336,49 @@ export default function ExporterDailyWorkersPage() {
                                 </tr>
                             ) : (
                                 data.workers.map((row) => (
-                                    <tr key={`${row.workerId}-${row.assignmentTime}`} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/30">
-                                        <td className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">{row.workerName}</td>
-                                        <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 font-mono">{row.workerId}</td>
-                                        <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">{row.phone || '—'}</td>
-                                        <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.checkInTime)}</td>
-                                        <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.assignmentTime)}</td>
-                                        <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.checkoutTime)}</td>
-                                        <td className="px-4 py-2 text-sm">
-                                            <span
-                                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                                                    row.sessionStatus === 'active'
-                                                        ? 'bg-emerald-100 text-emerald-700'
-                                                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
-                                                }`}
-                                            >
+                                    <tr key={`${row.workerId}-${row.assignmentTime}`} className="hover:bg-emerald-50/40 dark:hover:bg-emerald-950/10 transition-colors">
+                                        <td className="px-4 py-2.5">
+                                            <div className="flex items-center gap-2.5">
+                                                {row.photo ? (
+                                                    <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-emerald-100 dark:ring-emerald-900/40">
+                                                        <Image src={row.photo} alt={row.workerName} fill className="object-cover" sizes="32px" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shrink-0 text-white text-xs font-semibold">
+                                                        {row.workerName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{row.workerName}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 font-mono">{row.workerId}</td>
+                                        <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300">{row.phone || '—'}</td>
+                                        <td className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.checkInTime)}</td>
+                                        <td className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.assignmentTime)}</td>
+                                        <td className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.checkoutTime)}</td>
+                                        <td className="px-4 py-2.5">
+                                            {row.checkInMethod === 'qr' ? (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400">
+                                                    <QrCode className="w-3 h-3" />
+                                                    QR
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400">
+                                                    <MousePointer className="w-3 h-3" />
+                                                    Manual
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                                row.sessionStatus === 'active'
+                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                                                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
+                                            }`}>
                                                 {row.sessionStatus}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-2 text-sm text-right font-semibold text-gray-900 dark:text-gray-100">{row.totalBags}</td>
-                                        <td className="px-4 py-2 text-sm text-right font-semibold text-gray-900 dark:text-gray-100">
+                                        <td className="px-4 py-2.5 text-sm text-right font-semibold text-gray-900 dark:text-gray-100">
                                             {formatMoney(row.totalPayout)}
                                         </td>
                                     </tr>

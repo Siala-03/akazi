@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
                         checkInTime: today,
                         status: 'on-site',
                         supervisorId: currentUser.userId,
+                        checkInMethod: 'manual',
                     },
                     include: { worker: true },
                 });
@@ -98,6 +99,7 @@ export async function POST(request: NextRequest) {
                 checkInTime: today,
                 status: 'on-site',
                 supervisorId: currentUser.userId,
+                checkInMethod: 'manual',
             },
             include: { worker: true },
         });

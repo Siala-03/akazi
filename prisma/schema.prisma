@@ -8,7 +8,291 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ─── Enums ────────────────────────────────────────────────────────────────────
+model User {
+  id                    String          @id @default(cuid())
+  email                 String          @unique
+  password              String
+  role                  UserRole
+  name                  String
+  phone                 String
+  profilePicture        String          @default("")
+  exporterId            String?
+  facilityId            String?
+  isActive              Boolean         @default(true)
+  resetOtp              String?
+  resetOtpExpiry        DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  supervisedAttendances Attendance[]    @relation("AttendanceSupervisor")
+  auditLogs             AuditLog[]      @relation("AuditLogUser")
+  supervisedBags        Bag[]           @relation("BagSupervisor")
+  createdRateCards      RateCard[]      @relation("RateCardCreator")
+  supervisedSessions    Session[]       @relation("SessionSupervisor")
+  exporter              Exporter?       @relation("UserExporter", fields: [exporterId], references: [id])
+  facility              Facility?       @relation("UserFacility", fields: [facilityId], references: [id])
+  reviewedRequests      WorkerRequest[] @relation("WorkerRequestReviewer")
+
+  @@index([role, isActive])
+}
+
+model Exporter {
+  id                 String          @id @default(cuid())
+  exporterCode       String          @unique
+  tinNumber          String?
+  companyTradingName String
+  companyAddress     String
+  contactPerson      String
+  phone              String
+  email              String
+  isActive           Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  dailyRate          Int?
+  bags               Bag[]           @relation("BagExporter")
+  earnings           Earnings[]      @relation("EarningsExporter")
+  rateCards          RateCard[]      @relation("RateCardExporter")
+  sessions           Session[]       @relation("SessionExporter")
+  users              User[]          @relation("UserExporter")
+  workerRequests     WorkerRequest[] @relation("WorkerRequestExporter")
+
+  @@index([isActive])
+}
+
+model Cooperative {
+  id            String   @id @default(cuid())
+  name          String
+  code          String   @unique
+  contactPerson String
+  phone         String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  workers       Worker[]
+
+  @@index([code])
+}
+
+model Facility {
+  id          String       @id @default(cuid())
+  name        String
+  code        String       @unique
+  location    String
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  attendances Attendance[] @relation("AttendanceFacility")
+  bags        Bag[]        @relation("BagFacility")
+  sessions    Session[]    @relation("SessionFacility")
+  users       User[]       @relation("UserFacility")
+  workers     Worker[]     @relation("WorkerFacility")
+
+  @@index([code])
+}
+
+model Worker {
+  id                         String       @id @default(cuid())
+  workerId                   String       @unique
+  fullName                   String
+  gender                     Gender
+  dateOfBirth                DateTime?
+  ageRange                   String?
+  phone                      String
+  email                      String?
+  photo                      String
+  cooperativeId              String
+  facilityId                 String?
+  primaryRole                String
+  enrollmentDate             DateTime     @default(now())
+  hourlyRate                 Float        @default(50)
+  status                     WorkerStatus @default(active)
+  previousWorkType           String?
+  avgDaysWorkedPerMonth      Float?
+  typicalDailyEarnings       String?
+  previousPaymentMethod      String?
+  householdSize              String?
+  isPrimaryEarner            Boolean?
+  skillsNotes                String?
+  qrToken                    String?      @unique
+  consentWorkRecords         Boolean
+  consentAnonymizedReporting Boolean      @default(false)
+  consentTimestamp           DateTime     @default(now())
+  createdAt                  DateTime     @default(now())
+  updatedAt                  DateTime     @updatedAt
+  nationalId                 String?
+  attendances                Attendance[]
+  bagWorkers                 BagWorker[]
+  earnings                   Earnings[]   @relation("EarningsWorker")
+  sessions                   Session[]    @relation("SessionWorker")
+  cooperative                Cooperative  @relation(fields: [cooperativeId], references: [id])
+  facility                   Facility?    @relation("WorkerFacility", fields: [facilityId], references: [id])
+
+  @@index([cooperativeId, status])
+  @@index([status])
+  @@index([phone])
+}
+
+model Attendance {
+  id            String    @id @default(cuid())
+  workerId      String
+  facilityId    String?
+  date          DateTime
+  checkInTime   DateTime
+  checkOutTime  DateTime?
+  status        String    @default("on-site")
+  supervisorId  String
+  checkInMethod String    @default("manual")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  facility     Facility? @relation("AttendanceFacility", fields: [facilityId], references: [id])
+  supervisor   User      @relation("AttendanceSupervisor", fields: [supervisorId], references: [id])
+  worker       Worker    @relation(fields: [workerId], references: [id])
+  sessions     Session[]
+
+  @@unique([workerId, date])
+  @@index([date])
+  @@index([status, date])
+}
+
+model Session {
+  id           String        @id @default(cuid())
+  attendanceId String
+  workerId     String
+  exporterId   String
+  facilityId   String?
+  date         DateTime
+  startTime    DateTime
+  endTime      DateTime?
+  status       SessionStatus @default(active)
+  supervisorId String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  dailyRate    Int?
+  bagWorkers   BagWorker[]
+  attendance   Attendance    @relation(fields: [attendanceId], references: [id])
+  exporter     Exporter      @relation("SessionExporter", fields: [exporterId], references: [id])
+  facility     Facility?     @relation("SessionFacility", fields: [facilityId], references: [id])
+  supervisor   User          @relation("SessionSupervisor", fields: [supervisorId], references: [id])
+  worker       Worker        @relation("SessionWorker", fields: [workerId], references: [id])
+
+  @@index([workerId, date])
+  @@index([status])
+  @@index([attendanceId])
+}
+
+model Bag {
+  id           String      @id @default(cuid())
+  bagNumber    String      @unique
+  exporterId   String
+  facilityId   String?
+  date         DateTime
+  weight       Float       @default(60)
+  status       BagStatus   @default(in_progress)
+  supervisorId String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  completedAt  DateTime?
+  startedAt    DateTime    @default(now())
+  exporter     Exporter    @relation("BagExporter", fields: [exporterId], references: [id])
+  facility     Facility?   @relation("BagFacility", fields: [facilityId], references: [id])
+  supervisor   User        @relation("BagSupervisor", fields: [supervisorId], references: [id])
+  workers      BagWorker[]
+
+  @@index([exporterId, date])
+  @@index([date, status])
+}
+
+model BagWorker {
+  id        String  @id @default(cuid())
+  bagId     String
+  workerId  String
+  sessionId String
+  bag       Bag     @relation(fields: [bagId], references: [id], onDelete: Cascade)
+  session   Session @relation(fields: [sessionId], references: [id])
+  worker    Worker  @relation(fields: [workerId], references: [id])
+
+  @@index([bagId])
+  @@index([workerId])
+}
+
+model Earnings {
+  id            String         @id @default(cuid())
+  workerId      String
+  exporterId    String
+  date          DateTime
+  bagsProcessed Int
+  ratePerBag    Float
+  totalEarnings Float
+  status        EarningsStatus @default(computed)
+  computedAt    DateTime       @default(now())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  exporter      Exporter       @relation("EarningsExporter", fields: [exporterId], references: [id])
+  worker        Worker         @relation("EarningsWorker", fields: [workerId], references: [id])
+
+  @@index([workerId, date])
+  @@index([exporterId, date])
+  @@index([date, status])
+}
+
+model RateCard {
+  id            String    @id @default(cuid())
+  exporterId    String?
+  ratePerBag    Float
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isActive      Boolean   @default(true)
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  creator       User      @relation("RateCardCreator", fields: [createdBy], references: [id])
+  exporter      Exporter? @relation("RateCardExporter", fields: [exporterId], references: [id])
+
+  @@index([exporterId, isActive])
+  @@index([effectiveFrom, effectiveTo])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String
+  changes   Json
+  reason    String?
+  ipAddress String
+  createdAt DateTime @default(now())
+  user      User     @relation("AuditLogUser", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+model WorkerRequest {
+  id                    String              @id @default(cuid())
+  exporterId            String
+  numberOfContainers    Int
+  numberOfBags          Int
+  numberOfWorkersNeeded Int
+  startDate             DateTime
+  idealCompletionDate   DateTime
+  notes                 String?
+  status                WorkerRequestStatus @default(pending)
+  adminNotes            String?
+  reviewedBy            String?
+  reviewedAt            DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  exporter              Exporter            @relation("WorkerRequestExporter", fields: [exporterId], references: [id])
+  reviewer              User?               @relation("WorkerRequestReviewer", fields: [reviewedBy], references: [id])
+}
+
+model Settings {
+  id                String   @id @default("singleton")
+  exporterDailyRate Int      @default(2000)
+  workerDailyWage   Int      @default(1700)
+  updatedAt         DateTime @updatedAt
+}
 
 enum UserRole {
   supervisor
@@ -36,10 +320,10 @@ enum SessionStatus {
 }
 
 enum BagStatus {
-  in_progress
   completed
   validated
   locked
+  in_progress
 }
 
 enum EarningsStatus {
@@ -52,307 +336,4 @@ enum WorkerRequestStatus {
   approved
   rejected
   fulfilled
-}
-
-// ─── Models ───────────────────────────────────────────────────────────────────
-
-model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
-  password       String
-  role           UserRole
-  name           String
-  phone          String
-  profilePicture String    @default("")
-  exporterId     String?
-  facilityId     String?
-  isActive       Boolean   @default(true)
-  resetOtp       String?
-  resetOtpExpiry DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  exporter Exporter? @relation("UserExporter", fields: [exporterId], references: [id])
-  facility Facility? @relation("UserFacility", fields: [facilityId], references: [id])
-
-  supervisedAttendances Attendance[]    @relation("AttendanceSupervisor")
-  supervisedSessions    Session[]       @relation("SessionSupervisor")
-  supervisedBags        Bag[]           @relation("BagSupervisor")
-  createdRateCards      RateCard[]      @relation("RateCardCreator")
-  auditLogs             AuditLog[]      @relation("AuditLogUser")
-  reviewedRequests      WorkerRequest[] @relation("WorkerRequestReviewer")
-
-  @@index([role, isActive])
-}
-
-model Exporter {
-  id                 String   @id @default(cuid())
-  exporterCode       String   @unique
-  tinNumber          String?
-  companyTradingName String
-  companyAddress     String
-  contactPerson      String
-  phone              String
-  email              String
-  dailyRate          Int?
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  users          User[]          @relation("UserExporter")
-  sessions       Session[]       @relation("SessionExporter")
-  bags           Bag[]           @relation("BagExporter")
-  earnings       Earnings[]      @relation("EarningsExporter")
-  rateCards      RateCard[]      @relation("RateCardExporter")
-  workerRequests WorkerRequest[] @relation("WorkerRequestExporter")
-
-  @@index([isActive])
-}
-
-model Cooperative {
-  id            String   @id @default(cuid())
-  name          String
-  code          String   @unique
-  contactPerson String
-  phone         String
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  workers Worker[]
-
-  @@index([code])
-}
-
-model Facility {
-  id        String   @id @default(cuid())
-  name      String
-  code      String   @unique
-  location  String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  workers     Worker[]     @relation("WorkerFacility")
-  users       User[]       @relation("UserFacility")
-  attendances Attendance[] @relation("AttendanceFacility")
-  sessions    Session[]    @relation("SessionFacility")
-  bags        Bag[]        @relation("BagFacility")
-
-  @@index([code])
-}
-
-model Worker {
-  id                         String       @id @default(cuid())
-  workerId                   String       @unique
-  fullName                   String
-  nationalId                 String?
-  gender                     Gender
-  dateOfBirth                DateTime?
-  ageRange                   String?
-  phone                      String
-  email                      String?
-  photo                      String
-  cooperativeId              String
-  facilityId                 String?
-  primaryRole                String
-  enrollmentDate             DateTime     @default(now())
-  hourlyRate                 Float        @default(50)
-  status                     WorkerStatus @default(active)
-  previousWorkType           String?
-  avgDaysWorkedPerMonth      Float?
-  typicalDailyEarnings       String?
-  previousPaymentMethod      String?
-  householdSize              String?
-  isPrimaryEarner            Boolean?
-  skillsNotes                String?
-  qrToken                    String?      @unique
-  consentWorkRecords         Boolean
-  consentAnonymizedReporting Boolean      @default(false)
-  consentTimestamp           DateTime     @default(now())
-  createdAt                  DateTime     @default(now())
-  updatedAt                  DateTime     @updatedAt
-
-  cooperative Cooperative @relation(fields: [cooperativeId], references: [id])
-  facility    Facility?   @relation("WorkerFacility", fields: [facilityId], references: [id])
-
-  attendances Attendance[]
-  sessions    Session[]    @relation("SessionWorker")
-  earnings    Earnings[]   @relation("EarningsWorker")
-  bagWorkers  BagWorker[]
-
-  @@index([cooperativeId, status])
-  @@index([status])
-  @@index([phone])
-}
-
-// Attendance.status uses String to preserve "on-site" and "checked-out" values
-model Attendance {
-  id           String    @id @default(cuid())
-  workerId     String
-  facilityId   String?
-  date         DateTime
-  checkInTime  DateTime
-  checkOutTime DateTime?
-  status       String    @default("on-site")
-  supervisorId String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  worker     Worker    @relation(fields: [workerId], references: [id])
-  facility   Facility? @relation("AttendanceFacility", fields: [facilityId], references: [id])
-  supervisor User      @relation("AttendanceSupervisor", fields: [supervisorId], references: [id])
-  sessions   Session[]
-
-  @@unique([workerId, date])
-  @@index([date])
-  @@index([status, date])
-}
-
-model Session {
-  id           String        @id @default(cuid())
-  attendanceId String
-  workerId     String
-  exporterId   String
-  facilityId   String?
-  dailyRate    Int?
-  date         DateTime
-  startTime    DateTime
-  endTime      DateTime?
-  status       SessionStatus @default(active)
-  supervisorId String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  attendance Attendance @relation(fields: [attendanceId], references: [id])
-  worker     Worker     @relation("SessionWorker", fields: [workerId], references: [id])
-  exporter   Exporter   @relation("SessionExporter", fields: [exporterId], references: [id])
-  facility   Facility?  @relation("SessionFacility", fields: [facilityId], references: [id])
-  supervisor User       @relation("SessionSupervisor", fields: [supervisorId], references: [id])
-  bagWorkers BagWorker[]
-
-  @@index([workerId, date])
-  @@index([status])
-  @@index([attendanceId])
-}
-
-model Bag {
-  id           String    @id @default(cuid())
-  bagNumber    String    @unique
-  exporterId   String
-  facilityId   String?
-  date         DateTime
-  startedAt    DateTime  @default(now())
-  completedAt  DateTime?
-  weight       Float     @default(60)
-  status       BagStatus @default(in_progress)
-  supervisorId String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  exporter   Exporter  @relation("BagExporter", fields: [exporterId], references: [id])
-  facility   Facility? @relation("BagFacility", fields: [facilityId], references: [id])
-  supervisor User      @relation("BagSupervisor", fields: [supervisorId], references: [id])
-  workers    BagWorker[]
-
-  @@index([exporterId, date])
-  @@index([date, status])
-}
-
-model BagWorker {
-  id        String @id @default(cuid())
-  bagId     String
-  workerId  String
-  sessionId String
-
-  bag     Bag     @relation(fields: [bagId], references: [id], onDelete: Cascade)
-  worker  Worker  @relation(fields: [workerId], references: [id])
-  session Session @relation(fields: [sessionId], references: [id])
-
-  @@index([bagId])
-  @@index([workerId])
-}
-
-model Earnings {
-  id            String         @id @default(cuid())
-  workerId      String
-  exporterId    String
-  date          DateTime
-  bagsProcessed Int
-  ratePerBag    Float
-  totalEarnings Float
-  status        EarningsStatus @default(computed)
-  computedAt    DateTime       @default(now())
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  worker   Worker   @relation("EarningsWorker", fields: [workerId], references: [id])
-  exporter Exporter @relation("EarningsExporter", fields: [exporterId], references: [id])
-
-  @@index([workerId, date])
-  @@index([exporterId, date])
-  @@index([date, status])
-}
-
-model RateCard {
-  id            String    @id @default(cuid())
-  exporterId    String?
-  ratePerBag    Float
-  effectiveFrom DateTime
-  effectiveTo   DateTime?
-  isActive      Boolean   @default(true)
-  createdBy     String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  exporter Exporter? @relation("RateCardExporter", fields: [exporterId], references: [id])
-  creator  User      @relation("RateCardCreator", fields: [createdBy], references: [id])
-
-  @@index([exporterId, isActive])
-  @@index([effectiveFrom, effectiveTo])
-}
-
-model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String
-  action    String
-  entity    String
-  entityId  String
-  changes   Json
-  reason    String?
-  ipAddress String
-  createdAt DateTime @default(now())
-
-  user User @relation("AuditLogUser", fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([entity, entityId])
-  @@index([createdAt])
-}
-
-model WorkerRequest {
-  id                    String              @id @default(cuid())
-  exporterId            String
-  numberOfContainers    Int
-  numberOfBags          Int
-  numberOfWorkersNeeded Int
-  startDate             DateTime
-  idealCompletionDate   DateTime
-  notes                 String?
-  status                WorkerRequestStatus @default(pending)
-  adminNotes            String?
-  reviewedBy            String?
-  reviewedAt            DateTime?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-
-  exporter Exporter @relation("WorkerRequestExporter", fields: [exporterId], references: [id])
-  reviewer User?    @relation("WorkerRequestReviewer", fields: [reviewedBy], references: [id])
-}
-
-model Settings {
-  id                String   @id @default("singleton")
-  exporterDailyRate Int      @default(2000)
-  workerDailyWage   Int      @default(1700)
-  updatedAt         DateTime @updatedAt
 }

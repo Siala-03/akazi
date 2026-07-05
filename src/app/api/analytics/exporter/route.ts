@@ -160,7 +160,9 @@ export async function GET(request: NextRequest) {
 
         const trendStart = getStartOfDay(new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000));
 
-        const [sessionTrendRows, dailySessionRows] = await Promise.all([
+        const thirtyDaysAgo = getStartOfDay(new Date(today.getTime() - 29 * 24 * 60 * 60 * 1000));
+
+        const [sessionTrendRows, dailySessionRows, workerFrequencyRows] = await Promise.all([
             prisma.$queryRaw<{ day: string; sessions: bigint; cost: number }[]>`
                 SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day,
                        COUNT(*)::bigint AS sessions,
@@ -178,9 +180,29 @@ export async function GET(request: NextRequest) {
                 WHERE "exporterId" = ${exporterId}
                     AND date >= ${rangeStart} AND date <= ${rangeEnd}
                 GROUP BY day`,
+            prisma.$queryRaw<{ workerId: string; fullName: string; photo: string; sessionCount: bigint; lastSeen: string }[]>`
+                SELECT s."workerId",
+                       w."fullName",
+                       w.photo,
+                       COUNT(*)::bigint AS "sessionCount",
+                       TO_CHAR(MAX(s.date), 'YYYY-MM-DD') AS "lastSeen"
+                FROM "Session" s
+                INNER JOIN "Worker" w ON w.id = s."workerId"
+                WHERE s."exporterId" = ${exporterId}
+                    AND s.date >= ${thirtyDaysAgo} AND s.date <= ${endOfDay}
+                GROUP BY s."workerId", w."fullName", w.photo
+                ORDER BY "sessionCount" DESC
+                LIMIT 15`,
         ]);
 
         const sessionTrendMap = new Map(sessionTrendRows.map(d => [d.day, { sessions: Number(d.sessions), cost: Number(d.cost ?? 0) }]));
+        const topWorkers = workerFrequencyRows.map((r) => ({
+            workerId: r.workerId,
+            fullName: r.fullName,
+            photo: r.photo,
+            sessionCount: Number(r.sessionCount),
+            lastSeen: r.lastSeen,
+        }));
         const dailySessionsMap = new Map(dailySessionRows.map(row => [row.day, { sessions: Number(row.sessions), cost: row.cost }]));
 
         const trendData = [];
@@ -250,6 +272,7 @@ export async function GET(request: NextRequest) {
                 workerDailyWage: WORKER_DAILY_WAGE,
                 coopMarginPerDay: EXPORTER_RATE - WORKER_DAILY_WAGE,
                 trends: { sessions: trendData },
+                topWorkers,
             },
         });
     } catch (error) {

@@ -14,10 +14,12 @@ type SessionRow = {
         workerId: string;
         fullName: string;
         phone: string;
+        photo: string;
     };
     attendance: {
         checkInTime: Date;
         checkOutTime: Date | null;
+        checkInMethod: string;
     };
 };
 
@@ -81,12 +83,14 @@ export async function GET(request: NextRequest) {
                         workerId: true,
                         fullName: true,
                         phone: true,
+                        photo: true,
                     },
                 },
                 attendance: {
                     select: {
                         checkInTime: true,
                         checkOutTime: true,
+                        checkInMethod: true,
                     },
                 },
             },
@@ -113,11 +117,13 @@ export async function GET(request: NextRequest) {
                 workerName: string;
                 workerId: string;
                 phone: string;
+                photo: string;
                 checkInTime: Date;
                 assignmentTime: Date;
                 checkoutTime: Date | null;
                 sessionStatus: string;
                 sessionCount: number;
+                checkInMethod: string;
             }
         >();
 
@@ -130,11 +136,13 @@ export async function GET(request: NextRequest) {
                     workerName: session.worker.fullName,
                     workerId: session.worker.workerId,
                     phone: session.worker.phone,
+                    photo: session.worker.photo,
                     checkInTime: session.attendance.checkInTime,
                     assignmentTime: session.startTime,
                     checkoutTime: session.attendance.checkOutTime,
                     sessionStatus: session.status,
                     sessionCount: 1,
+                    checkInMethod: session.attendance.checkInMethod ?? 'manual',
                 });
                 continue;
             }
@@ -166,10 +174,12 @@ export async function GET(request: NextRequest) {
                     workerName: row.workerName,
                     workerId: row.workerId,
                     phone: row.phone,
+                    photo: row.photo,
                     checkInTime: row.checkInTime.toISOString(),
                     assignmentTime: row.assignmentTime.toISOString(),
                     checkoutTime: row.checkoutTime ? row.checkoutTime.toISOString() : null,
                     sessionStatus: row.sessionStatus,
+                    checkInMethod: row.checkInMethod,
                     totalBags,
                     totalPayout,
                     sessionCount: row.sessionCount,

@@ -11,7 +11,11 @@ import {
     ChevronRight,
     RefreshCw,
     Download,
+    AlertTriangle,
+    QrCode,
+    MousePointer,
 } from 'lucide-react';
+import Image from 'next/image';
 import { ExportButton } from '@/components/export/ExportButton';
 import { ExportData } from '@/lib/export';
 
@@ -549,6 +553,118 @@ export default function ExporterDashboard() {
                     </div>
                 </div>
             </div>
+
+            {/* Cost Anomaly Alerts */}
+            {(() => {
+                const breakdown: any[] = analytics?.dailyBreakdown || [];
+                const activeDays = breakdown.filter((d) => d.sessions > 0);
+                if (activeDays.length < 3) return null;
+                const avg = activeDays.reduce((s: number, d: any) => s + d.costToExporter, 0) / activeDays.length;
+                const threshold = avg * 1.35;
+                const anomalies = activeDays.filter((d: any) => d.costToExporter > threshold);
+                if (anomalies.length === 0) return null;
+                return (
+                    <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-amber-200 dark:border-amber-700/50 p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <AlertTriangle className="w-5 h-5 text-amber-500" />
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Cost Anomaly Alerts</h3>
+                            <span className="ml-auto text-xs text-gray-400">Days &gt;35% above period avg ({fmt(Math.round(avg))})</span>
+                        </div>
+                        <div className="space-y-2">
+                            {anomalies.map((d: any) => (
+                                <div key={d.date} className="flex items-center justify-between py-2 px-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800/40">
+                                    <div className="flex items-center gap-2">
+                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                            {new Date(d.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                        </span>
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">{d.sessions} sessions</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{fmt(d.costToExporter)}</span>
+                                        <span className="text-xs text-amber-600 dark:text-amber-500 font-medium">
+                                            +{Math.round(((d.costToExporter - avg) / avg) * 100)}%
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">
+                            Review these days in Daily Workers for unusual manual check-ins.
+                        </p>
+                    </div>
+                );
+            })()}
+
+            {/* Worker Frequency — Top Workers (last 30 days) */}
+            {analytics?.topWorkers?.length > 0 && (
+                <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden">
+                    <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                        <div>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Worker Frequency — Last 30 Days</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Regularity check: consistent workers reduce ghost-worker risk</p>
+                        </div>
+                        <Users className="w-5 h-5 text-purple-500" />
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-gray-50 dark:bg-gray-800/70">
+                                <tr>
+                                    <th className="px-5 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
+                                    <th className="px-5 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Worker</th>
+                                    <th className="px-5 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase">Sessions</th>
+                                    <th className="px-5 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase">Consistency</th>
+                                    <th className="px-5 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase">Last Seen</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700/40">
+                                {analytics.topWorkers.map((w: any, i: number) => {
+                                    const pct = Math.min(100, Math.round((w.sessionCount / 30) * 100));
+                                    return (
+                                        <tr key={w.workerId} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/30 transition-colors">
+                                            <td className="px-5 py-2.5 text-sm text-gray-400 font-mono">{i + 1}</td>
+                                            <td className="px-5 py-2.5">
+                                                <div className="flex items-center gap-2.5">
+                                                    {w.photo ? (
+                                                        <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-emerald-100 dark:ring-emerald-900/40">
+                                                            <Image src={w.photo} alt={w.fullName} fill className="object-cover" sizes="32px" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shrink-0 text-white text-xs font-semibold">
+                                                            {w.fullName.charAt(0).toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{w.fullName}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-2.5 text-center">
+                                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{w.sessionCount}</span>
+                                                <span className="text-xs text-gray-400 ml-1">days</span>
+                                            </td>
+                                            <td className="px-5 py-2.5">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                                        <div
+                                                            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500"
+                                                            style={{ width: `${pct}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs text-gray-500 w-8 text-right">{pct}%</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-2.5 text-right text-sm text-gray-500 dark:text-gray-400">{w.lastSeen}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center gap-4 text-xs text-gray-400">
+                        <span className="flex items-center gap-1"><QrCode className="w-3 h-3" /> QR-verified check-ins are logged per worker on the Daily Workers page</span>
+                        <span className="flex items-center gap-1 ml-auto"><MousePointer className="w-3 h-3 text-amber-400" /> High manual check-in rate on a worker warrants review</span>
+                    </div>
+                </div>
+            )}
 
         </div>
     );

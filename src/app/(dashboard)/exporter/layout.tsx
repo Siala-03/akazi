@@ -12,6 +12,7 @@ import {
     Coffee,
     ClipboardList,
     Table,
+    Radio,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Breadcrumb } from '@/components/Breadcrumb';
@@ -21,8 +22,9 @@ const SidebarProfile = dynamic(() => import('@/components/wrappers/SidebarProfil
 
 const navigation = [
     { name: 'Dashboard',       href: '/exporter/dashboard',        icon: LayoutDashboard },
+    { name: 'Live On-Site',    href: '/exporter/on-site',          icon: Radio },
     { name: 'Daily Workers',   href: '/exporter/daily-workers',    icon: Table },
-    { name: 'Worker Requests', href: '/exporter/worker-requests',   icon: ClipboardList },
+    { name: 'Worker Requests', href: '/exporter/worker-requests',  icon: ClipboardList },
 ];
 
 export default function ExporterLayout({ children }: { children: ReactNode }) {
