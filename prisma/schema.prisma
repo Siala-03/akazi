@@ -45,6 +45,7 @@ model Exporter {
   phone              String
   email              String
   isActive           Boolean         @default(true)
+  operationsEnabled  Boolean         @default(false)
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   dailyRate          Int?

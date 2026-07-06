@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import {
     Building2, MapPin, User, Phone, Mail,
-    Plus, Search, RefreshCw, Edit2, Power, PowerOff, X, Hash, KeyRound, DollarSign,
+    Plus, Search, RefreshCw, Edit2, Power, PowerOff, X, Hash, KeyRound, DollarSign, Zap, ZapOff,
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
@@ -20,6 +20,7 @@ interface Exporter {
     email: string;
     dailyRate: number | null;
     isActive: boolean;
+    operationsEnabled: boolean;
 }
 
 const emptyForm = {
@@ -144,6 +145,25 @@ export default function AdminExportersPage() {
             fetchExporters();
         } catch {
             toast.error('Failed to update status');
+        }
+    };
+
+    const handleToggleOperations = async (exporter: Exporter) => {
+        try {
+            const res = await fetch(`/api/exporters/${exporter._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ operationsEnabled: !exporter.operationsEnabled }),
+            });
+            if (!res.ok) throw new Error('Update failed');
+            toast.success(
+                exporter.operationsEnabled
+                    ? `${exporter.companyTradingName} removed from supervisor list`
+                    : `${exporter.companyTradingName} added to supervisor list`
+            );
+            fetchExporters();
+        } catch {
+            toast.error('Failed to update operations access');
         }
     };
 
@@ -296,6 +316,7 @@ export default function AdminExportersPage() {
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Email</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Location Address</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Daily Rate</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ops Access</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                     <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -339,6 +360,21 @@ export default function AdminExportersPage() {
                                                     Set Rate
                                                 </button>
                                             )}
+                                        </td>
+                                        <td className="px-4 sm:px-6 py-4">
+                                            <button
+                                                onClick={() => handleToggleOperations(exp)}
+                                                title={exp.operationsEnabled ? 'Remove from supervisor list' : 'Allow in supervisor list (bypass request)'}
+                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                                                    exp.operationsEnabled
+                                                        ? 'bg-violet-100 text-violet-700 hover:bg-violet-200'
+                                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                }`}
+                                            >
+                                                {exp.operationsEnabled
+                                                    ? <><Zap className="w-3 h-3" /> Enabled</>
+                                                    : <><ZapOff className="w-3 h-3" /> Disabled</>}
+                                            </button>
                                         </td>
                                         <td className="px-4 sm:px-6 py-4">
                                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${

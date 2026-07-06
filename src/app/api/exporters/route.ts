@@ -21,7 +21,10 @@ export async function GET(request: NextRequest) {
             delete where.isActive;
         }
         if (searchParams.get('approvedOnly') === 'true') {
-            where.workerRequests = { some: { status: 'approved' } };
+            where.OR = [
+                { workerRequests: { some: { status: 'approved' } } },
+                { operationsEnabled: true },
+            ];
         }
 
         const exporters = await prisma.exporter.findMany({
