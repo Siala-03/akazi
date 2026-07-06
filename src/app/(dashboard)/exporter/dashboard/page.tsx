@@ -12,8 +12,6 @@ import {
     RefreshCw,
     Download,
     AlertTriangle,
-    QrCode,
-    MousePointer,
 } from 'lucide-react';
 import Image from 'next/image';
 import { ExportButton } from '@/components/export/ExportButton';
@@ -558,7 +556,7 @@ export default function ExporterDashboard() {
                                             <td className="px-5 py-2.5 text-sm text-gray-400 font-mono">{i + 1}</td>
                                             <td className="px-5 py-2.5">
                                                 <div className="flex items-center gap-2.5">
-                                                    {w.photo ? (
+                                                    {w.photo?.startsWith('http') ? (
                                                         <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-emerald-100 dark:ring-emerald-900/40">
                                                             <Image src={w.photo} alt={w.fullName} fill className="object-cover" sizes="32px" />
                                                         </div>
@@ -591,10 +589,6 @@ export default function ExporterDashboard() {
                                 })}
                             </tbody>
                         </table>
-                    </div>
-                    <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center gap-4 text-xs text-gray-400">
-                        <span className="flex items-center gap-1"><QrCode className="w-3 h-3" /> QR-verified check-ins are logged per worker on the Daily Workers page</span>
-                        <span className="flex items-center gap-1 ml-auto"><MousePointer className="w-3 h-3 text-amber-400" /> High manual check-in rate on a worker warrants review</span>
                     </div>
                 </div>
             )}

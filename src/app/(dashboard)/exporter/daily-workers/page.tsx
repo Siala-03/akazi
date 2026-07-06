@@ -179,74 +179,81 @@ export default function ExporterDailyWorkersPage() {
     return (
         <div className="space-y-6">
             {/* Header card */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700/60 p-6 shadow-sm">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Daily Workers</h1>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Worker activity and payout summary — including check-in method for fraud verification.
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            Period: {formatRange(data.rangeStart, data.rangeEnd)}
-                        </p>
-                    </div>
+            <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700/60 p-5 sm:p-6 shadow-sm">
+                {/* Title row */}
+                <div className="mb-4">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Daily Workers</h1>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Worker activity and payout summary — including check-in method for fraud verification.
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Period: {formatRange(data.rangeStart, data.rangeEnd)}
+                    </p>
+                </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                        <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-                            <button
-                                onClick={() => setFilterMode('day')}
-                                className={`px-3 py-2 text-sm font-medium ${filterMode === 'day' ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
-                            >
-                                Day
-                            </button>
-                            <button
-                                onClick={() => setFilterMode('week')}
-                                className={`px-3 py-2 text-sm font-medium ${filterMode === 'week' ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
-                            >
-                                Week
-                            </button>
-                        </div>
-
-                        {filterMode === 'day' ? (
-                            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
-                                <Calendar className="w-4 h-4 text-gray-500" />
-                                <input
-                                    type="date"
-                                    value={selectedDate}
-                                    onChange={(e) => setSelectedDate(e.target.value)}
-                                    className="bg-transparent text-sm text-gray-700 dark:text-gray-200 focus:outline-none"
-                                />
-                            </label>
-                        ) : (
-                            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
-                                <Calendar className="w-4 h-4 text-gray-500" />
-                                <input
-                                    type="week"
-                                    value={selectedWeek}
-                                    onChange={(e) => setSelectedWeek(e.target.value)}
-                                    className="bg-transparent text-sm text-gray-700 dark:text-gray-200 focus:outline-none"
-                                />
-                            </label>
-                        )}
-
+                {/* Controls row — wraps cleanly at every breakpoint */}
+                <div className="flex flex-wrap items-center gap-2">
+                    {/* Day / Week toggle */}
+                    <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden shrink-0">
                         <button
-                            onClick={handleRefresh}
-                            disabled={refreshing}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+                            onClick={() => setFilterMode('day')}
+                            className={`px-4 py-2 text-sm font-medium transition-colors ${filterMode === 'day' ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                         >
-                            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                            Refresh
+                            Day
                         </button>
-
                         <button
-                            onClick={exportCsv}
-                            disabled={data.workers.length === 0}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50"
+                            onClick={() => setFilterMode('week')}
+                            className={`px-4 py-2 text-sm font-medium transition-colors ${filterMode === 'week' ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                         >
-                            <Download className="w-4 h-4" />
-                            Export CSV
+                            Week
                         </button>
                     </div>
+
+                    {/* Date / week picker */}
+                    {filterMode === 'day' ? (
+                        <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 cursor-pointer">
+                            <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                className="bg-transparent text-sm text-gray-700 dark:text-gray-200 focus:outline-none min-w-0"
+                            />
+                        </label>
+                    ) : (
+                        <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 cursor-pointer">
+                            <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                            <input
+                                type="week"
+                                value={selectedWeek}
+                                onChange={(e) => setSelectedWeek(e.target.value)}
+                                className="bg-transparent text-sm text-gray-700 dark:text-gray-200 focus:outline-none min-w-0"
+                            />
+                        </label>
+                    )}
+
+                    {/* Push action buttons to the right on wider screens */}
+                    <div className="flex-1" />
+
+                    {/* Refresh */}
+                    <button
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors shrink-0"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                        <span className="hidden sm:inline">Refresh</span>
+                    </button>
+
+                    {/* Export CSV */}
+                    <button
+                        onClick={exportCsv}
+                        disabled={data.workers.length === 0}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors shrink-0"
+                    >
+                        <Download className="w-4 h-4" />
+                        <span>Export CSV</span>
+                    </button>
                 </div>
             </div>
 
@@ -287,16 +294,6 @@ export default function ExporterDailyWorkersPage() {
                 </div>
             </div>
 
-            {/* Manual entry notice */}
-            {!loading && manualCount > 0 && (
-                <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 flex items-start gap-3">
-                    <MousePointer className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                    <p className="text-sm text-amber-800 dark:text-amber-300">
-                        <span className="font-semibold">{manualCount} worker{manualCount > 1 ? 's were' : ' was'} checked in manually</span> by the supervisor.
-                        QR scan check-ins are cryptographically verified — manual entries should be cross-checked against attendance sheets.
-                    </p>
-                </div>
-            )}
 
             {error && (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -339,7 +336,7 @@ export default function ExporterDailyWorkersPage() {
                                     <tr key={`${row.workerId}-${row.assignmentTime}`} className="hover:bg-emerald-50/40 dark:hover:bg-emerald-950/10 transition-colors">
                                         <td className="px-4 py-2.5">
                                             <div className="flex items-center gap-2.5">
-                                                {row.photo ? (
+                                                {row.photo?.startsWith('http') ? (
                                                     <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-emerald-100 dark:ring-emerald-900/40">
                                                         <Image src={row.photo} alt={row.workerName} fill className="object-cover" sizes="32px" />
                                                     </div>
