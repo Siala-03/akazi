@@ -335,61 +335,6 @@ export default function ExporterDashboard() {
                 </div>
             </div>
 
-            {/* Performance Overview */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Performance Overview</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {filterMode === 'week' 
-                                ? `Week of ${fmtDate(selectedWeek)}`
-                                : filterMode === 'month'
-                                ? selectedMonth
-                                : customStartDate && customEndDate 
-                                ? `${fmtDate(customStartDate)} – ${fmtDate(customEndDate)}`
-                                : 'All time data'
-                            }
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                        <TrendingUp className="w-5 h-5 text-blue-600" />
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                    <div className="bg-white dark:bg-[#1e293b] rounded-xl p-4 border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                                <Users className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Period Sessions</p>
-                                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodSessionsCount || 0).toLocaleString()}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Worker-days</span>
-                            <span className="font-semibold text-gray-700 dark:text-gray-300">{(analytics?.periodWorkersEngaged || 0)} workers</span>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-[#1e293b] rounded-xl p-4 border-l-4 border-l-emerald-500 border-t border-r border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                                <TrendingUp className="w-5 h-5 text-emerald-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">All Time</p>
-                                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(analytics?.sessionsCumulativeCount || 0).toLocaleString()}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Cumulative sessions</span>
-                            <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.cumulativeCost || 0)}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {/* Date-wise Expenses Breakdown */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -490,16 +435,8 @@ export default function ExporterDashboard() {
                     </div>
                     <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">Workers in period</span>
-                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodWorkersEngaged || 0).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-500 dark:text-gray-400">All-time workers</span>
                             <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.workersEngaged || 0).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">Period sessions</span>
-                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{(analytics?.periodSessionsCount || 0).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-500 dark:text-gray-400">All-time sessions</span>
@@ -521,10 +458,6 @@ export default function ExporterDashboard() {
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100">Cost Breakdown</h3>
                     </div>
                     <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">Period cost</span>
-                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(analytics?.periodCostToExporter || 0)}</span>
-                        </div>
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-500 dark:text-gray-400">This week</span>
                             <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(analytics?.weeklyCost || 0)}</span>
