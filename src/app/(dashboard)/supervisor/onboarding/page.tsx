@@ -37,10 +37,19 @@ function validate(step: number, data: FormData): Errors {
         if (!data.workerId.trim()) e.workerId = 'National ID is required';
         else if (!/^\d{16}$/.test(data.workerId.trim())) e.workerId = 'National ID must be exactly 16 digits';
     }
+    if (step >= 1) {
+        if (data.dateOfBirth) {
+            const dob = new Date(data.dateOfBirth);
+            const minDate = new Date();
+            minDate.setFullYear(minDate.getFullYear() - 18);
+            if (dob > minDate) e.dateOfBirth = 'Worker must be at least 18 years old';
+        }
+    }
     if (step >= 2) {
-        if (!data.phone.trim()) e.phone = 'Phone number is required';
-        else if (!/^\+?[0-9]{9,15}$/.test(data.phone.replace(/\s/g, '')))
-            e.phone = 'Enter a valid phone number (e.g. +250788000000)';
+        const phone = data.phone.replace(/\s/g, '');
+        if (!phone) e.phone = 'Phone number is required';
+        else if (!/^07\d{8}$/.test(phone))
+            e.phone = 'Phone must start with 07 and be exactly 10 digits';
         if (!data.primaryRole.trim()) e.primaryRole = 'Primary role is required';
         if (!data.cooperativeId) e.cooperativeId = 'Please select a cooperative';
     }
@@ -97,7 +106,7 @@ export default function OnboardingPage() {
         setTouched(allTouched);
         const errs = validate(currentStep, formData);
         const stepFields: Record<number, (keyof FormData)[]> = {
-            1: ['fullName', 'workerId'],
+            1: ['fullName', 'workerId', 'dateOfBirth'],
             2: ['phone', 'primaryRole', 'cooperativeId'],
             3: ['consentWorkRecords'],
         };
@@ -206,7 +215,14 @@ export default function OnboardingPage() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date of Birth</label>
-                                <input type="date" value={formData.dateOfBirth} onChange={e => set('dateOfBirth', e.target.value)} className={inputClass('dateOfBirth')} />
+                                <input
+                                    type="date"
+                                    value={formData.dateOfBirth}
+                                    onChange={e => set('dateOfBirth', e.target.value)}
+                                    max={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d.toISOString().slice(0, 10); })()}
+                                    className={inputClass('dateOfBirth')}
+                                />
+                                {fieldError('dateOfBirth') && <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('dateOfBirth')}</p>}
                             </div>
                         </div>
                     </div>
@@ -219,8 +235,16 @@ export default function OnboardingPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Phone Number *</label>
-                                <input type="tel" value={formData.phone} onChange={e => set('phone', e.target.value)} className={inputClass('phone')} placeholder="+250788000000" />
-                                {fieldError('phone') && <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('phone')}</p>}
+                                <input
+                                    type="tel"
+                                    inputMode="numeric"
+                                    maxLength={10}
+                                    value={formData.phone}
+                                    onChange={e => set('phone', e.target.value.replace(/\D/g, ''))}
+                                    className={inputClass('phone')}
+                                    placeholder="0788000000"
+                                />
+                                {fieldError('phone') ? <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('phone')}</p> : <p className="mt-1 text-xs text-gray-400">10 digits starting with 07</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email <span className="text-gray-400 font-normal">(optional)</span></label>

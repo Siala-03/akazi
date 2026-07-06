@@ -115,9 +115,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields', details: 'Full name and phone are required' }, { status: 400 });
         }
 
-        const cleanPhone = String(body.phone).replace(/\s/g, '');
-        if (!/^\d{10}$/.test(cleanPhone)) {
-            return NextResponse.json({ error: 'Phone number must be exactly 10 digits' }, { status: 400 });
+        const cleanPhone = String(body.phone).replace(/\D/g, '');
+        if (!/^07\d{8}$/.test(cleanPhone)) {
+            return NextResponse.json({ error: 'Phone must start with 07 and be exactly 10 digits' }, { status: 400 });
         }
 
         if (!body.workerId || !String(body.workerId).trim()) {
@@ -138,6 +138,11 @@ export async function POST(request: NextRequest) {
             const dob = new Date(trimmedDateOfBirth);
             if (Number.isNaN(dob.getTime())) {
                 return NextResponse.json({ error: 'Invalid date of birth' }, { status: 400 });
+            }
+            const minDob = new Date();
+            minDob.setFullYear(minDob.getFullYear() - 18);
+            if (dob > minDob) {
+                return NextResponse.json({ error: 'Worker must be at least 18 years old' }, { status: 400 });
             }
             parsedDateOfBirth = dob;
         }
