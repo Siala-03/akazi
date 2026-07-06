@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Breadcrumb } from '@/components/Breadcrumb';
+import { InactivityLogout } from '@/components/InactivityLogout';
 
 const SidebarProfile = dynamic(() => import('@/components/wrappers/SidebarProfile').then(mod => ({ default: mod.SidebarProfile })), { ssr: false });
 
@@ -117,6 +118,7 @@ export default function NaebLayout({ children }: { children: ReactNode }) {
                     </div>
                 </main>
             </div>
+            <InactivityLogout />
         </div>
     );
 }

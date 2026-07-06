@@ -20,6 +20,7 @@ import {
 import dynamic from 'next/dynamic';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { AdminTopbarExtras } from '@/components/AdminTopbarExtras';
+import { InactivityLogout } from '@/components/InactivityLogout';
 
 const SettingsModal = dynamic(() => import('@/components/settings/SettingsModal').then(mod => ({ default: mod.SettingsModal })), { ssr: false });
 const SidebarProfile = dynamic(() => import('@/components/wrappers/SidebarProfile').then(mod => ({ default: mod.SidebarProfile })), { ssr: false });
@@ -138,6 +139,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </div>
 
             <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+            <InactivityLogout />
         </div>
     );
 }
