@@ -11,15 +11,17 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const { searchParams } = new URL(request.url);
         const where: any = { isActive: true };
+
         if (currentUser.role === 'exporter' && currentUser.exporterId) {
             where.id = currentUser.exporterId;
         }
-        if (currentUser.role === 'admin') {
-            const { searchParams } = new URL(request.url);
-            if (searchParams.get('all') === 'true') {
-                delete where.isActive;
-            }
+        if (currentUser.role === 'admin' && searchParams.get('all') === 'true') {
+            delete where.isActive;
+        }
+        if (searchParams.get('approvedOnly') === 'true') {
+            where.workerRequests = { some: { status: 'approved' } };
         }
 
         const exporters = await prisma.exporter.findMany({
