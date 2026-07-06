@@ -157,11 +157,9 @@ export default function SupervisorDashboard() {
                         </div>
                         <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Checked In Today</p>
                         <p className="mt-2 text-4xl font-bold text-gray-900 dark:text-gray-100">{analytics?.workersCheckedInToday || 0}</p>
-                        {analytics?.workersCheckedInToday > 0 ? (
-                            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">On-site now</p>
-                        ) : (
-                            <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">Start checking in workers!</p>
-                        )}
+                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                            {analytics?.workersCheckedInToday > 0 ? 'workers arrived today' : 'Start checking in workers!'}
+                        </p>
                     </div>
                 </div>
 
