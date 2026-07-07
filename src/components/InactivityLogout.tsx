@@ -44,10 +44,9 @@ export function InactivityLogout() {
         EVENTS.forEach((e) => window.addEventListener(e, onActivity, { passive: true }));
         window.addEventListener('storage', onStorage);
 
-        // Initialise timestamp if not present, then start timer
-        if (!localStorage.getItem(STORAGE_KEY)) {
-            localStorage.setItem(STORAGE_KEY, String(Date.now()));
-        }
+        // Always reset to now on mount — prevents stale timestamp from a previous session
+        // triggering an immediate logout on fresh login
+        localStorage.setItem(STORAGE_KEY, String(Date.now()));
         scheduleCheck();
 
         return () => {
