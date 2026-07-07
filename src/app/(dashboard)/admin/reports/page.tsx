@@ -614,7 +614,7 @@ export default function AdminReportsPage() {
     doc.rect(0, 0, pageWidth, 28, 'F');
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
-    doc.text('Akazi Rwanda Ltd', margin, 12);
+    doc.text('Akazi', margin, 12);
     doc.setFontSize(10);
     doc.text(tabLabels[activeTab], margin, 20);
     doc.setFontSize(8);
@@ -776,7 +776,7 @@ export default function AdminReportsPage() {
       doc.text(`Page ${i} of ${pageCount}  ·  ${format(new Date(), 'dd MMM yyyy HH:mm')}`, pageWidth / 2, pageH - 12, { align: 'center' });
       doc.setFontSize(8);
       doc.setTextColor(6, 95, 70);
-      doc.text('Akazi Rwanda Ltd by Umucyo Women Cooperative', pageWidth / 2, pageH - 6, { align: 'center' });
+      doc.text('Akazi by Umucyo Women Cooperative', pageWidth / 2, pageH - 6, { align: 'center' });
     }
 
     doc.save(`akazi_${activeTab}_report_${format(new Date(), 'yyyyMMdd_HHmmss')}.pdf`);

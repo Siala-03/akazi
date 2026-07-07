@@ -1,8 +1,8 @@
 import { ReactNode } from 'react';
 
 export const metadata = {
-    title: 'Login - Akazi Rwanda Ltd',
-    description: 'Login to Akazi Rwanda Ltd',
+    title: 'Login - Akazi',
+    description: 'Login to Akazi',
 };
 
 export default function AuthLayout({ children }: { children: ReactNode }) {

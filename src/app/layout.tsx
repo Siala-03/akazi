@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Akazi Rwanda Ltd",
-  description: "Digital platform for managing workers at Akazi Rwanda Ltd",
+  title: "Akazi",
+  description: "Digital platform for managing workers at Akazi",
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '32x32' },

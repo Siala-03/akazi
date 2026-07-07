@@ -18,7 +18,7 @@ export async function exportToPDF(data: ExportData): Promise<void> {
     doc.rect(0, 0, pageWidth, 32, 'F');
     doc.setFontSize(18);
     doc.setTextColor(255, 255, 255);
-    doc.text('Akazi Rwanda Ltd', pageWidth / 2, 14, { align: 'center' });
+    doc.text('Akazi', pageWidth / 2, 14, { align: 'center' });
     doc.setFontSize(10);
     doc.text('Exporter Performance Report', pageWidth / 2, 22, { align: 'center' });
 
@@ -164,7 +164,7 @@ export async function exportToPDF(data: ExportData): Promise<void> {
         );
         doc.setFontSize(8);
         doc.setTextColor(6, 95, 70);
-        doc.text('Akazi Rwanda Ltd by Umucyo Women Cooperative', pageWidth / 2, pageH - 6, { align: 'center' });
+        doc.text('Akazi by Umucyo Women Cooperative', pageWidth / 2, pageH - 6, { align: 'center' });
     }
 
     const fileName = `${data.exporterCode}_report_${format(new Date(), 'yyyyMMdd_HHmmss')}.pdf`;

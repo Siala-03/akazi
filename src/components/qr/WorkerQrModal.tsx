@@ -90,10 +90,10 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.font = 'bold 20px Arial, sans-serif';
-        ctx.fillText('Akazi Rwanda Ltd', W / 2, 36);
+        ctx.fillText('Akazi', W / 2, 36);
         ctx.font = '11px Arial, sans-serif';
         ctx.fillStyle = accentSoftHex;
-        ctx.fillText('Akazi Rwanda Ltd', W / 2, 54);
+        ctx.fillText('Akazi', W / 2, 54);
 
         // QR code
         const qrImg = new Image();
@@ -179,8 +179,8 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
             <body>
                 <div class="badge">
                     <div class="badge-header">
-                        Akazi Rwanda Ltd
-                        <span>Akazi Rwanda Ltd</span>
+                        Akazi
+                        <span>Akazi</span>
                     </div>
                     <img src="${qrDataUrl}" class="qr-img" alt="QR Code" />
                     <div class="worker-name">${workerName}</div>
@@ -234,8 +234,8 @@ export function WorkerQrModal({ workerId, workerName, mode, onClose }: WorkerQrM
                             {/* Badge Preview */}
                             <div ref={printRef} className={`border-2 ${previewBorderClass} rounded-xl overflow-hidden mb-4`}>
                                 <div className={`${previewHeaderClass} text-white text-center py-2 px-4`}>
-                                    <p className="font-bold tracking-widest text-sm">Akazi Rwanda Ltd</p>
-                                    <p className={`text-xs ${previewHeaderSubClass}`}>Akazi Rwanda Ltd</p>
+                                    <p className="font-bold tracking-widest text-sm">Akazi</p>
+                                    <p className={`text-xs ${previewHeaderSubClass}`}>Akazi</p>
                                 </div>
                                 <div className="bg-white p-4 text-center">
                                     {qrDataUrl && (

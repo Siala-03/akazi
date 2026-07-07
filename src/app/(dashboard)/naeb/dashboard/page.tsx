@@ -122,7 +122,7 @@ export default function NaebDashboardPage() {
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">NAEB Overview</h1>
-                        <p className="text-white/80 text-base mt-1">Akazi Rwanda Ltd — Coffee Sorting Workforce Summary</p>
+                        <p className="text-white/80 text-base mt-1">Akazi — Coffee Sorting Workforce Summary</p>
                         {lastUpdated && (
                             <p className="text-xs text-white/60 mt-1">Last updated: {lastUpdated.toLocaleTimeString()}</p>
                         )}

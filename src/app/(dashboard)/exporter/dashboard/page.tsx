@@ -124,7 +124,7 @@ export default function ExporterDashboard() {
         ];
 
         const csvContent = [
-            'Akazi Rwanda Ltd - Exporter Daily Breakdown',
+            'Akazi - Exporter Daily Breakdown',
             `Exporter:,${exporterInfo.name}`,
             `Code:,${exporterInfo.code}`,
             `Period:,${periodLabel}`,

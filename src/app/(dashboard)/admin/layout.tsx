@@ -67,7 +67,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                                     <Coffee className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="hidden sm:block">
-                                    <span className="text-lg font-bold text-white tracking-wide">Akazi Rwanda Ltd</span>
+                                    <span className="text-lg font-bold text-white tracking-wide">Akazi</span>
                                     <div>
                                         <span className="text-xs font-medium text-white/50">Admin Portal</span>
                                     </div>

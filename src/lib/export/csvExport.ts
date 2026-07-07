@@ -5,7 +5,7 @@ export async function exportToCSV(data: ExportData): Promise<void> {
     const a = data.analytics;
     let csv = '';
 
-    csv += `Akazi Rwanda Ltd - Exporter Report\n`;
+    csv += `Akazi - Exporter Report\n`;
     csv += `Exporter:,${data.exporterName}\n`;
     csv += `Code:,${data.exporterCode}\n`;
     if (data.dateRange) {

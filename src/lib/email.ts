@@ -35,7 +35,7 @@ export async function sendEmail({ to, subject, html, attachments }: EmailOptions
     try {
         const transporter = getTransporter();
         await transporter.sendMail({
-            from: `"Akazi Rwanda Ltd" <${process.env.SMTP_EMAIL}>`,
+            from: `"Akazi" <${process.env.SMTP_EMAIL}>`,
             to,
             subject,
             html,
@@ -54,12 +54,12 @@ export async function sendEmail({ to, subject, html, attachments }: EmailOptions
 export async function sendOtpEmail(to: string, otp: string, name: string): Promise<{ success: boolean; error?: string }> {
     return sendEmail({
         to,
-        subject: 'Akazi Rwanda Ltd – Password Reset Code',
+        subject: 'Akazi – Password Reset Code',
         html: `
             <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
                 <div style="background:#065f46;color:white;padding:16px;border-radius:8px;text-align:center;margin-bottom:20px;">
-                    <h2 style="margin:0;">Akazi Rwanda Ltd</h2>
-                    <p style="margin:4px 0 0;font-size:12px;opacity:0.85;">Akazi Rwanda Ltd</p>
+                    <h2 style="margin:0;">Akazi</h2>
+                    <p style="margin:4px 0 0;font-size:12px;opacity:0.85;">Akazi</p>
                 </div>
                 <p>Hello <strong>${name}</strong>,</p>
                 <p>You requested a password reset. Use the code below:</p>
@@ -85,15 +85,15 @@ export async function sendWelcomeEmail(
 
     return sendEmail({
         to,
-        subject: `Akazi Rwanda Ltd – Your ${roleLabel} Account Has Been Created`,
+        subject: `Akazi – Your ${roleLabel} Account Has Been Created`,
         html: `
             <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
                 <div style="background:#065f46;color:white;padding:16px;border-radius:8px;text-align:center;margin-bottom:20px;">
-                    <h2 style="margin:0;">Akazi Rwanda Ltd</h2>
-                    <p style="margin:4px 0 0;font-size:12px;opacity:0.85;">Akazi Rwanda Ltd</p>
+                    <h2 style="margin:0;">Akazi</h2>
+                    <p style="margin:4px 0 0;font-size:12px;opacity:0.85;">Akazi</p>
                 </div>
                 <p>Hello <strong>${name}</strong>,</p>
-                <p>An administrator has created a <strong>${roleLabel}</strong> account for you on the Akazi Rwanda Ltd.</p>
+                <p>An administrator has created a <strong>${roleLabel}</strong> account for you on the Akazi.</p>
                 <p>Use the credentials below to log in:</p>
                 <div style="background:#f0fdf4;border:1px solid #d1fae5;border-radius:8px;padding:16px;margin:20px 0;">
                     <p style="margin:0 0 8px;font-size:14px;color:#374151;"><strong>Email:</strong> ${to}</p>
@@ -128,15 +128,15 @@ export async function sendQrBadgeEmail(
 
     return sendEmail({
         to,
-        subject: `Akazi Rwanda Ltd – Your Worker QR Badge`,
+        subject: `Akazi – Your Worker QR Badge`,
         html: `
             <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
                 <div style="background:#065f46;color:white;padding:16px;border-radius:8px;text-align:center;margin-bottom:20px;">
-                    <h2 style="margin:0;">Akazi Rwanda Ltd</h2>
-                    <p style="margin:4px 0 0;font-size:12px;opacity:0.85;">Akazi Rwanda Ltd</p>
+                    <h2 style="margin:0;">Akazi</h2>
+                    <p style="margin:4px 0 0;font-size:12px;opacity:0.85;">Akazi</p>
                 </div>
                 <p>Hello <strong>${workerName}</strong>,</p>
-                <p>You have been registered in the Akazi Rwanda Ltd. Below is your QR badge for check-in:</p>
+                <p>You have been registered in the Akazi. Below is your QR badge for check-in:</p>
                 <div style="text-align:center;margin:20px 0;">
                     <img src="cid:qrbadge" alt="QR Code" style="width:200px;height:200px;border:1px solid #d1fae5;border-radius:8px;" />
                 </div>

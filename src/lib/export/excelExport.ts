@@ -8,7 +8,7 @@ export async function exportToExcel(data: ExportData): Promise<void> {
 
   // ── Summary Sheet ──
   const summaryRows: any[][] = [
-    ['Akazi Rwanda Ltd - Exporter Report'],
+    ['Akazi - Exporter Report'],
     [],
     ['Exporter:', data.exporterName],
     ['Code:', data.exporterCode],

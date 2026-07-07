@@ -59,7 +59,7 @@ export default function AdminDashboard() {
 
     const getExportData = (): ExportData => {
         return {
-            exporterName: 'Akazi Rwanda Ltd',
+            exporterName: 'Akazi',
             exporterCode: 'ADMIN',
             analytics: analytics ? {
                 periodWorkersEngaged: analytics.workersCheckedInToday || 0,
