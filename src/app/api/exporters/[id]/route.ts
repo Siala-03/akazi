@@ -63,9 +63,23 @@ export async function DELETE(
         }
 
         const { id } = await params;
-        const exporter = await prisma.exporter.update({ where: { id }, data: { isActive: false } });
 
-        return NextResponse.json({ message: 'Exporter deactivated successfully', exporter: { ...exporter, _id: exporter.id } });
+        const hasSessions = await prisma.session.count({ where: { exporterId: id } });
+        if (hasSessions > 0) {
+            return NextResponse.json(
+                { error: 'Cannot delete an exporter with existing session records. Deactivate them instead.' },
+                { status: 409 }
+            );
+        }
+
+        await prisma.$transaction([
+            prisma.workerRequest.deleteMany({ where: { exporterId: id } }),
+            prisma.rateCard.deleteMany({ where: { exporterId: id } }),
+            prisma.user.deleteMany({ where: { exporterId: id, role: 'exporter' } }),
+            prisma.exporter.delete({ where: { id } }),
+        ]);
+
+        return NextResponse.json({ message: 'Exporter deleted successfully' });
     } catch (error) {
         console.error('Delete exporter error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

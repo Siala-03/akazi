@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import {
     Building2, MapPin, User, Phone, Mail,
-    Plus, Search, RefreshCw, Edit2, Power, PowerOff, X, Hash, KeyRound, DollarSign, Zap, ZapOff,
+    Plus, Search, RefreshCw, Edit2, Power, PowerOff, X, Hash, KeyRound, DollarSign, Zap, ZapOff, Trash2,
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
@@ -164,6 +164,19 @@ export default function AdminExportersPage() {
             fetchExporters();
         } catch {
             toast.error('Failed to update operations access');
+        }
+    };
+
+    const handleDelete = async (exporter: Exporter) => {
+        if (!confirm(`Permanently delete "${exporter.companyTradingName}"?\n\nThis will also remove their login account. This cannot be undone.`)) return;
+        try {
+            const res = await fetch(`/api/exporters/${exporter._id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Delete failed');
+            toast.success(`${exporter.companyTradingName} deleted`);
+            fetchExporters();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to delete exporter');
         }
     };
 
@@ -412,6 +425,13 @@ export default function AdminExportersPage() {
                                                     title={exp.isActive ? 'Deactivate' : 'Activate'}
                                                 >
                                                     {exp.isActive ? <PowerOff className="w-4 h-4" strokeWidth={2.5} /> : <Power className="w-4 h-4" strokeWidth={2.5} />}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(exp)}
+                                                    className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                                    title="Delete exporter"
+                                                >
+                                                    <Trash2 className="w-4 h-4" strokeWidth={2.5} />
                                                 </button>
                                             </div>
                                         </td>
