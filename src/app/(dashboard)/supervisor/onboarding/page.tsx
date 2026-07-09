@@ -41,8 +41,8 @@ function validate(step: number, data: FormData): Errors {
         if (data.dateOfBirth) {
             const dob = new Date(data.dateOfBirth);
             const minDate = new Date();
-            minDate.setFullYear(minDate.getFullYear() - 16);
-            if (dob > minDate) e.dateOfBirth = 'Worker must be at least 16 years old';
+            minDate.setFullYear(minDate.getFullYear() - 18);
+            if (dob > minDate) e.dateOfBirth = 'Worker must be at least 18 years old';
         }
     }
     if (step >= 2) {
@@ -219,7 +219,7 @@ export default function OnboardingPage() {
                                     type="date"
                                     value={formData.dateOfBirth}
                                     onChange={e => set('dateOfBirth', e.target.value)}
-                                    max={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 16); return d.toISOString().slice(0, 10); })()}
+                                    max={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d.toISOString().slice(0, 10); })()}
                                     className={inputClass('dateOfBirth')}
                                 />
                                 {fieldError('dateOfBirth') && <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('dateOfBirth')}</p>}
