@@ -142,9 +142,29 @@ export default function NaebDashboardPage() {
                 <div className="rounded-xl border border-red-200 bg-red-50 text-red-800 px-4 py-3 text-sm">{error}</div>
             )}
 
-            {/* Stat Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                {statCards.map((card) => {
+            {/* Stat Cards — row 1: 3 cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {statCards.slice(0, 3).map((card) => {
+                    const Icon = card.icon;
+                    return (
+                        <div key={card.label} className={`relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 ${card.border} border-t border-r border-b border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:-translate-y-1 transition-all`}>
+                            <div className="flex items-center justify-between mb-3">
+                                <Icon className={`w-6 h-6 ${card.iconColor}`} />
+                                <TrendingUp className="w-4 h-4 text-gray-300" />
+                            </div>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">{card.label}</p>
+                            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                                {loading ? '—' : card.value}
+                            </p>
+                            <p className={`mt-1 text-xs font-medium ${card.subColor}`}>{card.sub}</p>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Stat Cards — row 2: last 2 cards full width */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {statCards.slice(3).map((card) => {
                     const Icon = card.icon;
                     return (
                         <div key={card.label} className={`relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 ${card.border} border-t border-r border-b border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:-translate-y-1 transition-all`}>
