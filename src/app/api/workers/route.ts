@@ -140,9 +140,9 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: 'Invalid date of birth' }, { status: 400 });
             }
             const minDob = new Date();
-            minDob.setFullYear(minDob.getFullYear() - 18);
+            minDob.setFullYear(minDob.getFullYear() - 16);
             if (dob > minDob) {
-                return NextResponse.json({ error: 'Worker must be at least 18 years old' }, { status: 400 });
+                return NextResponse.json({ error: 'Worker must be at least 16 years old' }, { status: 400 });
             }
             parsedDateOfBirth = dob;
         }
