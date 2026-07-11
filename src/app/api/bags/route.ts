@@ -173,7 +173,6 @@ export async function GET(request: NextRequest) {
             const bags = await prisma.bag.findMany({
                 where,
                 orderBy: { date: 'desc' },
-                take: 200,
             });
 
             return NextResponse.json({ bags: bags.map((b) => ({ ...b, _id: b.id })) });
@@ -220,7 +219,6 @@ export async function GET(request: NextRequest) {
                     ${exporterFilter}
                     ${statusFilter}
                     ORDER BY b.date DESC
-                    LIMIT 200
                 `
             );
 
