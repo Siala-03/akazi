@@ -268,11 +268,7 @@ export default function WorkersPage() {
             render: (worker) => (
                 <div className="flex items-center gap-2 text-gray-600">
                     <Calendar className="w-4 h-4 text-gray-400" />
-                    {new Date(worker.enrollmentDate).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                    })}
+                    {new Date(worker.enrollmentDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </div>
             )
         },

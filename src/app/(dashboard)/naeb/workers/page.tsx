@@ -75,7 +75,7 @@ export default function NaebWorkersPage() {
             w.cooperativeId?.name ?? '—',
             w.dateOfBirth ? new Date(w.dateOfBirth).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
             w.status,
-            new Date(w.enrollmentDate).toLocaleDateString('en-GB'),
+            new Date(w.enrollmentDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         ]);
         const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
