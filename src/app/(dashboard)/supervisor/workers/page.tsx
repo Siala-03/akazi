@@ -14,6 +14,7 @@ interface Worker {
     phone: string;
     gender: string;
     status: string;
+    dateOfBirth?: string;
     enrollmentDate: string;
     weekSessions?: number;
 }
@@ -204,6 +205,18 @@ export default function WorkersPage() {
                     <Phone className="w-4 h-4 text-gray-400" />
                     {worker.phone}
                 </div>
+            )
+        },
+        {
+            key: 'dateOfBirth',
+            label: 'Date of Birth',
+            sortable: true,
+            render: (worker) => (
+                <span className="text-gray-600">
+                    {worker.dateOfBirth
+                        ? new Date(worker.dateOfBirth).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : '—'}
+                </span>
             )
         },
         {

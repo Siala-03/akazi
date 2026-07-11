@@ -16,6 +16,7 @@ interface Worker {
     email?: string;
     primaryRole: string;
     status: string;
+    dateOfBirth?: string;
     cooperativeId: {
         _id: string;
         name: string;
@@ -310,7 +311,7 @@ export default function AdminWorkersPage() {
                     </div>
                 </div>
                 {loading ? (
-                    <SkeletonTable rows={8} cols={6} />
+                    <SkeletonTable rows={8} cols={7} />
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -319,6 +320,7 @@ export default function AdminWorkersPage() {
                                     <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
                                     <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Worker ID</th>
                                     <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date of Birth</th>
                                     <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cooperative</th>
                                     <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                                     <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
@@ -347,6 +349,13 @@ export default function AdminWorkersPage() {
                                                 {worker.phone}
                                             </div>
                                             <div className="text-xs text-gray-400 capitalize mt-0.5 ml-5">{worker.gender}</div>
+                                        </td>
+
+                                        {/* Date of Birth */}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                            {worker.dateOfBirth
+                                                ? new Date(worker.dateOfBirth).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                                : '—'}
                                         </td>
 
                                         {/* Cooperative */}

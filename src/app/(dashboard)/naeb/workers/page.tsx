@@ -14,6 +14,7 @@ interface Worker {
     phone: string;
     primaryRole: string;
     status: string;
+    dateOfBirth?: string;
     enrollmentDate: string;
     cooperativeId: { _id: string; name: string } | null;
 }
@@ -64,7 +65,7 @@ export default function NaebWorkersPage() {
     const activeCount = filtered.filter(w => w.status === 'active').length;
 
     const handleExportCsv = () => {
-        const headers = ['Full Name', 'National ID', 'Gender', 'Phone', 'Role', 'Cooperative', 'Status', 'Enrolled'];
+        const headers = ['Full Name', 'National ID', 'Gender', 'Phone', 'Role', 'Cooperative', 'Date of Birth', 'Status', 'Enrolled'];
         const rows = filtered.map(w => [
             w.fullName,
             w.workerId,
@@ -72,6 +73,7 @@ export default function NaebWorkersPage() {
             w.phone,
             w.primaryRole,
             w.cooperativeId?.name ?? '—',
+            w.dateOfBirth ? new Date(w.dateOfBirth).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
             w.status,
             new Date(w.enrollmentDate).toLocaleDateString('en-GB'),
         ]);
@@ -162,13 +164,13 @@ export default function NaebWorkersPage() {
                 </div>
 
                 {loading ? (
-                    <SkeletonTable rows={10} cols={7} />
+                    <SkeletonTable rows={10} cols={8} />
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-gray-50 dark:bg-[#162032]">
                                 <tr>
-                                    {['Full Name', 'National ID', 'Gender', 'Phone', 'Cooperative', 'Status', 'Enrolled'].map(h => (
+                                    {['Full Name', 'National ID', 'Gender', 'Phone', 'Cooperative', 'Date of Birth', 'Status', 'Enrolled'].map(h => (
                                         <th key={h} className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
                                     ))}
                                 </tr>
@@ -176,7 +178,7 @@ export default function NaebWorkersPage() {
                             <tbody className="bg-white dark:bg-[#1e293b] divide-y divide-gray-100 dark:divide-gray-700/40">
                                 {paginated.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-5 py-12 text-center text-gray-400 text-sm">
+                                        <td colSpan={8} className="px-5 py-12 text-center text-gray-400 text-sm">
                                             No workers match the selected filters.
                                         </td>
                                     </tr>
@@ -203,6 +205,11 @@ export default function NaebWorkersPage() {
                                         </td>
                                         <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-400">
                                             {worker.cooperativeId?.name ?? '—'}
+                                        </td>
+                                        <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-400">
+                                            {worker.dateOfBirth
+                                                ? new Date(worker.dateOfBirth).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                                : '—'}
                                         </td>
                                         <td className="px-5 py-3.5">
                                             {worker.status === 'active' ? (
