@@ -59,7 +59,6 @@ export async function GET(request: NextRequest) {
             where,
             include: { cooperative: true },
             orderBy: { createdAt: 'desc' },
-            take: 100,
         });
 
         // Calculate weekly sessions for each worker
