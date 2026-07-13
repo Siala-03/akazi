@@ -316,18 +316,10 @@ export default function WorkersPage() {
                     <button
                         onClick={() => setQrWorker({ id: worker._id, name: worker.fullName })}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium transition-colors border border-emerald-200"
-                        title="Show check-in QR badge"
+                        title="Show attendance QR badge"
                     >
                         <QrCode className="w-4 h-4" />
-                        QR In
-                    </button>
-                    <button
-                        onClick={() => setQrWorker({ id: worker._id, name: worker.fullName })}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium transition-colors border border-red-200"
-                        title="Show check-out QR badge"
-                    >
-                        <QrCode className="w-4 h-4" />
-                        QR Out
+                        QR
                     </button>
                 </div>
             )
