@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Palette, Download, Bell, Database, DollarSign, Shield, Users, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, Palette, Download, Bell, Database, DollarSign, Shield, Users, CheckCircle, AlertCircle, Loader2, Lock } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useSettings, ExportFormat, DateFormat } from '@/contexts/SettingsContext';
 
@@ -9,13 +9,14 @@ const ThemeToggle = dynamic(() => import('@/components/theme/ThemeToggle').then(
 
 export default function AdminSettingsPage() {
   const { settings, updateNotifications, updateExports } = useSettings();
-  const [activeTab, setActiveTab] = useState<'appearance' | 'exports' | 'notifications' | 'rates' | 'system'>('appearance');
+  const [activeTab, setActiveTab] = useState<'appearance' | 'exports' | 'notifications' | 'rates' | 'permissions' | 'system'>('appearance');
 
   const tabs = [
     { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme and display settings' },
     { id: 'exports', label: 'Exports', icon: Download, description: 'Export preferences and formats' },
     { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Email and browser notifications' },
     { id: 'rates', label: 'Rate Configuration', icon: DollarSign, description: 'Set exporter and worker daily rates' },
+    { id: 'permissions', label: 'Permissions', icon: Lock, description: 'Control what each portal can do' },
     { id: 'system', label: 'System', icon: Database, description: 'System configuration' },
   ] as const;
 
@@ -83,6 +84,7 @@ export default function AdminSettingsPage() {
             {activeTab === 'exports' && <ExportsTab settings={settings} updateExports={updateExports} />}
             {activeTab === 'notifications' && <NotificationsTab settings={settings} updateNotifications={updateNotifications} />}
             {activeTab === 'rates' && <RatesTab />}
+            {activeTab === 'permissions' && <PermissionsTab />}
             {activeTab === 'system' && <SystemTab />}
           </div>
         </div>
@@ -390,9 +392,10 @@ function RatesTab() {
   );
 }
 
-function SystemTab() {
+function PermissionsTab() {
   const [supervisorCanEdit, setSupervisorCanEdit] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -405,6 +408,7 @@ function SystemTab() {
   const handleToggle = async (value: boolean) => {
     setSupervisorCanEdit(value);
     setSaving(true);
+    setSaved(false);
     try {
       const current = await fetch('/api/admin/settings').then(r => r.json());
       await fetch('/api/admin/settings', {
@@ -416,6 +420,8 @@ function SystemTab() {
           supervisorCanEditWorkers: value,
         }),
       });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
     } finally {
       setSaving(false);
     }
@@ -424,20 +430,24 @@ function SystemTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--foreground)' }}>System Configuration</h2>
-        <p className="text-sm mb-6" style={{ color: 'var(--muted-foreground)' }}>Advanced system settings and information</p>
-        <div className="space-y-4">
+        <h2 className="text-xl font-semibold mb-1" style={{ color: 'var(--foreground)' }}>Permissions</h2>
+        <p className="text-sm mb-6" style={{ color: 'var(--muted-foreground)' }}>
+          Control what actions each portal role is allowed to perform.
+        </p>
 
-          {/* Portal Permissions */}
-          <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--muted)' }}>
-            <h4 className="font-medium mb-3" style={{ color: 'var(--foreground)' }}>Portal Permissions</h4>
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>Allow Supervisors to Edit Worker Details</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
-                  When disabled, supervisors can view workers but cannot modify their information
-                </p>
-              </div>
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--muted-foreground)' }}>Supervisor Portal</h3>
+
+          <div className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: 'var(--muted)' }}>
+            <div className="flex-1">
+              <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>Edit Worker Details</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
+                Allow supervisors to edit worker name, phone, gender, status, and date of birth
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0 ml-4">
+              {saved && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
+              {saving && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
               <label className={`relative inline-flex items-center ${saving ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}>
                 <input
                   type="checkbox"
@@ -449,6 +459,19 @@ function SystemTab() {
               </label>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SystemTab() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--foreground)' }}>System Configuration</h2>
+        <p className="text-sm mb-6" style={{ color: 'var(--muted-foreground)' }}>Advanced system settings and information</p>
+        <div className="space-y-4">
           <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--muted)' }}>
             <h4 className="font-medium mb-3" style={{ color: 'var(--foreground)' }}>System Information</h4>
             <div className="space-y-2 text-sm">
