@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Palette, Download, Bell } from 'lucide-react';
+import { X, Palette, Download, Bell, Lock, Loader2 } from 'lucide-react';
 import { ThemeToggle } from '../theme/ThemeToggle';
 import { useSettings, ExportFormat, DateFormat } from '@/contexts/SettingsContext';
 
@@ -13,12 +13,48 @@ interface SettingsModalProps {
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { settings, updateNotifications, updateExports } = useSettings();
-  const [activeTab, setActiveTab] = useState<'appearance' | 'exports' | 'notifications'>('appearance');
+  const [activeTab, setActiveTab] = useState<'appearance' | 'exports' | 'notifications' | 'permissions'>('appearance');
   const [mounted, setMounted] = useState(false);
+  const [supervisorCanEdit, setSupervisorCanEdit] = useState<boolean | null>(null);
+  const [permSaving, setPermSaving] = useState(false);
+  const [permSaved, setPermSaved] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetch('/api/admin/settings')
+        .then(r => r.json())
+        .then(data => {
+          if (data.settings) setSupervisorCanEdit(data.settings.supervisorCanEditWorkers ?? true);
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
+
+  const handlePermToggle = async (value: boolean) => {
+    setSupervisorCanEdit(value);
+    setPermSaving(true);
+    setPermSaved(false);
+    try {
+      const current = await fetch('/api/admin/settings').then(r => r.json());
+      await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          exporterDailyRate: current.settings.exporterDailyRate,
+          workerDailyWage: current.settings.workerDailyWage,
+          supervisorCanEditWorkers: value,
+        }),
+      });
+      setPermSaved(true);
+      setTimeout(() => setPermSaved(false), 3000);
+    } finally {
+      setPermSaving(false);
+    }
+  };
 
   if (!isOpen || !mounted) return null;
 
@@ -26,6 +62,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     { id: 'appearance',    label: 'Appearance',    icon: Palette },
     { id: 'exports',       label: 'Exports',       icon: Download },
     { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'permissions',   label: 'Permissions',   icon: Lock },
   ] as const;
 
   return (
@@ -108,6 +145,31 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                   <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
                 </select>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'permissions' && (
+            <div className="space-y-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">Supervisor Portal</p>
+              <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Edit Worker Details</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Allow supervisors to edit worker name, phone, gender, status, and date of birth</p>
+                </div>
+                <div className="flex items-center gap-3 ml-4 shrink-0">
+                  {permSaved && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
+                  {permSaving && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+                  <label className={`relative inline-flex items-center ${permSaving ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}>
+                    <input
+                      type="checkbox"
+                      checked={supervisorCanEdit ?? true}
+                      onChange={e => handlePermToggle(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-focus:ring-2 peer-focus:ring-emerald-400 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500" />
+                  </label>
+                </div>
               </div>
             </div>
           )}
