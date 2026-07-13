@@ -351,7 +351,7 @@ export default function ExporterDashboard() {
                 </div>
 
                 {(() => {
-                    const allRows = analytics?.dailyBreakdown || [];
+                    const allRows = [...(analytics?.dailyBreakdown || [])].sort((a: any, b: any) => b.date.localeCompare(a.date));
                     const totalBreakdownPages = Math.max(1, Math.ceil(allRows.length / breakdownPageSize));
                     const safeBreakdownPage = Math.min(breakdownPage, totalBreakdownPages);
                     const paginatedRows = allRows.slice((safeBreakdownPage - 1) * breakdownPageSize, safeBreakdownPage * breakdownPageSize);
