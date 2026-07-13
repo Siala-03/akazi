@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { UserPlus, Users, Phone, Calendar, User, Filter, X, ChevronDown, Search, Clock, Banknote, Award, TrendingUp, Eye, BarChart2, QrCode } from 'lucide-react';
+import { UserPlus, Users, Phone, Calendar, User, Filter, X, ChevronDown, Search, Clock, Banknote, Award, TrendingUp, Eye, BarChart2, QrCode, Pencil, Loader2 } from 'lucide-react';
 import DataTable, { Column } from '@/components/DataTable';
 import { WorkerQrModal } from '@/components/qr/WorkerQrModal';
 import { PageHeader } from '@/components/PageHeader';
@@ -56,7 +56,9 @@ export default function WorkersPage() {
     const [workerDetails, setWorkerDetails] = useState<WorkerDetails | null>(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
     const [qrWorker, setQrWorker] = useState<{ id: string; name: string } | null>(null);
-    
+    const [editWorker, setEditWorker] = useState<Worker | null>(null);
+    const [canEditWorkers, setCanEditWorkers] = useState(false);
+
     const [filters, setFilters] = useState<FilterParams>({
         search: '',
         status: 'all',
@@ -65,6 +67,13 @@ export default function WorkersPage() {
         dateTo: '',
         week: ''
     });
+
+    useEffect(() => {
+        fetch('/api/settings/features')
+            .then(r => r.json())
+            .then(data => setCanEditWorkers(data.supervisorCanEditWorkers ?? false))
+            .catch(() => {});
+    }, []);
 
     useEffect(() => {
         fetchWorkers();
@@ -285,6 +294,15 @@ export default function WorkersPage() {
                         <Eye className="w-4 h-4" />
                         Details
                     </button>
+                    {canEditWorkers && (
+                        <button
+                            onClick={() => setEditWorker(worker)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200"
+                        >
+                            <Pencil className="w-4 h-4" />
+                            Edit
+                        </button>
+                    )}
                     <button
                         onClick={() => setQrWorker({ id: worker._id, name: worker.fullName })}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium transition-colors border border-emerald-200"
@@ -301,7 +319,6 @@ export default function WorkersPage() {
                         <QrCode className="w-4 h-4" />
                         QR Out
                     </button>
-
                 </div>
             )
         }
@@ -616,6 +633,154 @@ export default function WorkersPage() {
                     onClose={() => setQrWorker(null)}
                 />
             )}
+
+            {/* Edit Worker Modal */}
+            {editWorker && (
+                <EditWorkerModal
+                    worker={editWorker}
+                    onClose={() => setEditWorker(null)}
+                    onSaved={(updated) => {
+                        setWorkers(prev => prev.map(w => w._id === updated._id ? { ...w, ...updated } : w));
+                        setEditWorker(null);
+                    }}
+                />
+            )}
+        </div>
+    );
+}
+
+function EditWorkerModal({ worker, onClose, onSaved }: {
+    worker: Worker;
+    onClose: () => void;
+    onSaved: (updated: Worker) => void;
+}) {
+    const [form, setForm] = useState({
+        fullName: worker.fullName,
+        phone: worker.phone,
+        gender: worker.gender,
+        status: worker.status,
+        dateOfBirth: worker.dateOfBirth ? worker.dateOfBirth.slice(0, 10) : '',
+    });
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSave = async () => {
+        if (!form.fullName.trim()) { setError('Full name is required'); return; }
+        const cleanPhone = form.phone.replace(/\D/g, '');
+        if (!/^07\d{8}$/.test(cleanPhone)) { setError('Phone must start with 07 and be exactly 10 digits'); return; }
+
+        setSaving(true);
+        setError('');
+        try {
+            const res = await fetch(`/api/workers/${worker._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...form, phone: cleanPhone }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to save');
+            onSaved({ ...worker, ...form, phone: cleanPhone });
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2">
+                        <Pencil className="w-5 h-5 text-blue-600" />
+                        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Edit Worker</h2>
+                    </div>
+                    <button onClick={onClose} className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+                </div>
+
+                <div className="p-6 space-y-4">
+                    {error && (
+                        <div className="px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
+                            {error}
+                        </div>
+                    )}
+
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Full Name</label>
+                        <input
+                            type="text"
+                            value={form.fullName}
+                            onChange={e => setForm(p => ({ ...p, fullName: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Phone</label>
+                        <input
+                            type="tel"
+                            value={form.phone}
+                            onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Gender</label>
+                            <select
+                                value={form.gender}
+                                onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Status</label>
+                            <select
+                                value={form.status}
+                                onChange={e => setForm(p => ({ ...p, status: e.target.value }))}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Date of Birth</label>
+                        <input
+                            type="date"
+                            value={form.dateOfBirth}
+                            max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().slice(0, 10)}
+                            onChange={e => setForm(p => ({ ...p, dateOfBirth: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                        <button
+                            onClick={onClose}
+                            className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors"
+                        >
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pencil className="w-4 h-4" />}
+                            {saving ? 'Saving…' : 'Save Changes'}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

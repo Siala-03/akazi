@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { getSettings } from '@/lib/settings';
 import { toMongo } from '@/lib/serialize';
 
 export async function GET(
@@ -38,6 +39,13 @@ export async function PUT(
         const currentUser = await getCurrentUser();
         if (!currentUser || !['supervisor', 'admin'].includes(currentUser.role)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        if (currentUser.role === 'supervisor') {
+            const settings = await getSettings();
+            if (!settings.supervisorCanEditWorkers) {
+                return NextResponse.json({ error: 'Worker editing has been disabled by the administrator' }, { status: 403 });
+            }
         }
 
         const body = await request.json();

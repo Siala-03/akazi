@@ -391,12 +391,64 @@ function RatesTab() {
 }
 
 function SystemTab() {
+  const [supervisorCanEdit, setSupervisorCanEdit] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/admin/settings')
+      .then(r => r.json())
+      .then(data => {
+        if (data.settings) setSupervisorCanEdit(data.settings.supervisorCanEditWorkers ?? true);
+      });
+  }, []);
+
+  const handleToggle = async (value: boolean) => {
+    setSupervisorCanEdit(value);
+    setSaving(true);
+    try {
+      const current = await fetch('/api/admin/settings').then(r => r.json());
+      await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          exporterDailyRate: current.settings.exporterDailyRate,
+          workerDailyWage: current.settings.workerDailyWage,
+          supervisorCanEditWorkers: value,
+        }),
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--foreground)' }}>System Configuration</h2>
         <p className="text-sm mb-6" style={{ color: 'var(--muted-foreground)' }}>Advanced system settings and information</p>
         <div className="space-y-4">
+
+          {/* Portal Permissions */}
+          <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--muted)' }}>
+            <h4 className="font-medium mb-3" style={{ color: 'var(--foreground)' }}>Portal Permissions</h4>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>Allow Supervisors to Edit Worker Details</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
+                  When disabled, supervisors can view workers but cannot modify their information
+                </p>
+              </div>
+              <label className={`relative inline-flex items-center ${saving ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}>
+                <input
+                  type="checkbox"
+                  checked={supervisorCanEdit ?? true}
+                  onChange={e => handleToggle(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+              </label>
+            </div>
+          </div>
           <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--muted)' }}>
             <h4 className="font-medium mb-3" style={{ color: 'var(--foreground)' }}>System Information</h4>
             <div className="space-y-2 text-sm">

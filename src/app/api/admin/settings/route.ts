@@ -32,7 +32,7 @@ export async function PUT(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { exporterDailyRate, workerDailyWage } = body;
+        const { exporterDailyRate, workerDailyWage, supervisorCanEditWorkers } = body;
 
         if (
             typeof exporterDailyRate !== 'number' ||
@@ -47,10 +47,15 @@ export async function PUT(request: NextRequest) {
             );
         }
 
+        const updateData: any = { exporterDailyRate, workerDailyWage };
+        if (typeof supervisorCanEditWorkers === 'boolean') {
+            updateData.supervisorCanEditWorkers = supervisorCanEditWorkers;
+        }
+
         const settings = await prisma.settings.upsert({
             where: { id: 'singleton' },
-            update: { exporterDailyRate, workerDailyWage },
-            create: { id: 'singleton', exporterDailyRate, workerDailyWage },
+            update: updateData,
+            create: { id: 'singleton', exporterDailyRate, workerDailyWage, supervisorCanEditWorkers: supervisorCanEditWorkers ?? true },
         });
 
         invalidateSettingsCache();
