@@ -68,11 +68,21 @@ export default function WorkersPage() {
         week: ''
     });
 
-    useEffect(() => {
+    const fetchFeatureFlags = () => {
         fetch('/api/settings/features')
             .then(r => r.json())
-            .then(data => setCanEditWorkers(data.supervisorCanEditWorkers ?? false))
+            .then(data => {
+                if (typeof data.supervisorCanEditWorkers === 'boolean') {
+                    setCanEditWorkers(data.supervisorCanEditWorkers);
+                }
+            })
             .catch(() => {});
+    };
+
+    useEffect(() => {
+        fetchFeatureFlags();
+        window.addEventListener('focus', fetchFeatureFlags);
+        return () => window.removeEventListener('focus', fetchFeatureFlags);
     }, []);
 
     useEffect(() => {

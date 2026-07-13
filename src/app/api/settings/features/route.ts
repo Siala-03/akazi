@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { getSettings } from '@/lib/settings';
+import prisma from '@/lib/prisma';
 
 export async function GET() {
     try {
@@ -9,10 +9,10 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const settings = await getSettings();
+        const settings = await prisma.settings.findFirst();
 
         return NextResponse.json({
-            supervisorCanEditWorkers: settings.supervisorCanEditWorkers,
+            supervisorCanEditWorkers: settings?.supervisorCanEditWorkers ?? true,
         });
     } catch (error) {
         console.error('Get features error:', error);
