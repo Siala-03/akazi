@@ -16,8 +16,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<'appearance' | 'exports' | 'notifications' | 'permissions'>('appearance');
   const [mounted, setMounted] = useState(false);
   const [supervisorCanEdit, setSupervisorCanEdit] = useState<boolean | null>(null);
+  const [cachedRates, setCachedRates] = useState<{ exporterDailyRate: number; workerDailyWage: number } | null>(null);
   const [permSaving, setPermSaving] = useState(false);
   const [permSaved, setPermSaved] = useState(false);
+  const [permError, setPermError] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -28,29 +30,40 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       fetch('/api/admin/settings')
         .then(r => r.json())
         .then(data => {
-          if (data.settings) setSupervisorCanEdit(data.settings.supervisorCanEditWorkers ?? true);
+          if (data.settings) {
+            setSupervisorCanEdit(data.settings.supervisorCanEditWorkers ?? true);
+            setCachedRates({
+              exporterDailyRate: data.settings.exporterDailyRate,
+              workerDailyWage: data.settings.workerDailyWage,
+            });
+          }
         })
         .catch(() => {});
     }
   }, [isOpen]);
 
   const handlePermToggle = async (value: boolean) => {
+    if (!cachedRates) return;
     setSupervisorCanEdit(value);
     setPermSaving(true);
     setPermSaved(false);
+    setPermError('');
     try {
-      const current = await fetch('/api/admin/settings').then(r => r.json());
-      await fetch('/api/admin/settings', {
+      const res = await fetch('/api/admin/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          exporterDailyRate: current.settings.exporterDailyRate,
-          workerDailyWage: current.settings.workerDailyWage,
+          exporterDailyRate: cachedRates.exporterDailyRate,
+          workerDailyWage: cachedRates.workerDailyWage,
           supervisorCanEditWorkers: value,
         }),
       });
+      if (!res.ok) throw new Error('Save failed');
       setPermSaved(true);
       setTimeout(() => setPermSaved(false), 3000);
+    } catch {
+      setSupervisorCanEdit(!value);
+      setPermError('Failed to save — try again');
     } finally {
       setPermSaving(false);
     }
@@ -159,6 +172,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
                 <div className="flex items-center gap-3 ml-4 shrink-0">
                   {permSaved && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
+                  {permError && <span className="text-xs text-red-500 font-medium">{permError}</span>}
                   {permSaving && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
                   <label className={`relative inline-flex items-center ${permSaving ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}>
                     <input
