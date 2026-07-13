@@ -50,10 +50,23 @@ export async function PUT(
         const body = await request.json();
         const { id } = await params;
 
-        // Strip immutable fields
-        const { workerId: _wid, enrollmentDate: _ed, consentTimestamp: _ct, id: _id, dateOfBirth: rawDob, ...rest } = body;
+        // Strip immutable fields (except workerId which is editable)
+        const { enrollmentDate: _ed, consentTimestamp: _ct, id: _id, workerId, dateOfBirth: rawDob, ...rest } = body;
 
         const data: any = { ...rest };
+
+        if (workerId) {
+            const cleanId = String(workerId).trim();
+            if (!/^\d{16}$/.test(cleanId)) {
+                return NextResponse.json({ error: 'National ID must be exactly 16 digits' }, { status: 400 });
+            }
+            const duplicate = await prisma.worker.findFirst({ where: { workerId: cleanId, NOT: { id } } });
+            if (duplicate) {
+                return NextResponse.json({ error: 'A worker with this National ID already exists' }, { status: 409 });
+            }
+            data.workerId = cleanId;
+        }
+
         if (rawDob) {
             data.dateOfBirth = new Date(rawDob);
         } else {

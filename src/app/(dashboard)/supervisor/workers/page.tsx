@@ -666,6 +666,7 @@ function EditWorkerModal({ worker, onClose, onSaved }: {
 }) {
     const [form, setForm] = useState({
         fullName: worker.fullName,
+        workerId: worker.workerId,
         phone: worker.phone,
         gender: worker.gender,
         status: worker.status,
@@ -678,6 +679,8 @@ function EditWorkerModal({ worker, onClose, onSaved }: {
         if (!form.fullName.trim()) { setError('Full name is required'); return; }
         const cleanPhone = form.phone.replace(/\D/g, '');
         if (!/^07\d{8}$/.test(cleanPhone)) { setError('Phone must start with 07 and be exactly 10 digits'); return; }
+        const cleanId = form.workerId.replace(/\s/g, '');
+        if (!/^\d{16}$/.test(cleanId)) { setError('National ID must be exactly 16 digits'); return; }
 
         setSaving(true);
         setError('');
@@ -685,11 +688,11 @@ function EditWorkerModal({ worker, onClose, onSaved }: {
             const res = await fetch(`/api/workers/${worker._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...form, phone: cleanPhone }),
+                body: JSON.stringify({ ...form, phone: cleanPhone, workerId: cleanId }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to save');
-            onSaved({ ...worker, ...form, phone: cleanPhone });
+            onSaved({ ...worker, ...form, phone: cleanPhone, workerId: cleanId });
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -724,6 +727,18 @@ function EditWorkerModal({ worker, onClose, onSaved }: {
                             value={form.fullName}
                             onChange={e => setForm(p => ({ ...p, fullName: e.target.value }))}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">National ID</label>
+                        <input
+                            type="text"
+                            value={form.workerId}
+                            maxLength={16}
+                            onChange={e => setForm(p => ({ ...p, workerId: e.target.value.replace(/\D/g, '') }))}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-mono bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="16-digit national ID"
                         />
                     </div>
 
