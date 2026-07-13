@@ -51,7 +51,14 @@ export async function PUT(
         const { id } = await params;
 
         // Strip immutable fields
-        const { workerId: _wid, enrollmentDate: _ed, consentTimestamp: _ct, id: _id, ...data } = body;
+        const { workerId: _wid, enrollmentDate: _ed, consentTimestamp: _ct, id: _id, dateOfBirth: rawDob, ...rest } = body;
+
+        const data: any = { ...rest };
+        if (rawDob) {
+            data.dateOfBirth = new Date(rawDob);
+        } else {
+            data.dateOfBirth = null;
+        }
 
         const worker = await prisma.worker.update({
             where: { id },
