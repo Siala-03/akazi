@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { UserPlus, Users, Phone, Calendar, User, Filter, X, ChevronDown, Search, Clock, Banknote, Award, TrendingUp, Eye, BarChart2, QrCode, Pencil, Loader2 } from 'lucide-react';
+import { UserPlus, Users, Phone, Calendar, User, Filter, X, ChevronDown, Search, Clock, Banknote, TrendingUp, Eye, BarChart2, QrCode, Pencil, Loader2 } from 'lucide-react';
 import DataTable, { Column } from '@/components/DataTable';
 import { WorkerQrModal } from '@/components/qr/WorkerQrModal';
 import { PageHeader } from '@/components/PageHeader';
@@ -24,10 +24,7 @@ interface WorkerStats {
     totalInactiveWorkers: number;
     totalLaborCosts: number;
     avgHoursPerWorker: number;
-    topPerformer: {
-        name: string;
-        bagsProcessed: number;
-    } | null;
+    totalSessions: number;
 }
 
 interface WorkerDetails {
@@ -511,19 +508,17 @@ export default function WorkersPage() {
                     <p className="text-xs text-gray-400 mt-1">Per worker</p>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 col-span-2 sm:col-span-1">
+                <div className="card rounded-xl p-4 sm:p-5 col-span-2 sm:col-span-1">
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center">
-                            <Award className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
                         </div>
                     </div>
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Top Performer</p>
-                    <p className="text-base sm:text-xl font-bold text-gray-900 mt-1 truncate">
-                        {workerStats?.topPerformer?.name || 'N/A'}
+                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Sessions</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                        {workerStats?.totalSessions ?? 0}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                        {workerStats?.topPerformer?.bagsProcessed || 0} bags
-                    </p>
+                    <p className="text-xs text-gray-400 mt-1">Worker-days logged</p>
                 </div>
             </div>
 

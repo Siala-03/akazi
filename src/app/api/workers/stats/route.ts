@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
                     totalInactiveWorkers: 0,
                     totalLaborCosts: 0,
                     avgHoursPerWorker: 0,
-                    topPerformer: null,
+                    totalSessions: 0,
                 },
             });
         }
@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
                 totalInactiveWorkers,
                 totalLaborCosts,
                 avgHoursPerWorker: Math.round(avgHoursPerWorker * 10) / 10,
-                topPerformer,
+                totalSessions: allSessions.length,
             },
         });
     } catch (error) {
