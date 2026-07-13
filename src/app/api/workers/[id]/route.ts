@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { getSettings } from '@/lib/settings';
 import { toMongo } from '@/lib/serialize';
 
 export async function GET(
@@ -42,8 +41,8 @@ export async function PUT(
         }
 
         if (currentUser.role === 'supervisor') {
-            const settings = await getSettings();
-            if (!settings.supervisorCanEditWorkers) {
+            const settings = await prisma.settings.findFirst();
+            if (settings && settings.supervisorCanEditWorkers === false) {
                 return NextResponse.json({ error: 'Worker editing has been disabled by the administrator' }, { status: 403 });
             }
         }
