@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import {
+    ResponsiveContainer,
+    BarChart, Bar,
+    AreaChart, Area,
+    XAxis, YAxis, CartesianGrid, Tooltip,
+} from 'recharts';
 import {
     Users,
     TrendingUp,
@@ -46,18 +52,26 @@ export default function ExporterDashboard() {
     const [exporterInfo] = useState({ name: 'Exporter', code: 'EXP' });
     const [breakdownPage, setBreakdownPage] = useState(1);
     const [breakdownPageSize, setBreakdownPageSize] = useState(10);
-    const [selectedWeek, setSelectedWeek] = useState(getWeekStart(new Date()));
+    const [selectedWeek, setSelectedWeek] = useState('');
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
     const [filterMode, setFilterMode] = useState<'week' | 'month' | 'custom'>('week');
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
 
+    useEffect(() => {
+        fetch('/api/analytics/exporter?findLatestWeek=true')
+            .then(r => r.json())
+            .then(data => setSelectedWeek(data.latestWeekStart || getWeekStart(new Date())))
+            .catch(() => setSelectedWeek(getWeekStart(new Date())));
+    }, []);
+
     const fetchData = useCallback(async () => {
+        if (filterMode === 'week' && !selectedWeek) return;
         try {
             setLoading(true);
             setLoadError(null);
             const params = new URLSearchParams();
-            
+
             if (filterMode === 'week') {
                 const weekEnd = getWeekEnd(new Date(selectedWeek));
                 params.append('startDate', selectedWeek);
@@ -165,6 +179,22 @@ export default function ExporterDashboard() {
 
     const fmt = (n: number) => `FRw ${n.toLocaleString()}`;
 
+    const shiftWeek = (delta: number) => {
+        const d = new Date((selectedWeek || getWeekStart(new Date())) + 'T12:00:00');
+        d.setDate(d.getDate() + delta * 7);
+        setSelectedWeek(d.toISOString().split('T')[0]);
+    };
+
+    const weekChartData = useMemo(() => {
+        const sorted = [...(analytics?.dailyBreakdown || [])].sort((a: any, b: any) => a.date.localeCompare(b.date));
+        let running = 0;
+        return sorted.map((row: any) => {
+            running += row.costToExporter || 0;
+            const label = new Date(row.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short' });
+            return { label, date: row.date, sessions: row.sessions, cost: row.costToExporter || 0, cumulative: running };
+        });
+    }, [analytics?.dailyBreakdown]);
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -240,13 +270,28 @@ export default function ExporterDashboard() {
                     </div>
 
                     {filterMode === 'week' ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                onClick={() => shiftWeek(-1)}
+                                className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-emerald-400 transition-colors"
+                                title="Previous week"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
                             <input
                                 type="date"
                                 value={selectedWeek}
                                 onChange={e => setSelectedWeek(e.target.value)}
                                 className="px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-shadow"
                             />
+                            <button
+                                onClick={() => shiftWeek(1)}
+                                disabled={selectedWeek >= getWeekStart(new Date())}
+                                className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                title="Next week"
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
                             {(() => {
                                 const thisWeek = getWeekStart(new Date());
                                 const lastWeek = getWeekStart(new Date(Date.now() - 7 * 86400000));
@@ -332,6 +377,107 @@ export default function ExporterDashboard() {
                     <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{fmt(analytics?.periodCostToExporter || 0)}</p>
                 </div>
             </div>
+
+            {/* Weekly Analytics Charts */}
+            {filterMode === 'week' && (
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Weekly Analytics</h2>
+                        {selectedWeek && (
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                                {(() => {
+                                    const start = new Date(selectedWeek + 'T12:00:00');
+                                    const end = new Date(selectedWeek + 'T12:00:00');
+                                    end.setDate(end.getDate() + 6);
+                                    return `${start.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} – ${end.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+                                })()}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Daily Costs */}
+                        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700/50 p-5">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Daily Costs</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Cost to exporter per day (FRw)</p>
+                            {loading ? (
+                                <div className="h-[180px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={180}>
+                                    <BarChart data={weekChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                                        <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" strokeDasharray="3 3" />
+                                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={40}
+                                            tickFormatter={(v: number) => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`} />
+                                        <Tooltip
+                                            cursor={{ fill: 'rgba(148,163,184,0.08)' }}
+                                            formatter={(v: any) => [`FRw ${Number(v).toLocaleString()}`, 'Cost']}
+                                            labelFormatter={(_: any, payload: readonly any[]) => payload?.[0]?.payload?.date ? fmtDate(payload[0].payload.date) : ''}
+                                            contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                                        />
+                                        <Bar dataKey="cost" fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={48} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+
+                        {/* Daily Attendance */}
+                        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700/50 p-5">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Daily Attendance</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Worker sessions per day</p>
+                            {loading ? (
+                                <div className="h-[180px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={180}>
+                                    <BarChart data={weekChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                                        <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" strokeDasharray="3 3" />
+                                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} width={28} />
+                                        <Tooltip
+                                            cursor={{ fill: 'rgba(148,163,184,0.08)' }}
+                                            formatter={(v: any) => [Number(v), 'Workers']}
+                                            labelFormatter={(_: any, payload: readonly any[]) => payload?.[0]?.payload?.date ? fmtDate(payload[0].payload.date) : ''}
+                                            contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                                        />
+                                        <Bar dataKey="sessions" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={48} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Cumulative Cost */}
+                    <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700/50 p-5">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Cumulative Cost</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Running total cost across the week (FRw)</p>
+                        {loading ? (
+                            <div className="h-[180px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+                        ) : (
+                            <ResponsiveContainer width="100%" height={180}>
+                                <AreaChart data={weekChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="cumulativeGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#0d9488" stopOpacity={0.18} />
+                                            <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" strokeDasharray="3 3" />
+                                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={44}
+                                        tickFormatter={(v: number) => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`} />
+                                    <Tooltip
+                                        formatter={(v: any) => [`FRw ${Number(v).toLocaleString()}`, 'Running Total']}
+                                        labelFormatter={(_: any, payload: readonly any[]) => payload?.[0]?.payload?.date ? fmtDate(payload[0].payload.date) : ''}
+                                        contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                                    />
+                                    <Area dataKey="cumulative" stroke="#0d9488" strokeWidth={2} fill="url(#cumulativeGrad)"
+                                        dot={{ r: 4, fill: '#0d9488', strokeWidth: 0 }} activeDot={{ r: 6, fill: '#0d9488' }} />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Date-wise Expenses Breakdown */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 overflow-hidden">

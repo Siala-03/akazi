@@ -50,6 +50,20 @@ export async function GET(request: NextRequest) {
         const filterStartDate = searchParams.get('startDate');
         const filterEndDate = searchParams.get('endDate');
 
+        if (searchParams.get('findLatestWeek') === 'true') {
+            const latest = await prisma.session.findFirst({
+                where: { exporterId },
+                orderBy: { date: 'desc' },
+                select: { date: true },
+            });
+            if (!latest) return NextResponse.json({ latestWeekStart: null });
+            const d = latest.date;
+            const dow = d.getDay();
+            const ws = new Date(d);
+            ws.setDate(d.getDate() + (dow === 0 ? -6 : 1 - dow));
+            return NextResponse.json({ latestWeekStart: ws.toISOString().split('T')[0] });
+        }
+
         let rangeStart: Date;
         let rangeEnd: Date;
 
