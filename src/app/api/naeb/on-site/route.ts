@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { getStartOfDay, getEndOfDay } from '@/lib/utils';
 
 export async function GET() {
     try {
@@ -10,14 +9,9 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const today = new Date();
-        const startOfDay = getStartOfDay(today);
-        const endOfDay = getEndOfDay(today);
-
         const activeSessions = await prisma.session.findMany({
             where: {
                 status: 'active',
-                date: { gte: startOfDay, lte: endOfDay },
             },
             select: {
                 exporterId: true,

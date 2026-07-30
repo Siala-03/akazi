@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { getStartOfDay, getEndOfDay } from '@/lib/utils';
 
 export async function GET() {
     try {
@@ -14,15 +13,10 @@ export async function GET() {
             return NextResponse.json({ onSiteCount: 0, qrCount: 0, manualCount: 0, workers: [] });
         }
 
-        const today = new Date();
-        const startOfDay = getStartOfDay(today);
-        const endOfDay = getEndOfDay(today);
-
         const activeSessions = await prisma.session.findMany({
             where: {
                 exporterId: currentUser.exporterId,
                 status: 'active',
-                date: { gte: startOfDay, lte: endOfDay },
             },
             select: {
                 id: true,

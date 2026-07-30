@@ -139,7 +139,7 @@ export default function ExporterOnSitePage() {
                         <Users className="w-4 h-4 text-emerald-600" />
                     </div>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.onSiteCount ?? 0)}</p>
-                    <p className="text-xs text-gray-400 mt-1">active sessions today</p>
+                    <p className="text-xs text-gray-400 mt-1">currently checked in</p>
                 </div>
 
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-5 shadow-sm">
