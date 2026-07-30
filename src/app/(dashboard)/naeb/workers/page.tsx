@@ -185,15 +185,8 @@ export default function NaebWorkersPage() {
                                 ) : paginated.map(worker => (
                                     <tr key={worker._id} className="group bg-white dark:bg-[#1e293b] transition-all duration-150 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 hover:shadow-[inset_3px_0_0_0_#10b981]">
                                         <td className="px-5 py-3.5">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                                    {worker.fullName.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{worker.fullName}</p>
-                                                    <p className="text-xs text-gray-400 capitalize">{worker.primaryRole}</p>
-                                                </div>
-                                            </div>
+                                            <p className="text-sm font-semibold text-gray-900 dark:text-white">{worker.fullName}</p>
+                                            <p className="text-xs text-gray-400 capitalize">{worker.primaryRole}</p>
                                         </td>
                                         <td className="px-5 py-3.5 text-sm font-mono text-gray-600 dark:text-gray-400">{worker.workerId}</td>
                                         <td className="px-5 py-3.5 text-sm text-gray-700 dark:text-gray-300 capitalize">{worker.gender}</td>

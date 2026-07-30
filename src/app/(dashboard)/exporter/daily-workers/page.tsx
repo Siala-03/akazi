@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Calendar, Download, RefreshCw, Users, DollarSign, QrCode, MousePointer } from 'lucide-react';
-import Image from 'next/image';
 
 type DailyWorkerRow = {
     workerName: string;
@@ -335,18 +334,7 @@ export default function ExporterDailyWorkersPage() {
                                 data.workers.map((row) => (
                                     <tr key={`${row.workerId}-${row.assignmentTime}`} className="hover:bg-emerald-50/40 dark:hover:bg-emerald-950/10 transition-colors">
                                         <td className="px-4 py-2.5">
-                                            <div className="flex items-center gap-2.5">
-                                                {row.photo?.startsWith('http') ? (
-                                                    <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-emerald-100 dark:ring-emerald-900/40">
-                                                        <Image src={row.photo} alt={row.workerName} fill className="object-cover" sizes="32px" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shrink-0 text-white text-xs font-semibold">
-                                                        {row.workerName.charAt(0).toUpperCase()}
-                                                    </div>
-                                                )}
-                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{row.workerName}</span>
-                                            </div>
+                                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{row.workerName}</span>
                                         </td>
                                         <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 font-mono">{row.workerId}</td>
                                         <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300">{row.phone || '—'}</td>

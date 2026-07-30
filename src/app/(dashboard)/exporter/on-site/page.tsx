@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshCw, Users, QrCode, MousePointer, Clock, Wifi, WifiOff } from 'lucide-react';
-import Image from 'next/image';
 
 type OnSiteWorker = {
     sessionId: string;
@@ -212,18 +211,7 @@ export default function ExporterOnSitePage() {
                                     return (
                                         <tr key={w.sessionId} className="hover:bg-emerald-50/40 dark:hover:bg-emerald-950/10 transition-colors">
                                             <td className="px-4 py-2.5">
-                                                <div className="flex items-center gap-3">
-                                                    {w.photo ? (
-                                                        <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 ring-2 ring-emerald-100 dark:ring-emerald-900/40">
-                                                            <Image src={w.photo} alt={w.workerName} fill className="object-cover" sizes="36px" />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shrink-0 text-white text-sm font-semibold">
-                                                            {w.workerName.charAt(0).toUpperCase()}
-                                                        </div>
-                                                    )}
-                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{w.workerName}</span>
-                                                </div>
+                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{w.workerName}</span>
                                             </td>
                                             <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 font-mono">{w.workerId}</td>
                                             <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300">{w.phone || '—'}</td>

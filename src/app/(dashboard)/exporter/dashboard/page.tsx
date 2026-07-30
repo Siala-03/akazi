@@ -19,7 +19,6 @@ import {
     Download,
     AlertTriangle,
 } from 'lucide-react';
-import Image from 'next/image';
 import { ExportButton } from '@/components/export/ExportButton';
 import { ExportData } from '@/lib/export';
 
@@ -701,18 +700,7 @@ export default function ExporterDashboard() {
                                         <tr key={w.workerId} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/30 transition-colors">
                                             <td className="px-5 py-2.5 text-sm text-gray-400 font-mono">{i + 1}</td>
                                             <td className="px-5 py-2.5">
-                                                <div className="flex items-center gap-2.5">
-                                                    {w.photo?.startsWith('http') ? (
-                                                        <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-emerald-100 dark:ring-emerald-900/40">
-                                                            <Image src={w.photo} alt={w.fullName} fill className="object-cover" sizes="32px" />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shrink-0 text-white text-xs font-semibold">
-                                                            {w.fullName.charAt(0).toUpperCase()}
-                                                        </div>
-                                                    )}
-                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{w.fullName}</span>
-                                                </div>
+                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{w.fullName}</span>
                                             </td>
                                             <td className="px-5 py-2.5 text-center">
                                                 <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{w.sessionCount}</span>
