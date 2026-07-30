@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
     LayoutDashboard,
     Users,
+    Radio,
     LogOut,
     Menu,
     X,
@@ -19,6 +20,7 @@ const SidebarProfile = dynamic(() => import('@/components/wrappers/SidebarProfil
 
 const navigation = [
     { name: 'Overview',         href: '/naeb/dashboard', icon: LayoutDashboard },
+    { name: 'Live On-Site',     href: '/naeb/on-site',   icon: Radio },
     { name: 'Worker Database',  href: '/naeb/workers',   icon: Users },
 ];
 
