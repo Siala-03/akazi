@@ -83,9 +83,7 @@ export default function NaebOnSitePage() {
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                                <Users className="w-5 h-5 text-white" />
-                            </div>
+                            <Users className="w-5 h-5 text-white" />
                             <h1 className="text-3xl font-bold text-white">Live On-Site View</h1>
                         </div>
                         <p className="text-white/80 text-sm">Casual workers currently in the sorting warehouse — auto-refreshes every 30 seconds</p>
@@ -122,9 +120,7 @@ export default function NaebOnSitePage() {
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total On-Site</p>
-                        <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center">
-                            <Users className="w-4 h-4 text-emerald-600" />
-                        </div>
+                        <Users className="w-4 h-4 text-emerald-600" />
                     </div>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.onSiteCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">workers currently in the warehouse</p>
@@ -133,9 +129,7 @@ export default function NaebOnSitePage() {
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">QR Check-ins</p>
-                        <div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal-950/40 flex items-center justify-center">
-                            <QrCode className="w-4 h-4 text-teal-600" />
-                        </div>
+                        <QrCode className="w-4 h-4 text-teal-600" />
                     </div>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.qrCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">verified by QR scan</p>
@@ -144,9 +138,7 @@ export default function NaebOnSitePage() {
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Manual Check-ins</p>
-                        <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center">
-                            <MousePointer className="w-4 h-4 text-amber-600" />
-                        </div>
+                        <MousePointer className="w-4 h-4 text-amber-600" />
                     </div>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.manualCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">entered by supervisor</p>
@@ -204,9 +196,7 @@ export default function NaebOnSitePage() {
                                             <tr key={e.exporterId} className="hover:bg-emerald-50/40 dark:hover:bg-emerald-950/10 transition-colors">
                                                 <td className="px-6 py-3">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center shrink-0">
-                                                            <Building2 className="w-4 h-4 text-emerald-600" />
-                                                        </div>
+                                                        <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
                                                         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{e.exporterName}</span>
                                                     </div>
                                                 </td>
