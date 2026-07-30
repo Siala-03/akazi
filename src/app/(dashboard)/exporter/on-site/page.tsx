@@ -138,9 +138,7 @@ export default function ExporterOnSitePage() {
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total On-Site</p>
-                        <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center">
-                            <Users className="w-4 h-4 text-emerald-600" />
-                        </div>
+                        <Users className="w-4 h-4 text-emerald-600" />
                     </div>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.onSiteCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">active sessions today</p>
@@ -149,9 +147,7 @@ export default function ExporterOnSitePage() {
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">QR Check-ins</p>
-                        <div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal-950/40 flex items-center justify-center">
-                            <QrCode className="w-4 h-4 text-teal-600" />
-                        </div>
+                        <QrCode className="w-4 h-4 text-teal-600" />
                     </div>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.qrCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">verified by QR scan</p>
@@ -160,9 +156,7 @@ export default function ExporterOnSitePage() {
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Manual Check-ins</p>
-                        <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center">
-                            <MousePointer className="w-4 h-4 text-amber-600" />
-                        </div>
+                        <MousePointer className="w-4 h-4 text-amber-600" />
                     </div>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.manualCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">entered by supervisor</p>
