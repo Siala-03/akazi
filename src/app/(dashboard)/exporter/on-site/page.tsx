@@ -99,9 +99,7 @@ export default function ExporterOnSitePage() {
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                                <Users className="w-5 h-5 text-white" />
-                            </div>
+                            <Users className="w-5 h-5 text-white" />
                             <h1 className="text-3xl font-bold text-white">Live On-Site View</h1>
                         </div>
                         <p className="text-white/80 text-sm">Workers currently active at the warehouse — auto-refreshes every 30 seconds</p>
@@ -238,12 +236,12 @@ export default function ExporterOnSitePage() {
                                             </td>
                                             <td className="px-4 py-2.5">
                                                 {w.checkInMethod === 'qr' ? (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400">
+                                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 dark:text-teal-400">
                                                         <QrCode className="w-3 h-3" />
                                                         QR
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400">
+                                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
                                                         <MousePointer className="w-3 h-3" />
                                                         Manual
                                                     </span>
