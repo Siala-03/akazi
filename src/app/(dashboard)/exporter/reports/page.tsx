@@ -1,7 +1,13 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { FileText, Download, FileDown, Calendar, Users, DollarSign, RefreshCw } from 'lucide-react';
+import {
+    ResponsiveContainer,
+    BarChart, Bar,
+    AreaChart, Area,
+    CartesianGrid, XAxis, YAxis, Tooltip,
+} from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -14,7 +20,6 @@ type WorkerReportRow = {
     checkoutTime: string | null;
     sessionStatus: string;
     checkInMethod: string;
-    totalBags: number;
     totalPayout: number;
     sessionCount: number;
 };
@@ -22,7 +27,7 @@ type WorkerReportRow = {
 type WorkerReportData = {
     rangeStart: string | null;
     rangeEnd: string | null;
-    totals: { workers: number; totalBags: number; totalPayout: number };
+    totals: { workers: number; totalPayout: number };
     workers: WorkerReportRow[];
 };
 
@@ -114,12 +119,26 @@ export default function ExporterReportsPage() {
 
     const hasData = reportType === 'workers' ? !!workerData?.workers.length : !!costData?.dailyBreakdown.length;
 
+    const costChartData = useMemo(() => {
+        if (!costData) return [];
+        let cumulative = 0;
+        return costData.dailyBreakdown.map((row) => {
+            cumulative += row.costToExporter;
+            return {
+                label: row.date.slice(5),
+                date: row.date,
+                cost: row.costToExporter,
+                cumulative,
+            };
+        });
+    }, [costData]);
+
     const downloadCsv = () => {
         let csvContent = '';
         let filename = '';
 
         if (reportType === 'workers' && workerData) {
-            const header = 'Worker Name,Worker ID,Phone,Check-in Time,Assignment Time,Checkout Time,Check-in Method,Session Status,Session Count,Total Bags,Total Payout (RWF)';
+            const header = 'Worker Name,Worker ID,Phone,Check-in Time,Assignment Time,Checkout Time,Check-in Method,Session Status,Session Count,Total Payout (RWF)';
             const rows = workerData.workers.map((row) => [
                 row.workerName,
                 row.workerId,
@@ -130,7 +149,6 @@ export default function ExporterReportsPage() {
                 row.checkInMethod,
                 row.sessionStatus,
                 String(row.sessionCount),
-                String(row.totalBags),
                 String(row.totalPayout),
             ]);
             csvContent = [header, ...rows.map((r) => r.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(','))].join('\n');
@@ -165,6 +183,7 @@ export default function ExporterReportsPage() {
         const dateRangeLabel = `${fmtDateLabel(startDate)} – ${fmtDateLabel(endDate)}`;
         const doc = new jsPDF({ orientation: reportType === 'workers' ? 'landscape' : 'portrait' });
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 14;
 
         doc.setFillColor(6, 95, 70);
@@ -183,8 +202,8 @@ export default function ExporterReportsPage() {
         if (reportType === 'workers' && workerData) {
             autoTable(doc, {
                 startY: y,
-                head: [['Workers', 'Total Bags', 'Total Payout']],
-                body: [[String(workerData.totals.workers), String(workerData.totals.totalBags), fmtMoney(workerData.totals.totalPayout)]],
+                head: [['Workers', 'Total Payout']],
+                body: [[String(workerData.totals.workers), fmtMoney(workerData.totals.totalPayout)]],
                 theme: 'grid',
                 headStyles: { fillColor: [6, 95, 70], fontSize: 8, halign: 'center' },
                 bodyStyles: { fontSize: 9, halign: 'center', fontStyle: 'bold' },
@@ -194,7 +213,7 @@ export default function ExporterReportsPage() {
 
             autoTable(doc, {
                 startY: y,
-                head: [['Worker', 'ID', 'Phone', 'Check-in', 'Checkout', 'Method', 'Sessions', 'Bags', 'Payout']],
+                head: [['Worker', 'ID', 'Phone', 'Check-in', 'Checkout', 'Method', 'Sessions', 'Payout']],
                 body: workerData.workers.map((w) => [
                     w.workerName,
                     w.workerId,
@@ -203,7 +222,6 @@ export default function ExporterReportsPage() {
                     fmtTime(w.checkoutTime),
                     w.checkInMethod,
                     String(w.sessionCount),
-                    String(w.totalBags),
                     fmtMoney(w.totalPayout),
                 ]),
                 theme: 'striped',
@@ -229,6 +247,34 @@ export default function ExporterReportsPage() {
                 margin: { left: margin, right: margin },
             });
             y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+
+            // Daily cost bar chart
+            const chartRows = costData.dailyBreakdown;
+            if (chartRows.length > 0 && chartRows.some((r) => r.costToExporter > 0)) {
+                if (y > pageHeight - 70) { doc.addPage(); y = 20; }
+                const chartH = 40;
+                const chartW = pageWidth - margin * 2;
+                const maxCost = Math.max(...chartRows.map((r) => r.costToExporter), 1);
+                const barGap = 2;
+                const barW = Math.min((chartW - 10) / chartRows.length - barGap, 22);
+
+                doc.setFontSize(9);
+                doc.setTextColor(6, 95, 70);
+                doc.text('Daily Cost to Exporter', margin, y);
+                y += 5;
+
+                chartRows.forEach((row, i) => {
+                    const bh = (row.costToExporter / maxCost) * (chartH - 10);
+                    const bx = margin + 5 + i * (barW + barGap);
+                    doc.setFillColor(5, 150, 105);
+                    doc.rect(bx, y + chartH - bh, barW, bh, 'F');
+                    doc.setFontSize(6);
+                    doc.setTextColor(100, 100, 100);
+                    const lbl = row.date.slice(5);
+                    doc.text(lbl, bx + barW / 2, y + chartH + 4, { align: 'center', angle: 0 });
+                });
+                y += chartH + 12;
+            }
 
             autoTable(doc, {
                 startY: y,
@@ -351,20 +397,13 @@ export default function ExporterReportsPage() {
             {/* Preview — Daily Workers */}
             {reportType === 'workers' && workerData && workerData.workers.length > 0 && (
                 <>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-5 shadow-sm">
                             <div className="flex items-center justify-between mb-3">
                                 <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Workers</p>
                                 <Users className="w-4 h-4 text-emerald-600" />
                             </div>
                             <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{workerData.totals.workers}</p>
-                        </div>
-                        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-5 shadow-sm">
-                            <div className="flex items-center justify-between mb-3">
-                                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Bags</p>
-                                <FileText className="w-4 h-4 text-teal-600" />
-                            </div>
-                            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{workerData.totals.totalBags}</p>
                         </div>
                         <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-5 shadow-sm">
                             <div className="flex items-center justify-between mb-3">
@@ -380,7 +419,7 @@ export default function ExporterReportsPage() {
                             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                 <thead className="bg-gray-50 dark:bg-[#162032]">
                                     <tr>
-                                        {['Worker', 'ID', 'Phone', 'Check-in', 'Checkout', 'Method', 'Sessions', 'Bags', 'Payout'].map((h) => (
+                                        {['Worker', 'ID', 'Phone', 'Check-in', 'Checkout', 'Method', 'Sessions', 'Payout'].map((h) => (
                                             <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
                                         ))}
                                     </tr>
@@ -395,7 +434,6 @@ export default function ExporterReportsPage() {
                                             <td className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{fmtTime(w.checkoutTime)}</td>
                                             <td className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 capitalize">{w.checkInMethod}</td>
                                             <td className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{w.sessionCount}</td>
-                                            <td className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{w.totalBags}</td>
                                             <td className="px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-100">{fmtMoney(w.totalPayout)}</td>
                                         </tr>
                                     ))}
@@ -425,6 +463,54 @@ export default function ExporterReportsPage() {
                         <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700/60 p-5 shadow-sm">
                             <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-2">Worker Wages</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{fmtMoney(costData.periodWorkerWages)}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700/50 p-5">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Daily Cost</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Cost to exporter per day (RWF)</p>
+                            <ResponsiveContainer width="100%" height={180}>
+                                <BarChart data={costChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                                    <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" strokeDasharray="3 3" />
+                                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={40}
+                                        tickFormatter={(v: number) => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`} />
+                                    <Tooltip
+                                        cursor={{ fill: 'rgba(148,163,184,0.08)' }}
+                                        formatter={(v: number | undefined) => [fmtMoney(v ?? 0), 'Cost']}
+                                        labelFormatter={(_, payload) => payload?.[0]?.payload?.date ? fmtDateLabel(payload[0].payload.date) : ''}
+                                        contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                                    />
+                                    <Bar dataKey="cost" fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={48} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+
+                        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700/50 p-5">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Cumulative Cost</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Running total across the period (RWF)</p>
+                            <ResponsiveContainer width="100%" height={180}>
+                                <AreaChart data={costChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="cumulativeGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#0d9488" stopOpacity={0.18} />
+                                            <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" strokeDasharray="3 3" />
+                                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={44}
+                                        tickFormatter={(v: number) => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`} />
+                                    <Tooltip
+                                        formatter={(v: number | undefined) => [fmtMoney(v ?? 0), 'Running Total']}
+                                        labelFormatter={(_, payload) => payload?.[0]?.payload?.date ? fmtDateLabel(payload[0].payload.date) : ''}
+                                        contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                                    />
+                                    <Area dataKey="cumulative" stroke="#0d9488" strokeWidth={2} fill="url(#cumulativeGrad)"
+                                        dot={{ r: 4, fill: '#0d9488', strokeWidth: 0 }} activeDot={{ r: 6, fill: '#0d9488' }} />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
 
