@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Calendar, Download, RefreshCw, Users, DollarSign, QrCode, MousePointer } from 'lucide-react';
+import { Calendar, Download, FileDown, RefreshCw, Users, DollarSign, QrCode, MousePointer } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type DailyWorkerRow = {
     workerName: string;
@@ -175,6 +177,59 @@ export default function ExporterDailyWorkersPage() {
         URL.revokeObjectURL(url);
     };
 
+    const exportPdf = () => {
+        if (data.workers.length === 0) return;
+
+        const doc = new jsPDF({ orientation: 'landscape' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 14;
+
+        doc.setFillColor(6, 95, 70);
+        doc.rect(0, 0, pageWidth, 28, 'F');
+        doc.setFontSize(16);
+        doc.setTextColor(255, 255, 255);
+        doc.text('Akazi', margin, 12);
+        doc.setFontSize(10);
+        doc.text('Daily Workers Report', margin, 20);
+        doc.setFontSize(8);
+        doc.text(`Period: ${formatRange(data.rangeStart, data.rangeEnd)}`, pageWidth - margin, 12, { align: 'right' });
+        doc.text(`Generated: ${new Date().toLocaleString('en-GB')}`, pageWidth - margin, 19, { align: 'right' });
+
+        let y = 36;
+
+        autoTable(doc, {
+            startY: y,
+            head: [['Workers', 'Total Bags', 'Total Payout']],
+            body: [[String(data.totals.workers), String(data.totals.totalBags), formatMoney(data.totals.totalPayout)]],
+            theme: 'grid',
+            headStyles: { fillColor: [6, 95, 70], fontSize: 8, halign: 'center' },
+            bodyStyles: { fontSize: 9, halign: 'center', fontStyle: 'bold' },
+            margin: { left: margin, right: margin },
+        });
+        y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+
+        autoTable(doc, {
+            startY: y,
+            head: [['Worker', 'ID', 'Phone', 'Check-in', 'Checkout', 'Method', 'Status', 'Payout']],
+            body: data.workers.map((row) => [
+                row.workerName,
+                row.workerId,
+                row.phone || '—',
+                formatTime(row.checkInTime),
+                formatTime(row.checkoutTime),
+                row.checkInMethod,
+                row.sessionStatus,
+                formatMoney(row.totalPayout),
+            ]),
+            theme: 'striped',
+            headStyles: { fillColor: [6, 95, 70], fontSize: 8 },
+            bodyStyles: { fontSize: 8 },
+            margin: { left: margin, right: margin },
+        });
+
+        doc.save(`exporter_workers_${data.rangeStart || selectedDate}_${data.rangeEnd || selectedDate}.pdf`);
+    };
+
     return (
         <div className="space-y-6">
             {/* Header card */}
@@ -248,10 +303,20 @@ export default function ExporterDailyWorkersPage() {
                     <button
                         onClick={exportCsv}
                         disabled={data.workers.length === 0}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors shrink-0"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors shrink-0"
                     >
                         <Download className="w-4 h-4" />
-                        <span>Export CSV</span>
+                        <span>CSV</span>
+                    </button>
+
+                    {/* Export PDF */}
+                    <button
+                        onClick={exportPdf}
+                        disabled={data.workers.length === 0}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors shrink-0"
+                    >
+                        <FileDown className="w-4 h-4" />
+                        <span>PDF</span>
                     </button>
                 </div>
             </div>

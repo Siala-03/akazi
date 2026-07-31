@@ -13,7 +13,6 @@ import {
     ClipboardList,
     Table,
     Radio,
-    FileText,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Breadcrumb } from '@/components/Breadcrumb';
@@ -27,7 +26,6 @@ const navigation = [
     { name: 'Live On-Site',    href: '/exporter/on-site',          icon: Radio },
     { name: 'Daily Workers',   href: '/exporter/daily-workers',    icon: Table },
     { name: 'Worker Requests', href: '/exporter/worker-requests',  icon: ClipboardList },
-    { name: 'Reports',         href: '/exporter/reports',          icon: FileText },
 ];
 
 export default function ExporterLayout({ children }: { children: ReactNode }) {
