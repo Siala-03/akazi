@@ -27,14 +27,17 @@ export async function POST(request: NextRequest) {
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
+        const openAttendance = await prisma.attendance.findFirst({
+            where: { workerId, status: 'on-site' },
+        });
+        if (openAttendance) {
+            return NextResponse.json({ error: 'Worker is already checked in and on-site' }, { status: 409 });
+        }
+
         const existingAttendance = await prisma.attendance.findFirst({
             where: { workerId, date: { gte: startOfDay, lte: endOfDay } },
         });
-
         if (existingAttendance) {
-            if (existingAttendance.status === 'on-site') {
-                return NextResponse.json({ error: 'Worker is already checked in and on-site' }, { status: 409 });
-            }
             return NextResponse.json({ error: 'Worker has already completed attendance for today' }, { status: 409 });
         }
 
