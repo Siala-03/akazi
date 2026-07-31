@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { RefreshCw, Users, QrCode, MousePointer, Clock, Wifi, WifiOff } from 'lucide-react';
+import { RefreshCw, Users, QrCode, MousePointer, Clock } from 'lucide-react';
 
 type OnSiteWorker = {
     sessionId: string;
@@ -40,7 +40,6 @@ export default function ExporterOnSitePage() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
-    const [isLive, setIsLive] = useState(true);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const fetchOnSite = useCallback(async (silent = false) => {
@@ -65,15 +64,11 @@ export default function ExporterOnSitePage() {
     }, [fetchOnSite]);
 
     useEffect(() => {
-        if (isLive) {
-            intervalRef.current = setInterval(() => fetchOnSite(true), 30000);
-        } else {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-        }
+        intervalRef.current = setInterval(() => fetchOnSite(true), 30000);
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
-    }, [isLive, fetchOnSite]);
+    }, [fetchOnSite]);
 
     // Update durations every minute without a full refetch
     const [tick, setTick] = useState(0);
@@ -107,17 +102,6 @@ export default function ExporterOnSitePage() {
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setIsLive((v) => !v)}
-                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border font-medium text-sm transition-all ${
-                                isLive
-                                    ? 'bg-white/20 border-white/30 text-white hover:bg-white/30'
-                                    : 'bg-white/10 border-white/20 text-white/60 hover:bg-white/20'
-                            }`}
-                        >
-                            {isLive ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
-                            {isLive ? 'Live' : 'Paused'}
-                        </button>
                         <button
                             onClick={handleRefresh}
                             disabled={refreshing}
@@ -173,12 +157,10 @@ export default function ExporterOnSitePage() {
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100">Workers Currently On-Site</h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     </div>
-                    {isLive && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Live
-                        </span>
-                    )}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Live
+                    </span>
                 </div>
 
                 <div className="overflow-x-auto">
