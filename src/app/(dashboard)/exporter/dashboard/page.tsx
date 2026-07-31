@@ -142,7 +142,7 @@ export default function ExporterDashboard() {
         const csvContent = [
             'Akazi - Exporter Daily Breakdown',
             `Exporter:,${exporterInfo.name}`,
-            `Code:,${exporterInfo.code}`,
+            `TIN:,${exporterInfo.code}`,
             `Period:,${periodLabel}`,
             `Generated:,${new Date().toLocaleString()}`,
             '',

@@ -7,7 +7,7 @@ export async function exportToCSV(data: ExportData): Promise<void> {
 
     csv += `Akazi - Exporter Report\n`;
     csv += `Exporter:,${data.exporterName}\n`;
-    csv += `Code:,${data.exporterCode}\n`;
+    csv += `TIN:,${data.exporterCode}\n`;
     if (data.dateRange) {
         csv += `Period:,${format(data.dateRange.start, 'dd MMM yyyy')} – ${format(data.dateRange.end, 'dd MMM yyyy')}\n`;
     }

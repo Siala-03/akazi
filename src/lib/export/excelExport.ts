@@ -11,7 +11,7 @@ export async function exportToExcel(data: ExportData): Promise<void> {
     ['Akazi - Exporter Report'],
     [],
     ['Exporter:', data.exporterName],
-    ['Code:', data.exporterCode],
+    ['TIN:', data.exporterCode],
     ...(data.dateRange ? [['Period:', `${format(data.dateRange.start, 'dd MMM yyyy')} – ${format(data.dateRange.end, 'dd MMM yyyy')}`]] : []),
     ['Generated:', format(new Date(), 'dd MMM yyyy HH:mm')],
     [],

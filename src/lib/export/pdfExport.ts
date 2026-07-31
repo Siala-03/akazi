@@ -28,7 +28,7 @@ export async function exportToPDF(data: ExportData): Promise<void> {
     doc.setFontSize(11);
     doc.setTextColor(30, 30, 30);
     doc.text(`Exporter: ${data.exporterName}`, margin, y);
-    doc.text(`Code: ${data.exporterCode}`, margin, y + 6);
+    doc.text(`TIN: ${data.exporterCode}`, margin, y + 6);
 
     if (data.dateRange) {
         doc.text(
