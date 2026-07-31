@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { getStartOfDay, getEndOfDay } from '@/lib/utils';
+import { getStartOfDay, getEndOfDay, formatExporterIdentifier } from '@/lib/utils';
 import { getSettings } from '@/lib/settings';
 
 export async function GET(request: NextRequest) {
@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
 
         if (!currentUser.exporterId) {
             return NextResponse.json({
+                exporter: { name: 'Exporter', code: 'N/A' },
                 analytics: {
                     workersEngaged: 0,
                     totalHoursWorked: 0,
@@ -257,6 +258,10 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json({
+            exporter: {
+                name: exporterRecord?.companyTradingName || 'Exporter',
+                code: formatExporterIdentifier(exporterRecord),
+            },
             analytics: {
                 workersEngaged,
                 totalHoursWorked: Math.round(totalHoursWorked * 10) / 10,

@@ -48,7 +48,7 @@ export default function ExporterDashboard() {
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
-    const [exporterInfo] = useState({ name: 'Exporter', code: 'EXP' });
+    const [exporterInfo, setExporterInfo] = useState({ name: 'Exporter', code: 'EXP' });
     const [breakdownPage, setBreakdownPage] = useState(1);
     const [breakdownPageSize, setBreakdownPageSize] = useState(10);
     const [selectedWeek, setSelectedWeek] = useState('');
@@ -98,6 +98,9 @@ export default function ExporterDashboard() {
 
             const analyticsData = await analyticsRes.json();
             setAnalytics(analyticsData.analytics || {});
+            if (analyticsData.exporter) {
+                setExporterInfo(analyticsData.exporter);
+            }
             setLastUpdated(new Date());
         } catch (error) {
             console.error('Error fetching data:', error);
