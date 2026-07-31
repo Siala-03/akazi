@@ -241,7 +241,8 @@ export async function GET(request: NextRequest) {
             coopMargin: number;
         }> = [];
 
-        for (let cursor = new Date(rangeStart); cursor <= rangeEnd; cursor.setDate(cursor.getDate() + 1)) {
+        const breakdownEnd = rangeEnd < endOfDay ? rangeEnd : endOfDay;
+        for (let cursor = new Date(rangeStart); cursor <= breakdownEnd; cursor.setDate(cursor.getDate() + 1)) {
             const day = cursor.toISOString().split('T')[0];
             const sessData = dailySessionsMap.get(day) ?? { sessions: 0, cost: 0 };
             const sessions = sessData.sessions;
