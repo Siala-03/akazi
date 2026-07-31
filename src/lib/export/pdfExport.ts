@@ -65,7 +65,7 @@ export async function exportToPDF(data: ExportData): Promise<void> {
             columnStyles: { 0: { fontStyle: 'bold' }, 2: { fontStyle: 'bold' } },
             margin: { left: margin, right: margin },
         });
-        y = (doc as any).lastAutoTable.finalY + 10;
+        y = (doc as any).lastAutoTable.finalY + 16;
     }
 
     // ── Cost Breakdown ──
@@ -98,7 +98,7 @@ export async function exportToPDF(data: ExportData): Promise<void> {
             margin: { left: margin, right: margin },
             tableWidth: pageWidth / 2 - margin,
         });
-        y = (doc as any).lastAutoTable.finalY + 10;
+        y = (doc as any).lastAutoTable.finalY + 16;
     }
 
     // ── Charts ──
@@ -123,7 +123,7 @@ export async function exportToPDF(data: ExportData): Promise<void> {
             doc.setFontSize(11);
             doc.setTextColor(6, 95, 70);
             doc.text(title, margin, y);
-            y += 5;
+            y += 8;
 
             const chartH = 35;
             const chartW = pageWidth - margin * 2;
@@ -147,7 +147,7 @@ export async function exportToPDF(data: ExportData): Promise<void> {
                 doc.text(item.date.slice(5), bx + barW / 2, y + chartH + 4, { align: 'center' });
             });
 
-            y += chartH + 10;
+            y += chartH + 18;
         };
 
         drawBarChart(
