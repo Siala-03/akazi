@@ -101,6 +101,75 @@ export async function exportToPDF(data: ExportData): Promise<void> {
         y = (doc as any).lastAutoTable.finalY + 10;
     }
 
+    // ── Charts ──
+    if (a?.dailyBreakdown && a.dailyBreakdown.length > 0) {
+        const pageH = doc.internal.pageSize.getHeight();
+
+        let cumulative = 0;
+        const cumulativeRows = a.dailyBreakdown.map((r) => {
+            cumulative += r.costToExporter || 0;
+            return { date: r.date, value: cumulative };
+        });
+
+        const drawBarChart = (
+            items: { date: string; value: number }[],
+            title: string,
+            color: [number, number, number],
+            valueFormatter: (v: number) => string
+        ) => {
+            if (items.length === 0 || items.every((i) => i.value === 0)) return;
+            if (y > pageH - 70) { doc.addPage(); y = 20; }
+
+            doc.setFontSize(11);
+            doc.setTextColor(6, 95, 70);
+            doc.text(title, margin, y);
+            y += 5;
+
+            const chartH = 35;
+            const chartW = pageWidth - margin * 2;
+            const maxVal = Math.max(...items.map((i) => i.value), 1);
+            const gap = 2;
+            const barW = Math.min((chartW - 10) / items.length - gap, 24);
+            const showLabels = items.length <= 10;
+
+            items.forEach((item, i) => {
+                const bh = (item.value / maxVal) * (chartH - 8);
+                const bx = margin + 5 + i * (barW + gap);
+                doc.setFillColor(color[0], color[1], color[2]);
+                doc.rect(bx, y + chartH - bh, barW, bh, 'F');
+                if (showLabels && item.value > 0) {
+                    doc.setFontSize(5);
+                    doc.setTextColor(60, 60, 60);
+                    doc.text(valueFormatter(item.value), bx + barW / 2, y + chartH - bh - 1, { align: 'center' });
+                }
+                doc.setFontSize(5);
+                doc.setTextColor(100, 100, 100);
+                doc.text(item.date.slice(5), bx + barW / 2, y + chartH + 4, { align: 'center' });
+            });
+
+            y += chartH + 10;
+        };
+
+        drawBarChart(
+            a.dailyBreakdown.map((r) => ({ date: r.date, value: r.costToExporter || 0 })),
+            'Daily Cost to Exporter',
+            [5, 150, 105],
+            fmtFRw
+        );
+        drawBarChart(
+            a.dailyBreakdown.map((r) => ({ date: r.date, value: r.sessions || 0 })),
+            'Daily Sessions (Worker-Days)',
+            [139, 92, 246],
+            (v: number) => v.toString()
+        );
+        drawBarChart(
+            cumulativeRows,
+            'Cumulative Cost',
+            [13, 148, 136],
+            fmtFRw
+        );
+    }
+
     // ── Daily Breakdown Table ──
     if (a?.dailyBreakdown && a.dailyBreakdown.length > 0) {
         if (y > 200) { doc.addPage(); y = 20; }
