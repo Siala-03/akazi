@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import {
     UserCheck,
     UserX,
@@ -15,10 +17,13 @@ import {
     ChevronUp,
     Search,
     Building2,
-    QrCode
+    QrCode,
+    Download,
+    Loader2
 } from 'lucide-react';
 import { QrScannerModal } from '@/components/qr/QrScannerModal';
 import { PageHeader } from '@/components/PageHeader';
+import { generateBadgeCanvas, canvasToBlob } from '@/lib/qr/generateWorkerBadge';
 
 interface Worker {
     _id: string;
@@ -71,6 +76,7 @@ export default function OperationsPage() {
     const [checkoutExporterFilter, setCheckoutExporterFilter] = useState('');
     const [checkinExporterId, setCheckinExporterId] = useState('');
     const [selectedCheckoutIds, setSelectedCheckoutIds] = useState<string[]>([]);
+    const [downloadingQr, setDownloadingQr] = useState(false);
 
     useEffect(() => {
         // Set initial time and update every second
@@ -301,7 +307,48 @@ export default function OperationsPage() {
 
     const onSiteWorkers = attendance.filter((a) => a.status === 'on-site');
 
+    const filteredCheckout = checkoutExporterFilter
+        ? onSiteWorkers.filter(att => {
+            const session = sessions.find(s => s.workerId._id === att.workerId._id);
+            return session?.exporterId._id === checkoutExporterFilter;
+        })
+        : onSiteWorkers;
+
+    const checkoutExporter = checkoutExporterFilter
+        ? exporters.find(e => e._id === checkoutExporterFilter)
+        : null;
+
     useEffect(() => { setSelectedCheckoutIds([]); }, [checkoutExporterFilter]);
+
+    const handleDownloadQrBadges = async () => {
+        if (!checkoutExporter || filteredCheckout.length === 0) return;
+        setDownloadingQr(true);
+        try {
+            const zip = new JSZip();
+            for (const att of filteredCheckout) {
+                const worker = workers.find(w => w._id === att.workerId._id);
+                const res = await fetch(`/api/workers/${att.workerId._id}/qr-token`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || `Failed to load QR for ${att.workerId.fullName}`);
+
+                const canvas = await generateBadgeCanvas(
+                    { workerName: att.workerId.fullName, workerId: att.workerId.workerId, phone: worker?.phone },
+                    data.qrToken
+                );
+                const blob = await canvasToBlob(canvas);
+                zip.file(`${att.workerId.fullName.replace(/\s+/g, '_')}_${att.workerId.workerId}.png`, blob);
+            }
+
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            const dateStr = new Date().toISOString().split('T')[0];
+            saveAs(zipBlob, `${checkoutExporter.companyTradingName.replace(/\s+/g, '_')}_QR_Badges_${dateStr}.zip`);
+            toast.success(`Downloaded ${filteredCheckout.length} QR badge(s)`);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to generate QR badges');
+        } finally {
+            setDownloadingQr(false);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -628,6 +675,22 @@ export default function OperationsPage() {
                                     </span>
                                 </div>
                             </div>
+                            {checkoutExporter?.bulkQrDownloadEnabled && (
+                                <button
+                                    onClick={handleDownloadQrBadges}
+                                    disabled={downloadingQr || filteredCheckout.length === 0}
+                                    className="w-full mb-4 flex items-center justify-center gap-3 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-indigo-500/20 disabled:opacity-50"
+                                >
+                                    {downloadingQr ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <Download className="w-5 h-5" />
+                                    )}
+                                    {downloadingQr
+                                        ? `Generating badges (${filteredCheckout.length})...`
+                                        : `Download QR Badges — ${filteredCheckout.length} worker${filteredCheckout.length !== 1 ? 's' : ''} (zip)`}
+                                </button>
+                            )}
                             <button
                                 onClick={() => {
                                     setQrScannerMode('checkout');
@@ -639,13 +702,6 @@ export default function OperationsPage() {
                                 Scan QR Badge to Check Out
                             </button>
                             {(() => {
-                                const filteredCheckout = checkoutExporterFilter
-                                    ? onSiteWorkers.filter(att => {
-                                        const session = sessions.find(s => s.workerId._id === att.workerId._id);
-                                        return session?.exporterId._id === checkoutExporterFilter;
-                                    })
-                                    : onSiteWorkers;
-
                                 const eligibleIds = filteredCheckout
                                     .filter(att => sessions.find(s => s.workerId._id === att.workerId._id)?.exporterId?.bulkCheckoutEnabled)
                                     .map(att => att._id);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { X, Printer, RefreshCw, QrCode, Download } from 'lucide-react';
 import QRCode from 'qrcode';
+import { drawBadgeOnCanvas, downloadCanvasAsPng } from '@/lib/qr/generateWorkerBadge';
 
 interface WorkerQrModalProps {
     workerId: string;
@@ -53,119 +54,14 @@ export function WorkerQrModal({ workerId, workerName, onClose }: WorkerQrModalPr
     const handleDownload = async () => {
         if (!checkinUrl || !checkoutUrl || !qrInfo) return;
 
-        const W = 620;
-        const H = 380;
         const canvas = document.createElement('canvas');
-        canvas.width = W;
-        canvas.height = H;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        // Background + border
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, W, H);
-        ctx.strokeStyle = '#065f46';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.roundRect(2, 2, W - 4, H - 4, 10);
-        ctx.stroke();
-
-        // Header
-        ctx.fillStyle = '#065f46';
-        ctx.beginPath();
-        ctx.roundRect(0, 0, W, 56, [10, 10, 0, 0]);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.font = 'bold 20px Arial, sans-serif';
-        ctx.fillText('Akazi', W / 2, 30);
-        ctx.font = '11px Arial, sans-serif';
-        ctx.fillStyle = '#a7f3d0';
-        ctx.fillText('Worker Attendance Badge', W / 2, 47);
-
-        // Worker info
-        ctx.fillStyle = '#111827';
-        ctx.font = 'bold 16px Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(workerName, W / 2, 82);
-
-        if (qrInfo.phone) {
-            ctx.fillStyle = '#6b7280';
-            ctx.font = '12px Arial, sans-serif';
-            ctx.fillText(qrInfo.phone, W / 2, 99);
-        }
-
-        const idText = `ID: ${qrInfo.workerId}`;
-        ctx.font = '10px monospace';
-        const idW = ctx.measureText(idText).width + 20;
-        const idX = (W - idW) / 2;
-        ctx.fillStyle = '#f0fdf4';
-        ctx.beginPath();
-        ctx.roundRect(idX, 106, idW, 20, 4);
-        ctx.fill();
-        ctx.strokeStyle = '#d1fae5';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.fillStyle = '#065f46';
-        ctx.fillText(idText, W / 2, 120);
-
-        // QR codes
-        const qrSize = 170;
-        const leftX = 60;
-        const rightX = W - 60 - qrSize;
-        const qrY = 136;
-
-        const loadImg = (src: string) => new Promise<HTMLImageElement>((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve(img);
-            img.src = src;
-        });
-
-        const [ciImg, coImg] = await Promise.all([loadImg(checkinUrl), loadImg(checkoutUrl)]);
-
-        // Check-in box
-        ctx.strokeStyle = '#d1fae5';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect(leftX - 6, qrY - 6, qrSize + 12, qrSize + 12, 6);
-        ctx.stroke();
-        ctx.drawImage(ciImg, leftX, qrY, qrSize, qrSize);
-
-        // Check-out box
-        ctx.strokeStyle = '#fecaca';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect(rightX - 6, qrY - 6, qrSize + 12, qrSize + 12, 6);
-        ctx.stroke();
-        ctx.drawImage(coImg, rightX, qrY, qrSize, qrSize);
-
-        // Labels
-        const labelY = qrY + qrSize + 22;
-        ctx.font = 'bold 12px Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#065f46';
-        ctx.fillText('CHECK IN', leftX + qrSize / 2, labelY);
-        ctx.fillStyle = '#991b1b';
-        ctx.fillText('CHECK OUT', rightX + qrSize / 2, labelY);
-
-        // Divider
-        ctx.strokeStyle = '#e5e7eb';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(W / 2, qrY);
-        ctx.lineTo(W / 2, qrY + qrSize);
-        ctx.stroke();
-
-        // Footer
-        ctx.fillStyle = '#9ca3af';
-        ctx.font = '9px Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Supervisor scans CHECK IN in the morning · CHECK OUT at end of shift', W / 2, H - 10);
-
-        const link = document.createElement('a');
-        link.download = `Badge-${workerName.replace(/\s+/g, '_')}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        await drawBadgeOnCanvas(
+            canvas,
+            { workerName, workerId: qrInfo.workerId, phone: qrInfo.phone },
+            checkinUrl,
+            checkoutUrl
+        );
+        downloadCanvasAsPng(canvas, `Badge-${workerName.replace(/\s+/g, '_')}.png`);
     };
 
     const handlePrint = () => {
