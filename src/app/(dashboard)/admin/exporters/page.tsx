@@ -5,7 +5,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import {
     Building2, MapPin, User, Phone, Mail,
     Plus, Search, RefreshCw, Edit2, Power, PowerOff, X, Hash, KeyRound, DollarSign, Zap, ZapOff, Trash2,
-    ListChecks, ListX,
+    ListChecks, ListX, QrCode,
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
@@ -23,6 +23,7 @@ interface Exporter {
     isActive: boolean;
     operationsEnabled: boolean;
     bulkCheckoutEnabled: boolean;
+    bulkQrDownloadEnabled: boolean;
 }
 
 const emptyForm = {
@@ -185,6 +186,25 @@ export default function AdminExportersPage() {
             fetchExporters();
         } catch {
             toast.error('Failed to update bulk check-out access');
+        }
+    };
+
+    const handleToggleBulkQrDownload = async (exporter: Exporter) => {
+        try {
+            const res = await fetch(`/api/exporters/${exporter._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bulkQrDownloadEnabled: !exporter.bulkQrDownloadEnabled }),
+            });
+            if (!res.ok) throw new Error('Update failed');
+            toast.success(
+                exporter.bulkQrDownloadEnabled
+                    ? `Mass QR badge download disabled for ${exporter.companyTradingName}`
+                    : `Mass QR badge download enabled for ${exporter.companyTradingName}`
+            );
+            fetchExporters();
+        } catch {
+            toast.error('Failed to update QR badge download access');
         }
     };
 
@@ -352,6 +372,7 @@ export default function AdminExportersPage() {
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Daily Rate</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ops Access</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Multi Check-out</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">QR Badges</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                     <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -424,6 +445,21 @@ export default function AdminExportersPage() {
                                                 {exp.bulkCheckoutEnabled
                                                     ? <><ListChecks className="w-3 h-3" /> Enabled</>
                                                     : <><ListX className="w-3 h-3" /> Disabled</>}
+                                            </button>
+                                        </td>
+                                        <td className="px-4 sm:px-6 py-4">
+                                            <button
+                                                onClick={() => handleToggleBulkQrDownload(exp)}
+                                                title={exp.bulkQrDownloadEnabled ? 'Disable mass QR badge download in supervisor portal' : 'Allow supervisors to download all checked-in workers\' QR badges as a zip for this exporter'}
+                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                                                    exp.bulkQrDownloadEnabled
+                                                        ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                }`}
+                                            >
+                                                {exp.bulkQrDownloadEnabled
+                                                    ? <><QrCode className="w-3 h-3" /> Enabled</>
+                                                    : <><QrCode className="w-3 h-3" /> Disabled</>}
                                             </button>
                                         </td>
                                         <td className="px-4 sm:px-6 py-4">
