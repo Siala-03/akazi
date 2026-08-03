@@ -10,31 +10,48 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { attendanceId } = await request.json();
+        const body = await request.json();
+        const attendanceIds: string[] = Array.isArray(body.attendanceIds)
+            ? body.attendanceIds
+            : body.attendanceId ? [body.attendanceId] : [];
 
-        const attendance = await prisma.attendance.findUnique({ where: { id: attendanceId } });
-        if (!attendance) {
+        if (attendanceIds.length === 0) {
+            return NextResponse.json({ error: 'attendanceId or attendanceIds is required' }, { status: 400 });
+        }
+
+        const attendances = await prisma.attendance.findMany({ where: { id: { in: attendanceIds } } });
+        if (attendances.length === 0) {
             return NextResponse.json({ error: 'Attendance record not found' }, { status: 404 });
         }
 
-        if (attendance.status === 'checked-out') {
+        const alreadyCheckedOut = attendances.filter(a => a.status === 'checked-out');
+        const toCheckOut = attendances.filter(a => a.status !== 'checked-out');
+        if (toCheckOut.length === 0) {
             return NextResponse.json({ error: 'Worker is already checked out' }, { status: 400 });
         }
 
-        // Close all active sessions for this attendance
+        const toCheckOutIds = toCheckOut.map(a => a.id);
+        const now = new Date();
+
         const sessionsResult = await prisma.session.updateMany({
-            where: { attendanceId, status: 'active' },
-            data: { endTime: new Date(), status: 'closed' },
+            where: { attendanceId: { in: toCheckOutIds }, status: 'active' },
+            data: { endTime: now, status: 'closed' },
+        });
+        const updateResult = await prisma.attendance.updateMany({
+            where: { id: { in: toCheckOutIds } },
+            data: { checkOutTime: now, status: 'checked-out' },
         });
 
-        const updated = await prisma.attendance.update({
-            where: { id: attendanceId },
-            data: { checkOutTime: new Date(), status: 'checked-out' },
+        const updatedAttendances = await prisma.attendance.findMany({
+            where: { id: { in: toCheckOutIds } },
             include: { worker: true, facility: true },
         });
 
         return NextResponse.json({
-            attendance: toMongo(updated, { worker: 'workerId', facility: 'facilityId' }),
+            attendance: toMongo(updatedAttendances[0], { worker: 'workerId', facility: 'facilityId' }),
+            attendances: updatedAttendances.map(a => toMongo(a, { worker: 'workerId', facility: 'facilityId' })),
+            checkedOutCount: updateResult.count,
+            skippedAlreadyCheckedOut: alreadyCheckedOut.length,
             sessionsClosed: sessionsResult.count,
         });
     } catch (error) {

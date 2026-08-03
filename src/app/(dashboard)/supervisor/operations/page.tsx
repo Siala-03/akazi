@@ -49,6 +49,7 @@ interface Session {
     exporterId: {
         _id: string;
         companyTradingName: string;
+        bulkCheckoutEnabled?: boolean;
     };
     startTime: string;
     status: string;
@@ -69,6 +70,7 @@ export default function OperationsPage() {
     const [qrScannerMode, setQrScannerMode] = useState<'checkin' | 'checkout'>('checkin');
     const [checkoutExporterFilter, setCheckoutExporterFilter] = useState('');
     const [checkinExporterId, setCheckinExporterId] = useState('');
+    const [selectedCheckoutIds, setSelectedCheckoutIds] = useState<string[]>([]);
 
     useEffect(() => {
         // Set initial time and update every second
@@ -219,22 +221,58 @@ export default function OperationsPage() {
 
             const data = await res.json();
             const sessionsClosed = data.sessionsClosed || 0;
-            
+
             if (sessionsClosed > 0) {
                 toast.success(`Worker checked out successfully! ${sessionsClosed} session(s) closed.`);
             } else {
                 toast.success('Worker checked out successfully');
             }
-            
+
+            setSelectedCheckoutIds(prev => prev.filter(id => id !== attendanceId));
             fetchAttendance();
             fetchSessions();
-    
+
         } catch (error) {
             console.error('Checkout error:', error);
             toast.error(error instanceof Error ? error.message : 'Check-out failed');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleBulkCheckOut = async () => {
+        if (selectedCheckoutIds.length === 0) return;
+        setLoading(true);
+        try {
+            const res = await fetch('/api/attendance/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ attendanceIds: selectedCheckoutIds }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Check-out failed');
+            }
+
+            const data = await res.json();
+            toast.success(`${data.checkedOutCount} worker(s) checked out! ${data.sessionsClosed || 0} session(s) closed.`);
+
+            setSelectedCheckoutIds([]);
+            fetchAttendance();
+            fetchSessions();
+        } catch (error) {
+            console.error('Bulk checkout error:', error);
+            toast.error(error instanceof Error ? error.message : 'Check-out failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const toggleCheckoutSelection = (attendanceId: string) => {
+        setSelectedCheckoutIds(prev =>
+            prev.includes(attendanceId) ? prev.filter(id => id !== attendanceId) : [...prev, attendanceId]
+        );
     };
 
     const handleAssignExporter = async (attendanceId: string, exporterId: string) => {
@@ -262,6 +300,8 @@ export default function OperationsPage() {
     };
 
     const onSiteWorkers = attendance.filter((a) => a.status === 'on-site');
+
+    useEffect(() => { setSelectedCheckoutIds([]); }, [checkoutExporterFilter]);
 
     return (
         <div className="space-y-6">
@@ -606,77 +646,141 @@ export default function OperationsPage() {
                                     })
                                     : onSiteWorkers;
 
-                                return (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full table-compact">
-                                            <thead className="bg-gray-50 border-b border-gray-200">
-                                                <tr>
-                                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
-                                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Worker ID</th>
-                                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Exporter</th>
-                                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check-in Time</th>
-                                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                                                    <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                                {filteredCheckout.length === 0 ? (
-                                                    <tr>
-                                                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                                                            {checkoutExporterFilter ? 'No workers on-site for this exporter' : 'No workers on-site to check-out'}
-                                                        </td>
-                                                    </tr>
-                                                ) : (
-                                                    filteredCheckout.map((att) => {
-                                                        const session = sessions.find(s => s.workerId._id === att.workerId._id);
-                                                        const durationMins = Math.floor((Date.now() - new Date(att.checkInTime).getTime()) / 1000 / 60);
-                                                        const durationDisplay = durationMins < 60
-                                                            ? `${durationMins}m`
-                                                            : `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`;
+                                const eligibleIds = filteredCheckout
+                                    .filter(att => sessions.find(s => s.workerId._id === att.workerId._id)?.exporterId?.bulkCheckoutEnabled)
+                                    .map(att => att._id);
+                                const anyBulkEnabled = eligibleIds.length > 0 || exporters.some(exp => exp.bulkCheckoutEnabled);
+                                const allEligibleSelected = eligibleIds.length > 0 && eligibleIds.every(id => selectedCheckoutIds.includes(id));
 
-                                                        return (
-                                                            <tr key={att._id} className="hover:bg-gray-50">
-                                                                <td className="px-6 py-2.5">
-                                                                    <span className="font-medium text-gray-900">{att.workerId.fullName}</span>
-                                                                </td>
-                                                                <td className="px-6 py-2.5">
-                                                                    <span className="text-sm font-mono font-semibold text-gray-700">{att.workerId.workerId}</span>
-                                                                </td>
-                                                                <td className="px-6 py-2.5">
-                                                                    {session ? (
-                                                                        <span className="text-sm font-medium text-gray-900">{session.exporterId.companyTradingName}</span>
-                                                                    ) : (
-                                                                        <span className="text-sm text-gray-400 italic">—</span>
+                                const toggleSelectAllEligible = () => {
+                                    setSelectedCheckoutIds(prev =>
+                                        allEligibleSelected
+                                            ? prev.filter(id => !eligibleIds.includes(id))
+                                            : Array.from(new Set([...prev, ...eligibleIds]))
+                                    );
+                                };
+
+                                return (
+                                    <div>
+                                        {selectedCheckoutIds.length > 0 && (
+                                            <div className="flex items-center justify-between gap-3 mb-3 px-4 py-2.5 bg-red-50 border border-red-200 rounded-lg">
+                                                <span className="text-sm font-medium text-red-800">
+                                                    {selectedCheckoutIds.length} worker{selectedCheckoutIds.length !== 1 ? 's' : ''} selected
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setSelectedCheckoutIds([])}
+                                                        className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                                                    >
+                                                        Clear
+                                                    </button>
+                                                    <button
+                                                        onClick={handleBulkCheckOut}
+                                                        disabled={loading}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm disabled:opacity-50 transition-colors"
+                                                    >
+                                                        <UserX className="w-4 h-4" />
+                                                        Check Out Selected
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full table-compact">
+                                                <thead className="bg-gray-50 border-b border-gray-200">
+                                                    <tr>
+                                                        {anyBulkEnabled && (
+                                                            <th className="px-4 py-2 text-left">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={allEligibleSelected}
+                                                                    onChange={toggleSelectAllEligible}
+                                                                    disabled={eligibleIds.length === 0}
+                                                                    className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 disabled:opacity-30"
+                                                                    title="Select all eligible for multiple check-out"
+                                                                />
+                                                            </th>
+                                                        )}
+                                                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Worker</th>
+                                                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Worker ID</th>
+                                                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Exporter</th>
+                                                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Check-in Time</th>
+                                                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                                                        <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-200">
+                                                    {filteredCheckout.length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan={anyBulkEnabled ? 7 : 6} className="px-6 py-12 text-center text-gray-500">
+                                                                {checkoutExporterFilter ? 'No workers on-site for this exporter' : 'No workers on-site to check-out'}
+                                                            </td>
+                                                        </tr>
+                                                    ) : (
+                                                        filteredCheckout.map((att) => {
+                                                            const session = sessions.find(s => s.workerId._id === att.workerId._id);
+                                                            const isEligible = !!session?.exporterId?.bulkCheckoutEnabled;
+                                                            const durationMins = Math.floor((Date.now() - new Date(att.checkInTime).getTime()) / 1000 / 60);
+                                                            const durationDisplay = durationMins < 60
+                                                                ? `${durationMins}m`
+                                                                : `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`;
+
+                                                            return (
+                                                                <tr key={att._id} className="hover:bg-gray-50">
+                                                                    {anyBulkEnabled && (
+                                                                        <td className="px-4 py-2.5">
+                                                                            {isEligible && (
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={selectedCheckoutIds.includes(att._id)}
+                                                                                    onChange={() => toggleCheckoutSelection(att._id)}
+                                                                                    className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                                                                                />
+                                                                            )}
+                                                                        </td>
                                                                     )}
-                                                                </td>
-                                                                <td className="px-6 py-2.5">
-                                                                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                                        <Clock className="w-4 h-4 text-gray-400" />
-                                                                        {new Date(att.checkInTime).toLocaleTimeString('en-US', {
-                                                                            hour: '2-digit',
-                                                                            minute: '2-digit'
-                                                                        })}
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-6 py-2.5">
-                                                                    <span className="font-medium text-gray-700">{durationDisplay}</span>
-                                                                </td>
-                                                                <td className="px-6 py-2.5 text-right">
-                                                                    <button
-                                                                        onClick={() => handleCheckOut(att._id)}
-                                                                        disabled={loading}
-                                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium text-sm disabled:opacity-50 transition-colors"
-                                                                    >
-                                                                        <UserX className="w-4 h-4" />
-                                                                        Check Out
-                                                                    </button>
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })
-                                                )}
-                                            </tbody>
-                                        </table>
+                                                                    <td className="px-6 py-2.5">
+                                                                        <span className="font-medium text-gray-900">{att.workerId.fullName}</span>
+                                                                    </td>
+                                                                    <td className="px-6 py-2.5">
+                                                                        <span className="text-sm font-mono font-semibold text-gray-700">{att.workerId.workerId}</span>
+                                                                    </td>
+                                                                    <td className="px-6 py-2.5">
+                                                                        {session ? (
+                                                                            <span className="text-sm font-medium text-gray-900">{session.exporterId.companyTradingName}</span>
+                                                                        ) : (
+                                                                            <span className="text-sm text-gray-400 italic">—</span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-6 py-2.5">
+                                                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                                            <Clock className="w-4 h-4 text-gray-400" />
+                                                                            {new Date(att.checkInTime).toLocaleTimeString('en-US', {
+                                                                                hour: '2-digit',
+                                                                                minute: '2-digit'
+                                                                            })}
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-6 py-2.5">
+                                                                        <span className="font-medium text-gray-700">{durationDisplay}</span>
+                                                                    </td>
+                                                                    <td className="px-6 py-2.5 text-right">
+                                                                        <button
+                                                                            onClick={() => handleCheckOut(att._id)}
+                                                                            disabled={loading}
+                                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium text-sm disabled:opacity-50 transition-colors"
+                                                                        >
+                                                                            <UserX className="w-4 h-4" />
+                                                                            Check Out
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 );
                             })()}

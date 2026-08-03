@@ -46,6 +46,7 @@ model Exporter {
   email              String
   isActive           Boolean         @default(true)
   operationsEnabled  Boolean         @default(false)
+  bulkCheckoutEnabled Boolean        @default(false)
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   dailyRate          Int?

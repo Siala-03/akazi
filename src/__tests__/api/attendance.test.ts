@@ -11,6 +11,7 @@ const mockPrisma = vi.hoisted(() => ({
         findUnique: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
     },
     session: { updateMany: vi.fn() },
 }));
@@ -151,33 +152,67 @@ describe('POST /api/attendance/checkout', () => {
         expect(res.status).toBe(401);
     });
 
-    it('checks out worker and closes active sessions', async () => {
+    it('checks out a single worker and closes active sessions', async () => {
         mockGetCurrentUser.mockResolvedValue(SUPERVISOR);
-        mockPrisma.attendance.findUnique.mockResolvedValue(ATTENDANCE_FIXTURE);
+        mockPrisma.attendance.findMany.mockResolvedValue([ATTENDANCE_FIXTURE]);
         mockPrisma.session.updateMany.mockResolvedValue({ count: 1 });
-        mockPrisma.attendance.update.mockResolvedValue({
-            ...ATTENDANCE_FIXTURE,
-            status: 'checked-out',
-            checkOutTime: new Date(),
-            worker: WORKER_FIXTURE,
-            facility: null,
-        });
+        mockPrisma.attendance.updateMany.mockResolvedValue({ count: 1 });
 
         const res = await CHECKOUT_POST(post('/api/attendance/checkout', { attendanceId: 'att-1' }));
         expect(res.status).toBe(200);
 
         const data = await res.json();
         expect(data.sessionsClosed).toBe(1);
+        expect(data.checkedOutCount).toBe(1);
         expect(mockPrisma.session.updateMany).toHaveBeenCalledWith(
             expect.objectContaining({
-                where: expect.objectContaining({ attendanceId: 'att-1', status: 'active' }),
+                where: expect.objectContaining({ attendanceId: { in: ['att-1'] }, status: 'active' }),
                 data: expect.objectContaining({ status: 'closed' }),
             })
         );
-        expect(mockPrisma.attendance.update).toHaveBeenCalledWith(
+        expect(mockPrisma.attendance.updateMany).toHaveBeenCalledWith(
             expect.objectContaining({
+                where: expect.objectContaining({ id: { in: ['att-1'] } }),
                 data: expect.objectContaining({ status: 'checked-out' }),
             })
+        );
+    });
+
+    it('checks out multiple workers at once via attendanceIds', async () => {
+        mockGetCurrentUser.mockResolvedValue(SUPERVISOR);
+        const attendance2 = { ...ATTENDANCE_FIXTURE, id: 'att-2', workerId: 'worker-db-2' };
+        mockPrisma.attendance.findMany.mockResolvedValue([ATTENDANCE_FIXTURE, attendance2]);
+        mockPrisma.session.updateMany.mockResolvedValue({ count: 2 });
+        mockPrisma.attendance.updateMany.mockResolvedValue({ count: 2 });
+
+        const res = await CHECKOUT_POST(post('/api/attendance/checkout', { attendanceIds: ['att-1', 'att-2'] }));
+        expect(res.status).toBe(200);
+
+        const data = await res.json();
+        expect(data.checkedOutCount).toBe(2);
+        expect(data.sessionsClosed).toBe(2);
+        expect(mockPrisma.attendance.updateMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({ id: { in: ['att-1', 'att-2'] } }),
+            })
+        );
+    });
+
+    it('skips already checked-out workers in a bulk request', async () => {
+        mockGetCurrentUser.mockResolvedValue(SUPERVISOR);
+        const alreadyOut = { ...ATTENDANCE_FIXTURE, id: 'att-2', status: 'checked-out' };
+        mockPrisma.attendance.findMany.mockResolvedValue([ATTENDANCE_FIXTURE, alreadyOut]);
+        mockPrisma.session.updateMany.mockResolvedValue({ count: 1 });
+        mockPrisma.attendance.updateMany.mockResolvedValue({ count: 1 });
+
+        const res = await CHECKOUT_POST(post('/api/attendance/checkout', { attendanceIds: ['att-1', 'att-2'] }));
+        expect(res.status).toBe(200);
+
+        const data = await res.json();
+        expect(data.checkedOutCount).toBe(1);
+        expect(data.skippedAlreadyCheckedOut).toBe(1);
+        expect(mockPrisma.attendance.updateMany).toHaveBeenCalledWith(
+            expect.objectContaining({ where: expect.objectContaining({ id: { in: ['att-1'] } }) })
         );
     });
 });
