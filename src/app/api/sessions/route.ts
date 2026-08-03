@@ -73,9 +73,12 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url);
-        const includeAll = searchParams.get('all') === 'true' && currentUser.role === 'admin';
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
+        const wantsAll = searchParams.get('all') === 'true';
+        // Supervisors may bypass the active-only default, but only within an explicit date range
+        // (e.g. today's sessions including already-closed ones) — never an unscoped full history.
+        const includeAll = wantsAll && (currentUser.role === 'admin' || (currentUser.role === 'supervisor' && !!(startDate || endDate)));
 
         const where: any = includeAll ? {} : { status: 'active' };
 

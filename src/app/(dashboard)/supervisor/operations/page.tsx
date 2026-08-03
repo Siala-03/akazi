@@ -66,6 +66,7 @@ export default function OperationsPage() {
     const [workers, setWorkers] = useState<Worker[]>([]);
     const [attendance, setAttendance] = useState<Attendance[]>([]);
     const [sessions, setSessions] = useState<Session[]>([]);
+    const [allSessionsToday, setAllSessionsToday] = useState<Session[]>([]);
     const [exporters, setExporters] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [showSessions, setShowSessions] = useState(true);
@@ -101,6 +102,7 @@ export default function OperationsPage() {
         fetchWorkers();
         fetchAttendance();
         fetchSessions();
+        fetchAllSessionsToday();
         fetchExporters();
 
     }, []);
@@ -137,6 +139,19 @@ export default function OperationsPage() {
         }
     };
 
+    // Includes closed sessions too (unlike fetchSessions above), so workers who were
+    // already checked out today still resolve to their exporter for QR badge downloads.
+    const fetchAllSessionsToday = async () => {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const res = await fetch(`/api/sessions?startDate=${today}&endDate=${today}&all=true`);
+            const data = await res.json();
+            setAllSessionsToday(data.sessions || []);
+        } catch (error) {
+            console.error('Error fetching all sessions:', error);
+        }
+    };
+
     const fetchExporters = async () => {
         try {
             const res = await fetch('/api/exporters?approvedOnly=true');
@@ -169,6 +184,7 @@ export default function OperationsPage() {
             toast.success(`Worker checked in and assigned to ${exporterName}`);
             fetchAttendance();
             fetchSessions();
+            fetchAllSessionsToday();
     
             setSearchWorkerId('');
         } catch (error) {
@@ -237,6 +253,7 @@ export default function OperationsPage() {
             setSelectedCheckoutIds(prev => prev.filter(id => id !== attendanceId));
             fetchAttendance();
             fetchSessions();
+            fetchAllSessionsToday();
 
         } catch (error) {
             console.error('Checkout error:', error);
@@ -267,6 +284,7 @@ export default function OperationsPage() {
             setSelectedCheckoutIds([]);
             fetchAttendance();
             fetchSessions();
+            fetchAllSessionsToday();
         } catch (error) {
             console.error('Bulk checkout error:', error);
             toast.error(error instanceof Error ? error.message : 'Check-out failed');
@@ -297,6 +315,7 @@ export default function OperationsPage() {
 
             toast.success('Worker assigned to exporter');
             fetchSessions();
+            fetchAllSessionsToday();
     
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Assignment failed');
@@ -318,14 +337,24 @@ export default function OperationsPage() {
         ? exporters.find(e => e._id === checkoutExporterFilter)
         : null;
 
+    // Today's workers for the selected exporter regardless of on-site/checked-out status —
+    // unlike filteredCheckout (on-site only), this is what "today's QR badges" should cover,
+    // since a worker's badge is still valid after they've checked out.
+    const todaysExporterWorkers = checkoutExporterFilter
+        ? attendance.filter(att => {
+            const session = allSessionsToday.find(s => s.workerId._id === att.workerId._id);
+            return session?.exporterId._id === checkoutExporterFilter;
+        })
+        : [];
+
     useEffect(() => { setSelectedCheckoutIds([]); }, [checkoutExporterFilter]);
 
     const handleDownloadQrBadges = async () => {
-        if (!checkoutExporter || filteredCheckout.length === 0) return;
+        if (!checkoutExporter || todaysExporterWorkers.length === 0) return;
         setDownloadingQr(true);
         try {
             const zip = new JSZip();
-            for (const att of filteredCheckout) {
+            for (const att of todaysExporterWorkers) {
                 const worker = workers.find(w => w._id === att.workerId._id);
                 const res = await fetch(`/api/workers/${att.workerId._id}/qr-token`);
                 const data = await res.json();
@@ -342,7 +371,7 @@ export default function OperationsPage() {
             const zipBlob = await zip.generateAsync({ type: 'blob' });
             const dateStr = new Date().toISOString().split('T')[0];
             saveAs(zipBlob, `${checkoutExporter.companyTradingName.replace(/\s+/g, '_')}_QR_Badges_${dateStr}.zip`);
-            toast.success(`Downloaded ${filteredCheckout.length} QR badge(s)`);
+            toast.success(`Downloaded ${todaysExporterWorkers.length} QR badge(s)`);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Failed to generate QR badges');
         } finally {
@@ -374,6 +403,7 @@ export default function OperationsPage() {
                         }
                         fetchAttendance();
                         fetchSessions();
+                        fetchAllSessionsToday();
                 
                     }}
                 />
@@ -678,7 +708,7 @@ export default function OperationsPage() {
                             {checkoutExporter?.bulkQrDownloadEnabled && (
                                 <button
                                     onClick={handleDownloadQrBadges}
-                                    disabled={downloadingQr || filteredCheckout.length === 0}
+                                    disabled={downloadingQr || todaysExporterWorkers.length === 0}
                                     className="w-full mb-4 flex items-center justify-center gap-3 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-indigo-500/20 disabled:opacity-50"
                                 >
                                     {downloadingQr ? (
@@ -687,8 +717,8 @@ export default function OperationsPage() {
                                         <Download className="w-5 h-5" />
                                     )}
                                     {downloadingQr
-                                        ? `Generating badges (${filteredCheckout.length})...`
-                                        : `Download QR Badges — ${filteredCheckout.length} worker${filteredCheckout.length !== 1 ? 's' : ''} (zip)`}
+                                        ? `Generating badges (${todaysExporterWorkers.length})...`
+                                        : `Download QR Badges — ${todaysExporterWorkers.length} worker${todaysExporterWorkers.length !== 1 ? 's' : ''} today (zip)`}
                                 </button>
                             )}
                             <button
