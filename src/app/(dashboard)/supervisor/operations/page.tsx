@@ -75,6 +75,7 @@ export default function OperationsPage() {
     const [showQrScanner, setShowQrScanner] = useState(false);
     const [qrScannerMode, setQrScannerMode] = useState<'checkin' | 'checkout'>('checkin');
     const [checkoutExporterFilter, setCheckoutExporterFilter] = useState('');
+    const [checkoutSearch, setCheckoutSearch] = useState('');
     const [checkinExporterId, setCheckinExporterId] = useState('');
     const [selectedCheckoutIds, setSelectedCheckoutIds] = useState<string[]>([]);
     const [downloadingQr, setDownloadingQr] = useState(false);
@@ -326,12 +327,20 @@ export default function OperationsPage() {
 
     const onSiteWorkers = attendance.filter((a) => a.status === 'on-site');
 
-    const filteredCheckout = checkoutExporterFilter
+    const filteredCheckout = (checkoutExporterFilter
         ? onSiteWorkers.filter(att => {
             const session = sessions.find(s => s.workerId._id === att.workerId._id);
             return session?.exporterId._id === checkoutExporterFilter;
         })
-        : onSiteWorkers;
+        : onSiteWorkers
+    ).filter(att => {
+        if (!checkoutSearch) return true;
+        const search = checkoutSearch.toLowerCase();
+        const phone = workers.find(w => w._id === att.workerId._id)?.phone || '';
+        return att.workerId.fullName.toLowerCase().includes(search) ||
+            att.workerId.workerId.toLowerCase().includes(search) ||
+            phone.includes(search);
+    });
 
     const checkoutExporter = checkoutExporterFilter
         ? exporters.find(e => e._id === checkoutExporterFilter)
@@ -347,7 +356,7 @@ export default function OperationsPage() {
         })
         : [];
 
-    useEffect(() => { setSelectedCheckoutIds([]); }, [checkoutExporterFilter]);
+    useEffect(() => { setSelectedCheckoutIds([]); setCheckoutSearch(''); }, [checkoutExporterFilter]);
 
     const handleDownloadQrBadges = async () => {
         if (!checkoutExporter || todaysExporterWorkers.length === 0) return;
@@ -705,6 +714,21 @@ export default function OperationsPage() {
                                     </span>
                                 </div>
                             </div>
+                            {/* Quick Search */}
+                            <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                    <Search className="w-4 h-4 text-gray-700" />
+                                    Search: Worker ID, Phone or Name
+                                </label>
+                                <input
+                                    suppressHydrationWarning
+                                    type="text"
+                                    value={checkoutSearch}
+                                    onChange={e => setCheckoutSearch(e.target.value)}
+                                    placeholder="WORK001, 0788123456, or worker name..."
+                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-transparent bg-white font-medium"
+                                />
+                            </div>
                             {checkoutExporter?.bulkQrDownloadEnabled && (
                                 <button
                                     onClick={handleDownloadQrBadges}
@@ -799,7 +823,9 @@ export default function OperationsPage() {
                                                     {filteredCheckout.length === 0 ? (
                                                         <tr>
                                                             <td colSpan={anyBulkEnabled ? 7 : 6} className="px-6 py-12 text-center text-gray-500">
-                                                                {checkoutExporterFilter ? 'No workers on-site for this exporter' : 'No workers on-site to check-out'}
+                                                                {checkoutSearch
+                                                                    ? 'No workers found matching your search.'
+                                                                    : checkoutExporterFilter ? 'No workers on-site for this exporter' : 'No workers on-site to check-out'}
                                                             </td>
                                                         </tr>
                                                     ) : (
