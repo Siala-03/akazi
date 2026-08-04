@@ -27,18 +27,15 @@ export async function POST(request: NextRequest) {
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
-        const openAttendance = await prisma.attendance.findFirst({
-            where: { workerId, status: 'on-site' },
-        });
-        if (openAttendance) {
-            return NextResponse.json({ error: 'Worker is already checked in and on-site' }, { status: 409 });
-        }
-
         const existingAttendance = await prisma.attendance.findFirst({
             where: { workerId, date: { gte: startOfDay, lte: endOfDay } },
         });
         if (existingAttendance) {
-            return NextResponse.json({ error: 'Worker has already completed attendance for today' }, { status: 409 });
+            return NextResponse.json({
+                error: existingAttendance.status === 'on-site'
+                    ? 'Worker is already checked in and on-site'
+                    : 'Worker has already completed attendance for today',
+            }, { status: 409 });
         }
 
         // If exporterId provided: validate exporter and create attendance + session atomically
