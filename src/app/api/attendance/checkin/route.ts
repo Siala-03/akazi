@@ -25,9 +25,15 @@ export async function POST(request: NextRequest) {
 
         let today = new Date();
         if (dateStr) {
-            const { backdatedAttendanceEnabled } = await getSettings();
-            if (!backdatedAttendanceEnabled) {
-                return NextResponse.json({ error: 'Backdated check-in is not enabled' }, { status: 403 });
+            if (!exporterId) {
+                return NextResponse.json({ error: 'An exporter must be selected for a backdated check-in' }, { status: 400 });
+            }
+            const backdateExporter = await prisma.exporter.findUnique({
+                where: { id: exporterId },
+                select: { backdatedAttendanceEnabled: true },
+            });
+            if (!backdateExporter?.backdatedAttendanceEnabled) {
+                return NextResponse.json({ error: 'Backdated check-in is not enabled for this exporter' }, { status: 403 });
             }
             const picked = new Date(dateStr);
             if (isNaN(picked.getTime()) || picked > new Date()) {

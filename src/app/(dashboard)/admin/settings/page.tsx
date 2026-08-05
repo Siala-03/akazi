@@ -394,26 +394,21 @@ function RatesTab() {
 
 function PermissionsTab() {
   const [supervisorCanEdit, setSupervisorCanEdit] = useState<boolean | null>(null);
-  const [backdatedAttendanceEnabled, setBackdatedAttendanceEnabled] = useState<boolean | null>(null);
-  const [saving, setSaving] = useState<string | null>(null);
-  const [saved, setSaved] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/settings')
       .then(r => r.json())
       .then(data => {
-        if (data.settings) {
-          setSupervisorCanEdit(data.settings.supervisorCanEditWorkers ?? true);
-          setBackdatedAttendanceEnabled(data.settings.backdatedAttendanceEnabled ?? false);
-        }
+        if (data.settings) setSupervisorCanEdit(data.settings.supervisorCanEditWorkers ?? true);
       });
   }, []);
 
-  const handleToggle = async (key: 'supervisorCanEditWorkers' | 'backdatedAttendanceEnabled', value: boolean) => {
-    if (key === 'supervisorCanEditWorkers') setSupervisorCanEdit(value);
-    else setBackdatedAttendanceEnabled(value);
-    setSaving(key);
-    setSaved(null);
+  const handleToggle = async (value: boolean) => {
+    setSupervisorCanEdit(value);
+    setSaving(true);
+    setSaved(false);
     try {
       const current = await fetch('/api/admin/settings').then(r => r.json());
       await fetch('/api/admin/settings', {
@@ -422,14 +417,13 @@ function PermissionsTab() {
         body: JSON.stringify({
           exporterDailyRate: current.settings.exporterDailyRate,
           workerDailyWage: current.settings.workerDailyWage,
-          supervisorCanEditWorkers: key === 'supervisorCanEditWorkers' ? value : current.settings.supervisorCanEditWorkers,
-          backdatedAttendanceEnabled: key === 'backdatedAttendanceEnabled' ? value : current.settings.backdatedAttendanceEnabled,
+          supervisorCanEditWorkers: value,
         }),
       });
-      setSaved(key);
-      setTimeout(() => setSaved(null), 3000);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
     } finally {
-      setSaving(null);
+      setSaving(false);
     }
   };
 
@@ -452,35 +446,13 @@ function PermissionsTab() {
               </p>
             </div>
             <div className="flex items-center gap-3 shrink-0 ml-4">
-              {saved === 'supervisorCanEditWorkers' && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
-              {saving === 'supervisorCanEditWorkers' && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+              {saved && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
+              {saving && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
               <label className={`relative inline-flex items-center ${saving ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}>
                 <input
                   type="checkbox"
                   checked={supervisorCanEdit ?? true}
-                  onChange={e => handleToggle('supervisorCanEditWorkers', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: 'var(--muted)' }}>
-            <div className="flex-1">
-              <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>Check-in / Check-out by Date</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
-                Allow supervisors to pick a past date on the Operations page, to check in workers that were missed or fix a mistaken check-in/out from a prior day
-              </p>
-            </div>
-            <div className="flex items-center gap-3 shrink-0 ml-4">
-              {saved === 'backdatedAttendanceEnabled' && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
-              {saving === 'backdatedAttendanceEnabled' && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
-              <label className={`relative inline-flex items-center ${saving ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}>
-                <input
-                  type="checkbox"
-                  checked={backdatedAttendanceEnabled ?? false}
-                  onChange={e => handleToggle('backdatedAttendanceEnabled', e.target.checked)}
+                  onChange={e => handleToggle(e.target.checked)}
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>

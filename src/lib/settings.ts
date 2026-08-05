@@ -4,7 +4,6 @@ interface RateSettings {
     exporterDailyRate: number;
     workerDailyWage: number;
     supervisorCanEditWorkers: boolean;
-    backdatedAttendanceEnabled: boolean;
 }
 
 let cache: RateSettings | null = null;
@@ -23,7 +22,6 @@ export async function getSettings(): Promise<RateSettings> {
         exporterDailyRate: settings.exporterDailyRate,
         workerDailyWage: settings.workerDailyWage,
         supervisorCanEditWorkers: settings.supervisorCanEditWorkers,
-        backdatedAttendanceEnabled: settings.backdatedAttendanceEnabled,
     };
     return cache;
 }

@@ -80,10 +80,10 @@ export default function OperationsPage() {
     const [checkinExporterId, setCheckinExporterId] = useState('');
     const [selectedCheckoutIds, setSelectedCheckoutIds] = useState<string[]>([]);
     const [downloadingQr, setDownloadingQr] = useState(false);
-    const [backdatedAttendanceEnabled, setBackdatedAttendanceEnabled] = useState(false);
     const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
     const todayStr = new Date().toISOString().split('T')[0];
     const isBackdated = selectedDate !== todayStr;
+    const anyBackdateEnabled = exporters.some(exp => exp.backdatedAttendanceEnabled);
 
     useEffect(() => {
         // Set initial time and update every second
@@ -107,10 +107,6 @@ export default function OperationsPage() {
     useEffect(() => {
         fetchWorkers();
         fetchExporters();
-        fetch('/api/settings/features')
-            .then(r => r.json())
-            .then(data => setBackdatedAttendanceEnabled(!!data.backdatedAttendanceEnabled))
-            .catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -176,6 +172,10 @@ export default function OperationsPage() {
     const handleCheckIn = async (workerId: string) => {
         if (!checkinExporterId) {
             toast.error('Select an exporter above before checking in');
+            return;
+        }
+        if (isBackdated && !exporters.find(e => e._id === checkinExporterId)?.backdatedAttendanceEnabled) {
+            toast.error('Backdated check-in is not enabled for this exporter');
             return;
         }
         setLoading(true);
@@ -435,7 +435,7 @@ export default function OperationsPage() {
                 subtitle="Manage worker check-in and exporter assignments"
             />
 
-            {backdatedAttendanceEnabled && (
+            {anyBackdateEnabled && (
                 <div className={`flex items-center gap-3 p-4 rounded-xl border ${isBackdated ? 'bg-amber-50 border-amber-300' : 'bg-white border-gray-200'}`}>
                     <Calendar className={`w-5 h-5 shrink-0 ${isBackdated ? 'text-amber-600' : 'text-gray-400'}`} />
                     <div className="flex-1">

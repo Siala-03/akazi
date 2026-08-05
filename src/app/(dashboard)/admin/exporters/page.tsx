@@ -5,7 +5,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import {
     Building2, MapPin, User, Phone, Mail,
     Plus, Search, RefreshCw, Edit2, Power, PowerOff, X, Hash, KeyRound, DollarSign, Zap, ZapOff, Trash2,
-    ListChecks, ListX, QrCode,
+    ListChecks, ListX, QrCode, Calendar, CalendarOff,
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
@@ -24,6 +24,7 @@ interface Exporter {
     operationsEnabled: boolean;
     bulkCheckoutEnabled: boolean;
     bulkQrDownloadEnabled: boolean;
+    backdatedAttendanceEnabled: boolean;
 }
 
 const emptyForm = {
@@ -208,6 +209,25 @@ export default function AdminExportersPage() {
         }
     };
 
+    const handleToggleBackdatedAttendance = async (exporter: Exporter) => {
+        try {
+            const res = await fetch(`/api/exporters/${exporter._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ backdatedAttendanceEnabled: !exporter.backdatedAttendanceEnabled }),
+            });
+            if (!res.ok) throw new Error('Update failed');
+            toast.success(
+                exporter.backdatedAttendanceEnabled
+                    ? `Check-in/out by date disabled for ${exporter.companyTradingName}`
+                    : `Check-in/out by date enabled for ${exporter.companyTradingName}`
+            );
+            fetchExporters();
+        } catch {
+            toast.error('Failed to update backdated attendance access');
+        }
+    };
+
     const handleDelete = async (exporter: Exporter) => {
         if (!confirm(`Permanently delete "${exporter.companyTradingName}"?\n\nThis will also remove their login account. This cannot be undone.`)) return;
         try {
@@ -373,6 +393,7 @@ export default function AdminExportersPage() {
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ops Access</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Multi Check-out</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">QR Badges</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Backdated Attendance</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                     <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -460,6 +481,21 @@ export default function AdminExportersPage() {
                                                 {exp.bulkQrDownloadEnabled
                                                     ? <><QrCode className="w-3 h-3" /> Enabled</>
                                                     : <><QrCode className="w-3 h-3" /> Disabled</>}
+                                            </button>
+                                        </td>
+                                        <td className="px-4 sm:px-6 py-4">
+                                            <button
+                                                onClick={() => handleToggleBackdatedAttendance(exp)}
+                                                title={exp.backdatedAttendanceEnabled ? 'Disable check-in/out by date for this exporter' : 'Allow supervisors to check workers in/out on a past date for this exporter'}
+                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                                                    exp.backdatedAttendanceEnabled
+                                                        ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                }`}
+                                            >
+                                                {exp.backdatedAttendanceEnabled
+                                                    ? <><Calendar className="w-3 h-3" /> Enabled</>
+                                                    : <><CalendarOff className="w-3 h-3" /> Disabled</>}
                                             </button>
                                         </td>
                                         <td className="px-4 sm:px-6 py-4">
