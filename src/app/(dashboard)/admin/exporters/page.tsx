@@ -5,7 +5,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import {
     Building2, MapPin, User, Phone, Mail,
     Plus, Search, RefreshCw, Edit2, Power, PowerOff, X, Hash, KeyRound, DollarSign, Zap, ZapOff, Trash2,
-    ListChecks, ListX, QrCode, Calendar, CalendarOff,
+    ListChecks, ListX, QrCode, Calendar, CalendarOff, LogIn,
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
@@ -225,6 +225,21 @@ export default function AdminExportersPage() {
             fetchExporters();
         } catch {
             toast.error('Failed to update backdated attendance access');
+        }
+    };
+
+    const handleLoginAs = async (exporter: Exporter) => {
+        try {
+            const res = await fetch('/api/admin/impersonate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ exporterId: exporter._id }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to log in as exporter');
+            window.location.href = data.redirectUrl;
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to log in as exporter');
         }
     };
 
@@ -510,6 +525,13 @@ export default function AdminExportersPage() {
                                         </td>
                                         <td className="px-4 sm:px-6 py-4">
                                             <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() => handleLoginAs(exp)}
+                                                    className="p-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors"
+                                                    title="Log in as this exporter"
+                                                >
+                                                    <LogIn className="w-4 h-4" strokeWidth={2.5} />
+                                                </button>
                                                 <button
                                                     onClick={() => openEdit(exp)}
                                                     className="p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"

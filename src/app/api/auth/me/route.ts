@@ -22,7 +22,13 @@ export async function GET() {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        return NextResponse.json({ user: { ...user, _id: user.id } });
+        let impersonatorEmail: string | null = null;
+        if (currentUser.impersonatorId) {
+            const admin = await prisma.user.findUnique({ where: { id: currentUser.impersonatorId }, select: { email: true } });
+            impersonatorEmail = admin?.email ?? null;
+        }
+
+        return NextResponse.json({ user: { ...user, _id: user.id }, impersonatorEmail });
     } catch (error) {
         console.error('Get current user error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -16,6 +16,7 @@ export interface JWTPayload {
     role: 'supervisor' | 'admin' | 'exporter' | 'naeb';
     exporterId?: string;
     facilityId?: string;
+    impersonatorId?: string;
 }
 
 /**
