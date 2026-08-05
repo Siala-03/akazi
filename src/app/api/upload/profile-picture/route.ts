@@ -37,9 +37,9 @@ export async function POST(request: NextRequest) {
         const extension = file.name.split('.').pop();
         const filename = `profiles/profile_${decoded.userId}_${timestamp}.${extension}`;
 
-        const blob = await put(filename, file, { access: 'public' });
+        const blob = await put(filename, file, { access: 'private', addRandomSuffix: true });
 
-        return NextResponse.json({ success: true, imageUrl: blob.url });
+        return NextResponse.json({ success: true, imageUrl: `/api/files/${blob.pathname}` });
     } catch (error) {
         console.error('Upload error:', error);
         return NextResponse.json({ error: 'File upload failed' }, { status: 500 });
