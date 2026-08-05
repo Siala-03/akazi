@@ -49,6 +49,7 @@ model Exporter {
   bulkCheckoutEnabled Boolean        @default(false)
   bulkQrDownloadEnabled Boolean      @default(false)
   backdatedAttendanceEnabled Boolean @default(false)
+  costBreakdownEnabled Boolean       @default(false)
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   dailyRate          Int?

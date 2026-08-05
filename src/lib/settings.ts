@@ -14,7 +14,7 @@ export async function getSettings(): Promise<RateSettings> {
     let settings = await prisma.settings.findFirst();
     if (!settings) {
         settings = await prisma.settings.create({
-            data: { id: 'singleton', exporterDailyRate: 2000, workerDailyWage: 1700, supervisorCanEditWorkers: true },
+            data: { id: 'singleton', exporterDailyRate: 3000, workerDailyWage: 2500, supervisorCanEditWorkers: true },
         });
     }
 

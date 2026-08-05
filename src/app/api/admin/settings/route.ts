@@ -13,7 +13,7 @@ export async function GET() {
         let settings = await prisma.settings.findFirst();
         if (!settings) {
             settings = await prisma.settings.create({
-                data: { id: 'singleton', exporterDailyRate: 2000, workerDailyWage: 1700 },
+                data: { id: 'singleton', exporterDailyRate: 3000, workerDailyWage: 2500 },
             });
         }
 

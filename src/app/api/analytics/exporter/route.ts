@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
         if (!currentUser.exporterId) {
             return NextResponse.json({
-                exporter: { name: 'Exporter', code: 'N/A' },
+                exporter: { name: 'Exporter', code: 'N/A', costBreakdownEnabled: false },
                 analytics: {
                     workersEngaged: 0,
                     totalHoursWorked: 0,
@@ -262,6 +262,7 @@ export async function GET(request: NextRequest) {
             exporter: {
                 name: exporterRecord?.companyTradingName || 'Exporter',
                 code: formatExporterIdentifier(exporterRecord),
+                costBreakdownEnabled: (exporterRecord as any)?.costBreakdownEnabled ?? false,
             },
             analytics: {
                 workersEngaged,

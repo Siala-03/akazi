@@ -5,7 +5,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import {
     Building2, MapPin, User, Phone, Mail,
     Plus, Search, RefreshCw, Edit2, Power, PowerOff, X, Hash, KeyRound, DollarSign, Zap, ZapOff, Trash2,
-    ListChecks, ListX, QrCode, Calendar, CalendarOff, LogIn,
+    ListChecks, ListX, QrCode, Calendar, CalendarOff, LogIn, Receipt, ReceiptText,
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
@@ -25,6 +25,7 @@ interface Exporter {
     bulkCheckoutEnabled: boolean;
     bulkQrDownloadEnabled: boolean;
     backdatedAttendanceEnabled: boolean;
+    costBreakdownEnabled: boolean;
 }
 
 const emptyForm = {
@@ -243,6 +244,25 @@ export default function AdminExportersPage() {
         }
     };
 
+    const handleToggleCostBreakdown = async (exporter: Exporter) => {
+        try {
+            const res = await fetch(`/api/exporters/${exporter._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ costBreakdownEnabled: !exporter.costBreakdownEnabled }),
+            });
+            if (!res.ok) throw new Error('Update failed');
+            toast.success(
+                exporter.costBreakdownEnabled
+                    ? `Cost breakdown hidden for ${exporter.companyTradingName}`
+                    : `Cost breakdown shown for ${exporter.companyTradingName}`
+            );
+            fetchExporters();
+        } catch {
+            toast.error('Failed to update cost breakdown access');
+        }
+    };
+
     const handleDelete = async (exporter: Exporter) => {
         if (!confirm(`Permanently delete "${exporter.companyTradingName}"?\n\nThis will also remove their login account. This cannot be undone.`)) return;
         try {
@@ -409,6 +429,7 @@ export default function AdminExportersPage() {
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Multi Check-out</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">QR Badges</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Backdated Attendance</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cost Breakdown</th>
                                     <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                     <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -511,6 +532,21 @@ export default function AdminExportersPage() {
                                                 {exp.backdatedAttendanceEnabled
                                                     ? <><Calendar className="w-3 h-3" /> Enabled</>
                                                     : <><CalendarOff className="w-3 h-3" /> Disabled</>}
+                                            </button>
+                                        </td>
+                                        <td className="px-4 sm:px-6 py-4">
+                                            <button
+                                                onClick={() => handleToggleCostBreakdown(exp)}
+                                                title={exp.costBreakdownEnabled ? 'Show only the total cost to this exporter' : 'Show worker cost + Umucyo service fee breakdown to this exporter'}
+                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                                                    exp.costBreakdownEnabled
+                                                        ? 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200'
+                                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                }`}
+                                            >
+                                                {exp.costBreakdownEnabled
+                                                    ? <><ReceiptText className="w-3 h-3" /> Enabled</>
+                                                    : <><Receipt className="w-3 h-3" /> Disabled</>}
                                             </button>
                                         </td>
                                         <td className="px-4 sm:px-6 py-4">

@@ -48,7 +48,7 @@ export default function ExporterDashboard() {
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
-    const [exporterInfo, setExporterInfo] = useState({ name: 'Exporter', code: 'EXP' });
+    const [exporterInfo, setExporterInfo] = useState({ name: 'Exporter', code: 'EXP', costBreakdownEnabled: false });
     const [breakdownPage, setBreakdownPage] = useState(1);
     const [breakdownPageSize, setBreakdownPageSize] = useState(10);
     const [selectedWeek, setSelectedWeek] = useState('');
@@ -377,6 +377,18 @@ export default function ExporterDashboard() {
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Cost</p>
                     <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">{fmt(analytics?.periodCostToExporter || 0)}</p>
+                    {exporterInfo.costBreakdownEnabled && (
+                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-gray-500 dark:text-gray-400">Worker cost</span>
+                                <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.periodWorkerWages || 0)}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-gray-500 dark:text-gray-400">Umucyo service fee</span>
+                                <span className="font-semibold text-gray-700 dark:text-gray-300">{fmt(analytics?.periodCoopMargin || 0)}</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
