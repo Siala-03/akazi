@@ -295,6 +295,7 @@ model Settings {
   exporterDailyRate        Int      @default(2000)
   workerDailyWage          Int      @default(1700)
   supervisorCanEditWorkers Boolean  @default(true)
+  backdatedAttendanceEnabled Boolean @default(false)
   updatedAt                DateTime @updatedAt
 }
 

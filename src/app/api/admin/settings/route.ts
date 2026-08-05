@@ -32,7 +32,7 @@ export async function PUT(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { exporterDailyRate, workerDailyWage, supervisorCanEditWorkers } = body;
+        const { exporterDailyRate, workerDailyWage, supervisorCanEditWorkers, backdatedAttendanceEnabled } = body;
 
         if (
             typeof exporterDailyRate !== 'number' ||
@@ -50,6 +50,9 @@ export async function PUT(request: NextRequest) {
         const updateData: any = { exporterDailyRate, workerDailyWage };
         if (typeof supervisorCanEditWorkers === 'boolean') {
             updateData.supervisorCanEditWorkers = supervisorCanEditWorkers;
+        }
+        if (typeof backdatedAttendanceEnabled === 'boolean') {
+            updateData.backdatedAttendanceEnabled = backdatedAttendanceEnabled;
         }
 
         const settings = await prisma.settings.upsert({

@@ -19,7 +19,8 @@ import {
     Building2,
     QrCode,
     Download,
-    Loader2
+    Loader2,
+    Calendar
 } from 'lucide-react';
 import { QrScannerModal } from '@/components/qr/QrScannerModal';
 import { PageHeader } from '@/components/PageHeader';
@@ -79,6 +80,10 @@ export default function OperationsPage() {
     const [checkinExporterId, setCheckinExporterId] = useState('');
     const [selectedCheckoutIds, setSelectedCheckoutIds] = useState<string[]>([]);
     const [downloadingQr, setDownloadingQr] = useState(false);
+    const [backdatedAttendanceEnabled, setBackdatedAttendanceEnabled] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isBackdated = selectedDate !== todayStr;
 
     useEffect(() => {
         // Set initial time and update every second
@@ -101,12 +106,18 @@ export default function OperationsPage() {
 
     useEffect(() => {
         fetchWorkers();
+        fetchExporters();
+        fetch('/api/settings/features')
+            .then(r => r.json())
+            .then(data => setBackdatedAttendanceEnabled(!!data.backdatedAttendanceEnabled))
+            .catch(() => {});
+    }, []);
+
+    useEffect(() => {
         fetchAttendance();
         fetchSessions();
         fetchAllSessionsToday();
-        fetchExporters();
-
-    }, []);
+    }, [selectedDate]);
 
     const fetchWorkers = async () => {
         try {
@@ -121,7 +132,7 @@ export default function OperationsPage() {
 
     const fetchAttendance = async () => {
         try {
-            const res = await fetch('/api/attendance/checkin');
+            const res = await fetch(`/api/attendance/checkin?startDate=${selectedDate}&endDate=${selectedDate}`);
             const data = await res.json();
             setAttendance(data.attendance || []);
         } catch (error) {
@@ -131,8 +142,7 @@ export default function OperationsPage() {
 
     const fetchSessions = async () => {
         try {
-            const today = new Date().toISOString().split('T')[0];
-            const res = await fetch(`/api/sessions?startDate=${today}&endDate=${today}`);
+            const res = await fetch(`/api/sessions?startDate=${selectedDate}&endDate=${selectedDate}`);
             const data = await res.json();
             setSessions(data.sessions || []);
         } catch (error) {
@@ -144,8 +154,7 @@ export default function OperationsPage() {
     // already checked out today still resolve to their exporter for QR badge downloads.
     const fetchAllSessionsToday = async () => {
         try {
-            const today = new Date().toISOString().split('T')[0];
-            const res = await fetch(`/api/sessions?startDate=${today}&endDate=${today}&all=true`);
+            const res = await fetch(`/api/sessions?startDate=${selectedDate}&endDate=${selectedDate}&all=true`);
             const data = await res.json();
             setAllSessionsToday(data.sessions || []);
         } catch (error) {
@@ -174,7 +183,7 @@ export default function OperationsPage() {
             const res = await fetch('/api/attendance/checkin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ workerId, exporterId: checkinExporterId }),
+                body: JSON.stringify({ workerId, exporterId: checkinExporterId, date: isBackdated ? selectedDate : undefined }),
             });
             if (!res.ok) {
                 const data = await res.json();
@@ -425,6 +434,36 @@ export default function OperationsPage() {
                 title="Daily Operations"
                 subtitle="Manage worker check-in and exporter assignments"
             />
+
+            {backdatedAttendanceEnabled && (
+                <div className={`flex items-center gap-3 p-4 rounded-xl border ${isBackdated ? 'bg-amber-50 border-amber-300' : 'bg-white border-gray-200'}`}>
+                    <Calendar className={`w-5 h-5 shrink-0 ${isBackdated ? 'text-amber-600' : 'text-gray-400'}`} />
+                    <div className="flex-1">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Operating date</label>
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            max={todayStr}
+                            onChange={e => setSelectedDate(e.target.value)}
+                            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        />
+                    </div>
+                    {isBackdated && (
+                        <div className="text-sm text-amber-800">
+                            <p className="font-semibold">Editing a past date</p>
+                            <p className="text-xs text-amber-700">Check-ins and check-outs below apply to {selectedDate}, not today</p>
+                        </div>
+                    )}
+                    {isBackdated && (
+                        <button
+                            onClick={() => setSelectedDate(todayStr)}
+                            className="px-3 py-1.5 text-sm font-medium text-amber-800 hover:text-amber-900 underline"
+                        >
+                            Back to today
+                        </button>
+                    )}
+                </div>
+            )}
 
             {/* Tabs with workflow step indicator */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200">

@@ -13,6 +13,7 @@ export async function GET() {
 
         return NextResponse.json({
             supervisorCanEditWorkers: settings?.supervisorCanEditWorkers ?? true,
+            backdatedAttendanceEnabled: settings?.backdatedAttendanceEnabled ?? false,
         });
     } catch (error) {
         console.error('Get features error:', error);

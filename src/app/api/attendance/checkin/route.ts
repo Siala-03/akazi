@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { workerId, exporterId } = await request.json();
+        const { workerId, exporterId, date: dateStr } = await request.json();
 
         const worker = await prisma.worker.findUnique({ where: { id: workerId } });
         if (!worker) {
@@ -23,7 +23,21 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Worker is not active' }, { status: 400 });
         }
 
-        const today = new Date();
+        let today = new Date();
+        if (dateStr) {
+            const { backdatedAttendanceEnabled } = await getSettings();
+            if (!backdatedAttendanceEnabled) {
+                return NextResponse.json({ error: 'Backdated check-in is not enabled' }, { status: 403 });
+            }
+            const picked = new Date(dateStr);
+            if (isNaN(picked.getTime()) || picked > new Date()) {
+                return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
+            }
+            // Keep the current time-of-day, just move the calendar day to the picked date
+            const now = new Date();
+            picked.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+            today = picked;
+        }
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
