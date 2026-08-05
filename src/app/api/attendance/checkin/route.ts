@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
         }
 
         let today = new Date();
+        let backdatedCheckOutTime: Date | null = null;
         if (dateStr) {
             if (!exporterId) {
                 return NextResponse.json({ error: 'An exporter must be selected for a backdated check-in' }, { status: 400 });
@@ -39,10 +40,13 @@ export async function POST(request: NextRequest) {
             if (isNaN(picked.getTime()) || picked > new Date()) {
                 return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
             }
-            // Keep the current time-of-day, just move the calendar day to the picked date
-            const now = new Date();
-            picked.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+            // Backdated entries use a fixed shift window instead of "now" — a backdated
+            // check-in is a correction, not a live event, and must not stay open across
+            // days (that's what produced the duplicate open-session bug).
+            picked.setHours(10, 0, 0, 0);
             today = picked;
+            backdatedCheckOutTime = new Date(picked);
+            backdatedCheckOutTime.setHours(16, 30, 0, 0);
         }
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
@@ -90,7 +94,8 @@ export async function POST(request: NextRequest) {
                         facilityId,
                         date: today,
                         checkInTime: today,
-                        status: 'on-site',
+                        checkOutTime: backdatedCheckOutTime,
+                        status: backdatedCheckOutTime ? 'checked-out' : 'on-site',
                         supervisorId: currentUser.userId,
                         checkInMethod: 'manual',
                     },
@@ -106,7 +111,8 @@ export async function POST(request: NextRequest) {
                         dailyRate: snapshotRate,
                         date: today,
                         startTime: today,
-                        status: 'active',
+                        endTime: backdatedCheckOutTime,
+                        status: backdatedCheckOutTime ? 'closed' : 'active',
                         supervisorId: currentUser.userId,
                     },
                     include: { worker: true, exporter: true, facility: true },
