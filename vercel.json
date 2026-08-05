@@ -6,6 +6,6 @@
   "framework": "nextjs",
   "regions": ["iad1"],
   "crons": [
-    { "path": "/api/cron/auto-checkout", "schedule": "45 21 * * *" }
+    { "path": "/api/cron/auto-checkout", "schedule": "57 21 * * *" }
   ]
 }

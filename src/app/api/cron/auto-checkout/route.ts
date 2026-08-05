@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-// Runs daily at 23:45 CAT (21:45 UTC) via Vercel Cron (see vercel.json).
+// Runs daily at 23:57 CAT (21:57 UTC) via Vercel Cron (see vercel.json).
 // Closes out anyone still checked in as on-site, so a forgotten checkout
 // can never carry over into the next day and create a duplicate/stuck session.
 export async function GET(request: NextRequest) {
