@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# data archives (contain worker PII — keep local, never commit)
+/archive
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
