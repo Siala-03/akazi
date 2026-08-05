@@ -47,6 +47,17 @@ export async function POST(request: NextRequest) {
         const startOfDay = getStartOfDay(today);
         const endOfDay = getEndOfDay(today);
 
+        if (dateStr) {
+            const openElsewhere = await prisma.attendance.findFirst({
+                where: { workerId, status: 'on-site', NOT: { date: { gte: startOfDay, lte: endOfDay } } },
+            });
+            if (openElsewhere) {
+                return NextResponse.json({
+                    error: `Worker already has an open check-in on ${openElsewhere.date.toDateString()} — check them out first`,
+                }, { status: 409 });
+            }
+        }
+
         const existingAttendance = await prisma.attendance.findFirst({
             where: { workerId, date: { gte: startOfDay, lte: endOfDay } },
         });
