@@ -1,12 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-    ResponsiveContainer,
-    BarChart, Bar,
-    AreaChart, Area,
-    XAxis, YAxis, CartesianGrid, Tooltip,
-} from 'recharts';
+import { useEffect, useState, useCallback } from 'react';
 import {
     Users,
     TrendingUp,
@@ -186,16 +180,6 @@ export default function ExporterDashboard() {
         d.setDate(d.getDate() + delta * 7);
         setSelectedWeek(d.toISOString().split('T')[0]);
     };
-
-    const weekChartData = useMemo(() => {
-        const sorted = [...(analytics?.dailyBreakdown || [])].sort((a: any, b: any) => a.date.localeCompare(b.date));
-        let running = 0;
-        return sorted.map((row: any) => {
-            running += row.costToExporter || 0;
-            const label = new Date(row.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short' });
-            return { label, date: row.date, sessions: row.sessions, cost: row.costToExporter || 0, cumulative: running };
-        });
-    }, [analytics?.dailyBreakdown]);
 
     return (
         <div className="space-y-6">
@@ -391,107 +375,6 @@ export default function ExporterDashboard() {
                     )}
                 </div>
             </div>
-
-            {/* Weekly Analytics Charts */}
-            {filterMode === 'week' && (
-                <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Weekly Analytics</h2>
-                        {selectedWeek && (
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                                {(() => {
-                                    const start = new Date(selectedWeek + 'T12:00:00');
-                                    const end = new Date(selectedWeek + 'T12:00:00');
-                                    end.setDate(end.getDate() + 6);
-                                    return `${start.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} – ${end.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`;
-                                })()}
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {/* Daily Costs */}
-                        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700/50 p-5">
-                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Daily Costs</p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Cost to exporter per day (FRw)</p>
-                            {loading ? (
-                                <div className="h-[180px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
-                            ) : (
-                                <ResponsiveContainer width="100%" height={180}>
-                                    <BarChart data={weekChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                                        <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" strokeDasharray="3 3" />
-                                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                        <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={40}
-                                            tickFormatter={(v: number) => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`} />
-                                        <Tooltip
-                                            cursor={{ fill: 'rgba(148,163,184,0.08)' }}
-                                            formatter={(v: any) => [`FRw ${Number(v).toLocaleString()}`, 'Cost']}
-                                            labelFormatter={(_: any, payload: readonly any[]) => payload?.[0]?.payload?.date ? fmtDate(payload[0].payload.date) : ''}
-                                            contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
-                                        />
-                                        <Bar dataKey="cost" fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={48} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            )}
-                        </div>
-
-                        {/* Daily Attendance */}
-                        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700/50 p-5">
-                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Daily Attendance</p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Worker sessions per day</p>
-                            {loading ? (
-                                <div className="h-[180px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
-                            ) : (
-                                <ResponsiveContainer width="100%" height={180}>
-                                    <BarChart data={weekChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                                        <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" strokeDasharray="3 3" />
-                                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                        <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} width={28} />
-                                        <Tooltip
-                                            cursor={{ fill: 'rgba(148,163,184,0.08)' }}
-                                            formatter={(v: any) => [Number(v), 'Workers']}
-                                            labelFormatter={(_: any, payload: readonly any[]) => payload?.[0]?.payload?.date ? fmtDate(payload[0].payload.date) : ''}
-                                            contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
-                                        />
-                                        <Bar dataKey="sessions" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={48} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Cumulative Cost */}
-                    <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700/50 p-5">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Cumulative Cost</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Running total cost across the week (FRw)</p>
-                        {loading ? (
-                            <div className="h-[180px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
-                        ) : (
-                            <ResponsiveContainer width="100%" height={180}>
-                                <AreaChart data={weekChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="cumulativeGrad" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#0d9488" stopOpacity={0.18} />
-                                            <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" strokeDasharray="3 3" />
-                                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={44}
-                                        tickFormatter={(v: number) => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`} />
-                                    <Tooltip
-                                        formatter={(v: any) => [`FRw ${Number(v).toLocaleString()}`, 'Running Total']}
-                                        labelFormatter={(_: any, payload: readonly any[]) => payload?.[0]?.payload?.date ? fmtDate(payload[0].payload.date) : ''}
-                                        contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
-                                    />
-                                    <Area dataKey="cumulative" stroke="#0d9488" strokeWidth={2} fill="url(#cumulativeGrad)"
-                                        dot={{ r: 4, fill: '#0d9488', strokeWidth: 0 }} activeDot={{ r: 6, fill: '#0d9488' }} />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        )}
-                    </div>
-                </div>
-            )}
 
             {/* Date-wise Expenses Breakdown */}
             <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700/50 overflow-hidden">
