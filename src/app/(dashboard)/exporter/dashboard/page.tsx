@@ -12,6 +12,8 @@ import {
     RefreshCw,
     Download,
     AlertTriangle,
+    CalendarCheck,
+    Activity,
 } from 'lucide-react';
 import { ExportButton } from '@/components/export/ExportButton';
 import { ExportData } from '@/lib/export';
@@ -329,7 +331,7 @@ export default function ExporterDashboard() {
             </div>
 
             {/* Main Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
                 <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-purple-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
                     <div className="flex items-center justify-between mb-4">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center">
@@ -373,6 +375,35 @@ export default function ExporterDashboard() {
                             </div>
                         </div>
                     )}
+                </div>
+
+                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-blue-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
+                            <CalendarCheck className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <TrendingUp className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Active Days</p>
+                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                        {(analytics?.dailyBreakdown || []).filter((d: any) => d.sessions > 0).length} of {analytics?.periodDays || 0}
+                    </p>
+                </div>
+
+                <div className="relative overflow-hidden bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border-l-4 border-l-rose-500 border-t border-r border-b border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-1 transition-all">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
+                            <Activity className="w-6 h-6 text-rose-600" />
+                        </div>
+                        <TrendingUp className="w-5 h-5 text-rose-500" />
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Avg Cost / Active Day</p>
+                    <p className="mt-2 text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                        {(() => {
+                            const activeDays = (analytics?.dailyBreakdown || []).filter((d: any) => d.sessions > 0).length;
+                            return fmt(activeDays > 0 ? Math.round((analytics?.periodCostToExporter || 0) / activeDays) : 0);
+                        })()}
+                    </p>
                 </div>
             </div>
 
