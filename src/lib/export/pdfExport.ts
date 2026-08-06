@@ -3,8 +3,8 @@ import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ExportData } from './index';
 
-function fmtFRw(n: number): string {
-    return `FRw ${n.toLocaleString()}`;
+function fmtRWF(n: number): string {
+    return `RWF ${n.toLocaleString()}`;
 }
 
 export async function exportToPDF(data: ExportData): Promise<void> {
@@ -76,15 +76,15 @@ export async function exportToPDF(data: ExportData): Promise<void> {
         y += 3;
 
         const costRows = [
-            ['Period Cost', fmtFRw(a.periodCostToExporter || 0)],
-            ['All-Time Cost', fmtFRw(a.cumulativeCost || 0)],
+            ['Period Cost', fmtRWF(a.periodCostToExporter || 0)],
+            ['All-Time Cost', fmtRWF(a.cumulativeCost || 0)],
         ];
         if (a.periodSessionsCount > 0) {
-            costRows.push(['Avg Cost / Session', fmtFRw(Math.round((a.periodCostToExporter || 0) / a.periodSessionsCount))]);
+            costRows.push(['Avg Cost / Session', fmtRWF(Math.round((a.periodCostToExporter || 0) / a.periodSessionsCount))]);
         }
         const activeDays = (a.dailyBreakdown || []).filter((d: any) => d.sessions > 0).length;
         if (activeDays > 0) {
-            costRows.push(['Avg Daily Spend', fmtFRw(Math.round((a.periodCostToExporter || 0) / activeDays))]);
+            costRows.push(['Avg Daily Spend', fmtRWF(Math.round((a.periodCostToExporter || 0) / activeDays))]);
         }
 
         autoTable(doc, {
@@ -154,7 +154,7 @@ export async function exportToPDF(data: ExportData): Promise<void> {
             a.dailyBreakdown.map((r) => ({ date: r.date, value: r.costToExporter || 0 })),
             'Daily Cost to Exporter',
             [5, 150, 105],
-            fmtFRw
+            fmtRWF
         );
         drawBarChart(
             a.dailyBreakdown.map((r) => ({ date: r.date, value: r.sessions || 0 })),
@@ -166,7 +166,7 @@ export async function exportToPDF(data: ExportData): Promise<void> {
             cumulativeRows,
             'Cumulative Cost',
             [13, 148, 136],
-            fmtFRw
+            fmtRWF
         );
     }
 
@@ -184,7 +184,7 @@ export async function exportToPDF(data: ExportData): Promise<void> {
             .map((r: any) => [
                 r.date,
                 r.sessions.toString(),
-                fmtFRw(r.costToExporter || 0),
+                fmtRWF(r.costToExporter || 0),
             ]);
 
         if (breakdownRows.length > 0) {
@@ -196,12 +196,12 @@ export async function exportToPDF(data: ExportData): Promise<void> {
             breakdownRows.push([
                 'TOTAL',
                 totals.sessions.toString(),
-                fmtFRw(totals.cost),
+                fmtRWF(totals.cost),
             ]);
 
             autoTable(doc, {
                 startY: y,
-                head: [['Date', 'Sessions', 'Cost (FRw)']],
+                head: [['Date', 'Sessions', 'Cost (RWF)']],
                 body: breakdownRows,
                 theme: 'striped',
                 headStyles: { fillColor: [6, 95, 70], fontSize: 8 },

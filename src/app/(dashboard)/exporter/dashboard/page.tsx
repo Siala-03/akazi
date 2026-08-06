@@ -126,7 +126,7 @@ export default function ExporterDashboard() {
             : 'Selected Period';
 
         const csvRows = [
-            ['Date', 'Sessions', 'Cost to Exporter (FRw)'],
+            ['Date', 'Sessions', 'Cost to Exporter (RWF)'],
             ...rows.map((row: any) => [
                 row.date,
                 row.sessions,
@@ -174,7 +174,7 @@ export default function ExporterDashboard() {
         };
     };
 
-    const fmt = (n: number) => `FRw ${n.toLocaleString()}`;
+    const fmt = (n: number) => `RWF ${n.toLocaleString()}`;
 
     const shiftWeek = (delta: number) => {
         const d = new Date((selectedWeek || getWeekStart(new Date())) + 'T12:00:00');
@@ -424,7 +424,7 @@ export default function ExporterDashboard() {
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
                                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions</th>
-                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost (FRw)</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost (RWF)</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white dark:bg-[#1e293b] divide-y divide-gray-100 dark:divide-gray-700/40">

@@ -32,7 +32,7 @@ export async function exportToCSV(data: ExportData): Promise<void> {
 
         if (a.dailyBreakdown && a.dailyBreakdown.length > 0) {
             csv += `DAILY BREAKDOWN\n`;
-            csv += `Date,Sessions,Cost (FRw)\n`;
+            csv += `Date,Sessions,Cost (RWF)\n`;
             a.dailyBreakdown.forEach((r: any) => {
                 csv += `${r.date},${r.sessions},${r.costToExporter || 0}\n`;
             });

@@ -26,7 +26,7 @@ export async function exportToExcel(data: ExportData): Promise<void> {
       ['Period Days', a.periodDays || 0, '', ''],
       [],
       ['COST SUMMARY'],
-      ['Metric', 'Amount (FRw)'],
+      ['Metric', 'Amount (RWF)'],
       ['Period Cost', a.periodCostToExporter || 0],
       ['All-Time Cost', a.cumulativeCost || 0],
     );
@@ -42,7 +42,7 @@ export async function exportToExcel(data: ExportData): Promise<void> {
   // ── Daily Breakdown Sheet ──
   if (a?.dailyBreakdown && a.dailyBreakdown.length > 0) {
     const breakdownRows: any[][] = [
-      ['Date', 'Sessions', 'Cost (FRw)'],
+      ['Date', 'Sessions', 'Cost (RWF)'],
       ...a.dailyBreakdown.map((r: any) => [
         r.date,
         r.sessions,

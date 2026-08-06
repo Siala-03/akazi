@@ -28,7 +28,7 @@ interface Analytics {
 }
 
 function fmt(n: number) {
-    return `FRw ${n.toLocaleString()}`;
+    return `RWF ${n.toLocaleString()}`;
 }
 
 export default function NaebDashboardPage() {
@@ -196,7 +196,7 @@ export default function NaebDashboardPage() {
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-gray-50 dark:bg-[#162032]">
                             <tr>
-                                {['Exporter', 'Days Active', 'Total Sessions', 'Workers Engaged', 'Women Workers', 'Amount Paid (FRw)'].map(h => (
+                                {['Exporter', 'Days Active', 'Total Sessions', 'Workers Engaged', 'Women Workers', 'Amount Paid (RWF)'].map(h => (
                                     <th key={h} className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
                                 ))}
                             </tr>

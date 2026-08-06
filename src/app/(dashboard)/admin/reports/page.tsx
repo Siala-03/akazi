@@ -659,7 +659,7 @@ export default function AdminReportsPage() {
       autoTable(doc, {
         startY: y,
         head: [['Total Exporters', 'Total Bags', 'Total Workers', 'Total Labor Cost']],
-        body: [[filteredExporterReports.length.toString(), totBags.toLocaleString(), totWorkers.toLocaleString(), `FRw ${totCost.toLocaleString()}`]],
+        body: [[filteredExporterReports.length.toString(), totBags.toLocaleString(), totWorkers.toLocaleString(), `RWF ${totCost.toLocaleString()}`]],
         theme: 'grid',
         headStyles: { fillColor: [6, 95, 70], fontSize: 8, halign: 'center' },
         bodyStyles: { fontSize: 9, halign: 'center', fontStyle: 'bold' },
@@ -668,8 +668,8 @@ export default function AdminReportsPage() {
       y = (doc as any).lastAutoTable.finalY + 8;
 
       // Detail table
-      const rows = filteredExporterReports.map(r => [r.exporterId, r.exporterName, r.bagsSorted.toLocaleString(), r.workersInvolved.toLocaleString(), `FRw ${r.totalLaborCost.toLocaleString()}`, r.avgWorkersPerBag.toString()]);
-      rows.push(['TOTAL', '', totBags.toLocaleString(), totWorkers.toLocaleString(), `FRw ${totCost.toLocaleString()}`, '']);
+      const rows = filteredExporterReports.map(r => [r.exporterId, r.exporterName, r.bagsSorted.toLocaleString(), r.workersInvolved.toLocaleString(), `RWF ${r.totalLaborCost.toLocaleString()}`, r.avgWorkersPerBag.toString()]);
+      rows.push(['TOTAL', '', totBags.toLocaleString(), totWorkers.toLocaleString(), `RWF ${totCost.toLocaleString()}`, '']);
       autoTable(doc, {
         startY: y,
         head: [['TIN / Reg', 'Exporter Name', 'Bags', 'Workers', 'Labor Cost', 'Avg/Bag']],
@@ -694,7 +694,7 @@ export default function AdminReportsPage() {
       autoTable(doc, {
         startY: y,
         head: [['Total Workers', 'Total Days', 'Total Bags', 'Total Earnings']],
-        body: [[filteredWorkerReports.length.toString(), totDays.toLocaleString(), totBags.toLocaleString(), `FRw ${totEarn.toLocaleString()}`]],
+        body: [[filteredWorkerReports.length.toString(), totDays.toLocaleString(), totBags.toLocaleString(), `RWF ${totEarn.toLocaleString()}`]],
         theme: 'grid',
         headStyles: { fillColor: [6, 95, 70], fontSize: 8, halign: 'center' },
         bodyStyles: { fontSize: 9, halign: 'center', fontStyle: 'bold' },
@@ -702,8 +702,8 @@ export default function AdminReportsPage() {
       });
       y = (doc as any).lastAutoTable.finalY + 8;
 
-      const rows = filteredWorkerReports.map(r => [r.workerName, r.workerId, r.daysWorked.toString(), r.bagsContributed.toLocaleString(), `FRw ${r.totalEarnings.toLocaleString()}`, r.avgBagsPerDay.toString()]);
-      rows.push(['TOTAL', '', totDays.toLocaleString(), totBags.toLocaleString(), `FRw ${totEarn.toLocaleString()}`, '']);
+      const rows = filteredWorkerReports.map(r => [r.workerName, r.workerId, r.daysWorked.toString(), r.bagsContributed.toLocaleString(), `RWF ${r.totalEarnings.toLocaleString()}`, r.avgBagsPerDay.toString()]);
+      rows.push(['TOTAL', '', totDays.toLocaleString(), totBags.toLocaleString(), `RWF ${totEarn.toLocaleString()}`, '']);
       autoTable(doc, {
         startY: y,
         head: [['Worker', 'ID', 'Days', 'Bags', 'Earnings', 'Avg/Day']],
@@ -729,9 +729,9 @@ export default function AdminReportsPage() {
 
       const rows = filteredDailyOperations.map(r => [
         format(new Date(r.date), 'dd MMM yyyy'), r.workersOnSite.toString(), r.activeSessions.toString(),
-        r.bagsCompleted.toLocaleString(), r.exportersActive.join(', ') || '—', `FRw ${r.totalLaborCost.toLocaleString()}`
+        r.bagsCompleted.toLocaleString(), r.exportersActive.join(', ') || '—', `RWF ${r.totalLaborCost.toLocaleString()}`
       ]);
-      rows.push(['TOTAL', totW.toString(), totS.toString(), totB.toLocaleString(), '—', `FRw ${totC.toLocaleString()}`]);
+      rows.push(['TOTAL', totW.toString(), totS.toString(), totB.toLocaleString(), '—', `RWF ${totC.toLocaleString()}`]);
       autoTable(doc, {
         startY: y,
         head: [['Date', 'Workers', 'Sessions', 'Bags', 'Exporters', 'Labor Cost']],

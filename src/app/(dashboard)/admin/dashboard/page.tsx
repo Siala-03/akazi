@@ -265,7 +265,7 @@ export default function AdminDashboard() {
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Revenue Today</p>
                     <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                        FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}
+                        RWF {(analytics?.dailyCostToExporters || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {analytics?.workerDaysToday || 0} workers · per-exporter rates
@@ -274,40 +274,40 @@ export default function AdminDashboard() {
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Billed to Exporters</p>
                     <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                        FRw {(analytics?.dailyCostToExporters || 0).toLocaleString()}
+                        RWF {(analytics?.dailyCostToExporters || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Today · {analytics?.workerDaysToday || 0} worker-days
                     </p>
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
                         <span className="text-gray-500 dark:text-gray-400">This week</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">FRw {(analytics?.weeklyCostToExporters || 0).toLocaleString()}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">RWF {(analytics?.weeklyCostToExporters || 0).toLocaleString()}</span>
                     </div>
                 </div>
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Worker Wages</p>
                     <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                        FRw {(analytics?.dailyWorkerWages || 0).toLocaleString()}
+                        RWF {(analytics?.dailyWorkerWages || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Today · {analytics?.workerDaysToday || 0} worker-days · paid Fri
                     </p>
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
                         <span className="text-gray-500 dark:text-gray-400">This week</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">FRw {(analytics?.weeklyWorkerWages || 0).toLocaleString()}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">RWF {(analytics?.weeklyWorkerWages || 0).toLocaleString()}</span>
                     </div>
                 </div>
                 <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Cooperative Margin</p>
                     <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                        FRw {(analytics?.dailyCoopMargin || 0).toLocaleString()}
+                        RWF {(analytics?.dailyCoopMargin || 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Today · revenue minus wages
                     </p>
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs">
                         <span className="text-gray-500 dark:text-gray-400">Cumulative</span>
-                        <span className="font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">FRw {((analytics?.cumulativeCostToExporters || 0) - (analytics?.cumulativeWorkerWages || 0)).toLocaleString()}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">RWF {((analytics?.cumulativeCostToExporters || 0) - (analytics?.cumulativeWorkerWages || 0)).toLocaleString()}</span>
                     </div>
                 </div>
             </div>

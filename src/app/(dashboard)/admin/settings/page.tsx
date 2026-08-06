@@ -305,7 +305,7 @@ function RatesTab() {
                 <span className="text-xs font-medium px-2.5 py-1 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full whitespace-nowrap">Revenue</span>
               </div>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-blue-700 dark:text-blue-400">FRw</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-blue-700 dark:text-blue-400">RWF</span>
                 <input
                   type="number"
                   min="1"
@@ -328,7 +328,7 @@ function RatesTab() {
                 <span className="text-xs font-medium px-2.5 py-1 bg-emerald-100 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200 rounded-full whitespace-nowrap">Cost</span>
               </div>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-emerald-700 dark:text-emerald-400">FRw</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-emerald-700 dark:text-emerald-400">RWF</span>
                 <input
                   type="number"
                   min="1"
@@ -352,7 +352,7 @@ function RatesTab() {
                     </p>
                   </div>
                   <p className={`text-2xl font-bold ${margin > 0 ? 'text-purple-800 dark:text-purple-200' : 'text-red-700'}`}>
-                    FRw {margin.toLocaleString()}
+                    RWF {margin.toLocaleString()}
                   </p>
                 </div>
               </div>

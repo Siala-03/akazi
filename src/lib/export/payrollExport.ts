@@ -34,7 +34,7 @@ export function exportPayrollToExcel(workers: PayrollWorker[], summary: PayrollS
         [`Period: ${weekLabel}`],
         [`Generated: ${format(new Date(), 'dd MMM yyyy, HH:mm')}`],
         [],
-        ['Full Name', 'National ID', 'Exporter', 'Days', 'Daily Rate (FRw)', 'Total Wage (FRw)', 'Status'],
+        ['Full Name', 'National ID', 'Exporter', 'Days', 'Daily Rate (RWF)', 'Total Wage (RWF)', 'Status'],
     ];
 
     const dataRows = workers.map(w => [
@@ -87,7 +87,7 @@ export function exportPayrollToExcel(workers: PayrollWorker[], summary: PayrollS
         ['EXPORTER BREAKDOWN'],
         [`Period: ${weekLabel}`],
         [],
-        ['Exporter', 'Workers', 'Days', 'Total Wages (FRw)'],
+        ['Exporter', 'Workers', 'Days', 'Total Wages (RWF)'],
         ...Array.from(exporterMap.entries()).map(([name, d]) => [name, d.workers, d.days, d.wages]),
         [],
         ['TOTAL', summary.totalWorkers, summary.totalDays, summary.totalWorkerWages],
@@ -106,7 +106,7 @@ export function exportPayrollToExcel(workers: PayrollWorker[], summary: PayrollS
         ['COST RECONCILIATION'],
         [`Period: ${weekLabel}`],
         [],
-        ['Metric', 'Amount (FRw)'],
+        ['Metric', 'Amount (RWF)'],
         ['Total Workers', summary.totalWorkers],
         ['Total Worker-Days', summary.totalDays],
         ['Worker Wages', summary.totalWorkerWages],

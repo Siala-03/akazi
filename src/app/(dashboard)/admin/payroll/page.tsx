@@ -313,7 +313,7 @@ export default function PayrollPage() {
                         <div>
                             <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">{label}</p>
                             <p className={`mt-1 font-bold text-gray-900 dark:text-gray-100 ${format === 'currency' ? 'text-lg' : 'text-3xl'}`}>
-                                {format === 'currency' ? `FRw ${value.toLocaleString()}` : value.toLocaleString()}
+                                {format === 'currency' ? `RWF ${value.toLocaleString()}` : value.toLocaleString()}
                             </p>
                         </div>
                     </div>
@@ -352,8 +352,8 @@ export default function PayrollPage() {
                                             <td className="px-6 py-2.5"><span className="text-sm font-medium text-gray-900 dark:text-gray-100">{exp.name}</span></td>
                                             <td className="px-6 py-2.5 text-center text-sm text-gray-700 dark:text-gray-300">{exp.workers}</td>
                                             <td className="px-6 py-2.5 text-center text-sm text-gray-700 dark:text-gray-300">{exp.days}</td>
-                                            <td className="px-6 py-2.5 text-right text-sm text-gray-700 dark:text-gray-300">FRw {exp.wages.toLocaleString()}</td>
-                                            <td className="px-6 py-2.5 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">FRw {exp.charge.toLocaleString()}</td>
+                                            <td className="px-6 py-2.5 text-right text-sm text-gray-700 dark:text-gray-300">RWF {exp.wages.toLocaleString()}</td>
+                                            <td className="px-6 py-2.5 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">RWF {exp.charge.toLocaleString()}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -436,7 +436,7 @@ export default function PayrollPage() {
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">{worker.phone || '—'}</td>
                                                 <td className="px-4 py-3 text-center text-sm text-gray-700 dark:text-gray-200 tabular-nums">{worker.numberOfDays}</td>
-                                                <td className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-200 tabular-nums">FRw {worker.totalWage.toLocaleString()}</td>
+                                                <td className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-200 tabular-nums">RWF {worker.totalWage.toLocaleString()}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <button onClick={() => togglePaid(key)}
                                                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${isPaid ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400 hover:bg-amber-100 hover:text-amber-700'}`}>
@@ -454,7 +454,7 @@ export default function PayrollPage() {
                                         <td className="px-4 py-3" />
                                         <td className="px-4 py-3" />
                                         <td className="px-4 py-3 text-center text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">{filtered.reduce((s, w) => s + w.numberOfDays, 0)}</td>
-                                        <td className="px-4 py-3 text-right text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">FRw {filtered.reduce((s, w) => s + w.totalWage, 0).toLocaleString()}</td>
+                                        <td className="px-4 py-3 text-right text-sm font-bold text-gray-700 dark:text-gray-200 tabular-nums">RWF {filtered.reduce((s, w) => s + w.totalWage, 0).toLocaleString()}</td>
                                         <td className="px-4 py-3" />
                                     </tr>
                                 </tfoot>
@@ -501,17 +501,17 @@ export default function PayrollPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700/40">
                         <div className="px-6 py-5">
                             <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Collected from exporters</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">FRw {summary.totalCostToExporters.toLocaleString()}</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">RWF {summary.totalCostToExporters.toLocaleString()}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{summary.totalDays} worker-days</p>
                         </div>
                         <div className="px-6 py-5">
                             <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Disbursed to workers</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">FRw {summary.totalWorkerWages.toLocaleString()}</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">RWF {summary.totalWorkerWages.toLocaleString()}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{summary.totalDays} worker-days</p>
                         </div>
                         <div className="px-6 py-5">
                             <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">Cooperative margin</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">FRw {summary.cooperativeMargin.toLocaleString()}</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">RWF {summary.cooperativeMargin.toLocaleString()}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">revenue − wages</p>
                         </div>
                     </div>

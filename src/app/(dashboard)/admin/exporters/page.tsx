@@ -85,7 +85,7 @@ export default function AdminExportersPage() {
                 body: JSON.stringify({ dailyRate: Number(dailyRateInput) }),
             });
             if (!res.ok) throw new Error('Failed to set rate');
-            toast.success(`Daily rate set to FRw ${Number(dailyRateInput).toLocaleString()}/worker for ${rateExporter.companyTradingName}`);
+            toast.success(`Daily rate set to RWF ${Number(dailyRateInput).toLocaleString()}/worker for ${rateExporter.companyTradingName}`);
             setShowRateModal(false);
             setRateExporter(null);
             fetchExporters();
@@ -461,7 +461,7 @@ export default function AdminExportersPage() {
                                                     title="Click to update daily rate"
                                                 >
                                                     <DollarSign className="w-3 h-3" />
-                                                    FRw {exp.dailyRate.toLocaleString()}/day
+                                                    RWF {exp.dailyRate.toLocaleString()}/day
                                                 </button>
                                             ) : (
                                                 <button
@@ -636,7 +636,7 @@ export default function AdminExportersPage() {
                         <form onSubmit={handleSetRate} className="p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                    <span className="flex items-center gap-1.5"><DollarSign className="w-3.5 h-3.5 text-emerald-600" />Daily Rate Per Worker (FRw)</span>
+                                    <span className="flex items-center gap-1.5"><DollarSign className="w-3.5 h-3.5 text-emerald-600" />Daily Rate Per Worker (RWF)</span>
                                 </label>
                                 <input
                                     type="number"
@@ -650,7 +650,7 @@ export default function AdminExportersPage() {
                                 />
                                 {rateExporter.dailyRate && (
                                     <p className="text-xs text-gray-400 mt-1">
-                                        Current rate: FRw {rateExporter.dailyRate.toLocaleString()}/worker/day
+                                        Current rate: RWF {rateExporter.dailyRate.toLocaleString()}/worker/day
                                     </p>
                                 )}
                             </div>
