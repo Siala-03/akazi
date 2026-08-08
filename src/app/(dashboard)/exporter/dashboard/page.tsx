@@ -13,6 +13,8 @@ import {
     Download,
     AlertTriangle,
     Activity,
+    Bell,
+    X,
 } from 'lucide-react';
 import { ExportButton } from '@/components/export/ExportButton';
 import { ExportData } from '@/lib/export';
@@ -51,13 +53,32 @@ export default function ExporterDashboard() {
     const [filterMode, setFilterMode] = useState<'week' | 'month' | 'custom'>('week');
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
+    const [notes, setNotes] = useState<any[]>([]);
 
     useEffect(() => {
         fetch('/api/analytics/exporter?findLatestWeek=true')
             .then(r => r.json())
             .then(data => setSelectedWeek(data.latestWeekStart || getWeekStart(new Date())))
             .catch(() => setSelectedWeek(getWeekStart(new Date())));
+
+        fetch('/api/exporter-notes')
+            .then(r => r.json())
+            .then(data => setNotes((data.notes || []).filter((n: any) => !n.isRead)))
+            .catch(() => {});
     }, []);
+
+    const dismissNote = async (id: string) => {
+        setNotes(prev => prev.filter(n => n._id !== id));
+        try {
+            await fetch(`/api/exporter-notes/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isRead: true }),
+            });
+        } catch {
+            // Non-critical; note stays dismissed locally even if this fails
+        }
+    };
 
     const fetchData = useCallback(async () => {
         if (filterMode === 'week' && !selectedWeek) return;
@@ -225,6 +246,29 @@ export default function ExporterDashboard() {
             {loadError && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 text-sm">
                     {loadError}. Please refresh after confirming your session is active.
+                </div>
+            )}
+
+            {notes.length > 0 && (
+                <div className="space-y-3">
+                    {notes.map(note => (
+                        <div key={note._id} className="flex items-start gap-3 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-900/20 px-4 py-3">
+                            <Bell className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm text-teal-900 dark:text-teal-100">{note.message}</p>
+                                <p className="text-xs text-teal-600 dark:text-teal-400 mt-1">
+                                    {note.author?.name || 'Admin'} · {new Date(note.createdAt).toLocaleString()}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => dismissNote(note._id)}
+                                className="p-1 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-800/50 text-teal-600 dark:text-teal-400 transition-colors shrink-0"
+                                title="Dismiss"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ))}
                 </div>
             )}
 

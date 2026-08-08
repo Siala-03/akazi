@@ -5,7 +5,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import {
     Building2, MapPin, User, Phone, Mail,
     Plus, Search, RefreshCw, Edit2, Power, PowerOff, X, Hash, KeyRound, DollarSign, Zap, ZapOff, Trash2,
-    ListChecks, ListX, QrCode, Calendar, CalendarOff, LogIn, Receipt, ReceiptText,
+    ListChecks, ListX, QrCode, Calendar, CalendarOff, LogIn, Receipt, ReceiptText, MessageSquarePlus,
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { PageHeader } from '@/components/PageHeader';
@@ -53,6 +53,10 @@ export default function AdminExportersPage() {
     const [showRateModal, setShowRateModal] = useState(false);
     const [rateExporter, setRateExporter] = useState<Exporter | null>(null);
     const [dailyRateInput, setDailyRateInput] = useState('');
+    const [showNoteModal, setShowNoteModal] = useState(false);
+    const [noteExporter, setNoteExporter] = useState<Exporter | null>(null);
+    const [noteMessage, setNoteMessage] = useState('');
+    const [sendingNote, setSendingNote] = useState(false);
 
     useEffect(() => { fetchExporters(); }, []);
 
@@ -91,6 +95,34 @@ export default function AdminExportersPage() {
             fetchExporters();
         } catch {
             toast.error('Failed to set rate');
+        }
+    };
+
+    const openNoteModal = (exp: Exporter) => {
+        setNoteExporter(exp);
+        setNoteMessage('');
+        setShowNoteModal(true);
+    };
+
+    const handleSendNote = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!noteExporter || !noteMessage.trim()) return;
+        try {
+            setSendingNote(true);
+            const res = await fetch('/api/admin/exporter-notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ exporterId: noteExporter._id, message: noteMessage.trim() }),
+            });
+            if (!res.ok) throw new Error('Failed to send note');
+            toast.success(`Note sent to ${noteExporter.companyTradingName}`);
+            setShowNoteModal(false);
+            setNoteExporter(null);
+            setNoteMessage('');
+        } catch {
+            toast.error('Failed to send note');
+        } finally {
+            setSendingNote(false);
         }
     };
 
@@ -569,6 +601,13 @@ export default function AdminExportersPage() {
                                                     <LogIn className="w-4 h-4" strokeWidth={2.5} />
                                                 </button>
                                                 <button
+                                                    onClick={() => openNoteModal(exp)}
+                                                    className="p-1 text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 transition-colors"
+                                                    title="Send a note to this exporter"
+                                                >
+                                                    <MessageSquarePlus className="w-4 h-4" strokeWidth={2.5} />
+                                                </button>
+                                                <button
                                                     onClick={() => openEdit(exp)}
                                                     className="p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                                                     title="Edit"
@@ -664,6 +703,55 @@ export default function AdminExportersPage() {
                                 <button
                                     type="button"
                                     onClick={() => { setShowRateModal(false); setRateExporter(null); }}
+                                    className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-semibold hover:bg-gray-200 transition-colors text-sm"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Send Note Modal */}
+            {showNoteModal && noteExporter && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <div>
+                                <h2 className="text-lg font-bold text-gray-900">Send Note</h2>
+                                <p className="text-sm text-gray-500 mt-0.5">{noteExporter.companyTradingName}</p>
+                            </div>
+                            <button onClick={() => { setShowNoteModal(false); setNoteExporter(null); }} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleSendNote} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                    <span className="flex items-center gap-1.5"><MessageSquarePlus className="w-3.5 h-3.5 text-teal-600" />Message</span>
+                                </label>
+                                <textarea
+                                    required
+                                    rows={4}
+                                    value={noteMessage}
+                                    onChange={e => setNoteMessage(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm resize-none"
+                                    placeholder="e.g. For this week, the numbers in the system may not match manual attendance for some workers lacking IDs. We're looking into it."
+                                />
+                                <p className="text-xs text-gray-400 mt-1">This appears as an alert in {noteExporter.companyTradingName}'s dashboard.</p>
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    type="submit"
+                                    disabled={sendingNote || !noteMessage.trim()}
+                                    className="flex-1 bg-teal-600 text-white py-2.5 rounded-xl font-semibold hover:bg-teal-700 transition-colors text-sm disabled:opacity-50"
+                                >
+                                    {sendingNote ? 'Sending...' : 'Send Note'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowNoteModal(false); setNoteExporter(null); }}
                                     className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-semibold hover:bg-gray-200 transition-colors text-sm"
                                 >
                                     Cancel

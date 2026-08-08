@@ -31,6 +31,7 @@ model User {
   exporter              Exporter?       @relation("UserExporter", fields: [exporterId], references: [id])
   facility              Facility?       @relation("UserFacility", fields: [facilityId], references: [id])
   reviewedRequests      WorkerRequest[] @relation("WorkerRequestReviewer")
+  exporterNotesSent     ExporterNote[]  @relation("ExporterNoteAuthor")
 
   @@index([role, isActive])
 }
@@ -59,6 +60,7 @@ model Exporter {
   sessions           Session[]       @relation("SessionExporter")
   users              User[]          @relation("UserExporter")
   workerRequests     WorkerRequest[] @relation("WorkerRequestExporter")
+  notes              ExporterNote[]  @relation("ExporterNoteExporter")
 
   @@index([isActive])
 }
@@ -290,6 +292,19 @@ model WorkerRequest {
   updatedAt             DateTime            @updatedAt
   exporter              Exporter            @relation("WorkerRequestExporter", fields: [exporterId], references: [id])
   reviewer              User?               @relation("WorkerRequestReviewer", fields: [reviewedBy], references: [id])
+}
+
+model ExporterNote {
+  id         String   @id @default(cuid())
+  exporterId String
+  message    String
+  isRead     Boolean  @default(false)
+  createdBy  String
+  createdAt  DateTime @default(now())
+  exporter   Exporter @relation("ExporterNoteExporter", fields: [exporterId], references: [id])
+  author     User     @relation("ExporterNoteAuthor", fields: [createdBy], references: [id])
+
+  @@index([exporterId, isRead])
 }
 
 model Settings {
