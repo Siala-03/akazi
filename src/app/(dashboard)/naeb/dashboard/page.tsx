@@ -223,7 +223,7 @@ export default function NaebDashboardPage() {
                                     <tr key={row.exporterId} className="group bg-white dark:bg-[#1e293b] transition-all duration-150 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 hover:shadow-[inset_3px_0_0_0_#10b981]">
                                         <td className="px-5 py-4">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
                                                     <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                                                 </div>
                                                 <span className="text-sm font-semibold text-gray-900 dark:text-white">{row.exporterName}</span>
