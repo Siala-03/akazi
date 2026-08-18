@@ -165,6 +165,7 @@ export async function POST(request: NextRequest) {
                 qrToken: randomUUID(),
                 enrollmentDate: new Date(),
                 consentTimestamp: new Date(),
+                registeredBy: currentUser.userId,
             },
             include: { cooperative: true },
         });

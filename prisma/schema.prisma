@@ -32,6 +32,7 @@ model User {
   facility              Facility?       @relation("UserFacility", fields: [facilityId], references: [id])
   reviewedRequests      WorkerRequest[] @relation("WorkerRequestReviewer")
   exporterNotesSent     ExporterNote[]  @relation("ExporterNoteAuthor")
+  workersRegistered     Worker[]        @relation("WorkerRegisteredBy")
 
   @@index([role, isActive])
 }
@@ -42,7 +43,7 @@ model Exporter {
   tinNumber          String?
   companyTradingName String
   companyAddress     String
-  contactPerson      String
+  contactPerson      String  
   phone              String
   email              String
   isActive           Boolean         @default(true)
@@ -126,12 +127,16 @@ model Worker {
   createdAt                  DateTime     @default(now())
   updatedAt                  DateTime     @updatedAt
   nationalId                 String?
+  registeredBy               String?
   attendances                Attendance[]
   bagWorkers                 BagWorker[]
   earnings                   Earnings[]   @relation("EarningsWorker")
   sessions                   Session[]    @relation("SessionWorker")
   cooperative                Cooperative  @relation(fields: [cooperativeId], references: [id])
   facility                   Facility?    @relation("WorkerFacility", fields: [facilityId], references: [id])
+  registrar                  User?        @relation("WorkerRegisteredBy", fields: [registeredBy], references: [id])
+
+  @@index([registeredBy])
 
   @@index([cooperativeId, status])
   @@index([status])
