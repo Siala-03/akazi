@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyPassword, generateToken } from '@/lib/auth';
+import { getSystemLock } from '@/lib/settings';
 
 // In-memory rate limiter: 5 failed attempts per IP per 15 minutes
 const failMap = new Map<string, { count: number; resetAt: number }>();
@@ -69,6 +70,22 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
         }
 
+        if (!user.isSuperAdmin) {
+            const { loginsLocked } = await getSystemLock();
+            if (loginsLocked) {
+                return NextResponse.json(
+                    { error: 'System login is currently locked by the administrator. Please try again later.' },
+                    { status: 423 }
+                );
+            }
+            if (!user.approvedAt) {
+                return NextResponse.json(
+                    { error: 'Your account is pending administrator approval and cannot log in yet.' },
+                    { status: 403 }
+                );
+            }
+        }
+
         clearFailures(ip);
 
         const token = generateToken({
@@ -77,6 +94,7 @@ export async function POST(request: NextRequest) {
             role: user.role,
             exporterId: user.exporterId ?? undefined,
             facilityId: user.facilityId ?? undefined,
+            isSuperAdmin: user.isSuperAdmin,
         });
 
         const dashboardUrl =

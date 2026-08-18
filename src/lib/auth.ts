@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { getSystemLock } from './settings';
 
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as jwt.SignOptions['expiresIn'];
 
@@ -17,6 +18,8 @@ export interface JWTPayload {
     exporterId?: string;
     facilityId?: string;
     impersonatorId?: string;
+    isSuperAdmin?: boolean;
+    iat?: number;
 }
 
 /**
@@ -60,7 +63,9 @@ export function verifyToken(token: string): JWTPayload | null {
 }
 
 /**
- * Get current user from cookie
+ * Get current user from cookie. Sessions issued before a superadmin-triggered
+ * hard lock are rejected here, forcing a fresh login for everyone except the
+ * superadmin who can always reach the system to lift the lock.
  */
 export async function getCurrentUser(): Promise<JWTPayload | null> {
     const cookieStore = await cookies();
@@ -70,7 +75,17 @@ export async function getCurrentUser(): Promise<JWTPayload | null> {
         return null;
     }
 
-    return verifyToken(token);
+    const decoded = verifyToken(token);
+    if (!decoded) return null;
+
+    if (!decoded.isSuperAdmin) {
+        const { sessionsInvalidatedAt } = await getSystemLock();
+        if (sessionsInvalidatedAt && decoded.iat && decoded.iat * 1000 < sessionsInvalidatedAt.getTime()) {
+            return null;
+        }
+    }
+
+    return decoded;
 }
 
 /**

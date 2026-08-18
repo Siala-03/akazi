@@ -38,8 +38,20 @@ export async function POST(request: NextRequest) {
                 exporterId: exporterId || null,
                 facilityId: facilityId || null,
                 isActive: true,
+                approvedAt: currentUser.isSuperAdmin ? new Date() : null,
+                approvedBy: currentUser.isSuperAdmin ? currentUser.userId : null,
             },
         });
+
+        const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+
+        if (!user.approvedAt) {
+            return NextResponse.json({
+                user: { id: user.id, email: user.email, name: user.name, role: user.role, phone: user.phone },
+                message: `${roleLabel} account created but is pending superadmin approval. Login credentials will be sent once approved.`,
+                pendingApproval: true,
+            }, { status: 201 });
+        }
 
         let emailSent = false;
         let emailError = '';
@@ -51,7 +63,6 @@ export async function POST(request: NextRequest) {
             emailError = e instanceof Error ? e.message : 'Unknown error';
         }
 
-        const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
         return NextResponse.json({
             user: { id: user.id, email: user.email, name: user.name, role: user.role, phone: user.phone },
             message: emailSent

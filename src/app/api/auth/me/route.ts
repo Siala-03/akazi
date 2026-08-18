@@ -14,7 +14,7 @@ export async function GET() {
             select: {
                 id: true, email: true, name: true, phone: true, role: true,
                 profilePicture: true, exporterId: true, facilityId: true,
-                isActive: true, createdAt: true, updatedAt: true,
+                isActive: true, isSuperAdmin: true, createdAt: true, updatedAt: true,
             },
         });
 
@@ -56,7 +56,7 @@ export async function PUT(request: Request) {
             select: {
                 id: true, email: true, name: true, phone: true, role: true,
                 profilePicture: true, exporterId: true, facilityId: true,
-                isActive: true, createdAt: true, updatedAt: true,
+                isActive: true, isSuperAdmin: true, createdAt: true, updatedAt: true,
             },
         });
 

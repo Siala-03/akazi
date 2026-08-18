@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -17,6 +17,7 @@ import {
     Shield,
     FileSpreadsheet,
     Activity,
+    ShieldAlert,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Breadcrumb } from '@/components/Breadcrumb';
@@ -39,11 +40,25 @@ const navigation = [
     { name: 'NAEB Users',     href: '/admin/naeb-users',        icon: Shield },
 ];
 
+const superAdminNavigation = [
+    { name: 'System Control', href: '/admin/system-control', icon: ShieldAlert },
+];
+
 export default function AdminLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+    useEffect(() => {
+        fetch('/api/auth/me')
+            .then(res => res.json())
+            .then(data => setIsSuperAdmin(!!data.user?.isSuperAdmin))
+            .catch(() => {});
+    }, []);
+
+    const visibleNavigation = isSuperAdmin ? [...navigation, ...superAdminNavigation] : navigation;
 
     const handleLogout = async () => {
         await fetch('/api/auth/logout', { method: 'POST' });
@@ -104,7 +119,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     </div>
 
                     <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-                        {navigation.map((item) => {
+                        {visibleNavigation.map((item) => {
                             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                             const Icon = item.icon;
                             return (

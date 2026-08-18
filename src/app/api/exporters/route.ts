@@ -50,10 +50,12 @@ export async function POST(request: NextRequest) {
         const exporter = await prisma.exporter.create({ data: body });
 
         let userCreated = false;
+        let userPending = false;
         if (exporter.email) {
             const existingUser = await prisma.user.findUnique({ where: { email: exporter.email.toLowerCase() } });
             if (!existingUser) {
                 const tempPassword = crypto.randomBytes(6).toString('hex');
+                const isApprover = !!currentUser.isSuperAdmin;
                 await prisma.user.create({
                     data: {
                         email: exporter.email.toLowerCase(),
@@ -63,13 +65,19 @@ export async function POST(request: NextRequest) {
                         role: 'exporter',
                         exporterId: exporter.id,
                         isActive: true,
+                        approvedAt: isApprover ? new Date() : null,
+                        approvedBy: isApprover ? currentUser.userId : null,
                     },
                 });
-                try {
-                    await sendWelcomeEmail(exporter.email, exporter.contactPerson, tempPassword, 'exporter');
-                    userCreated = true;
-                } catch {
-                    userCreated = true;
+                if (isApprover) {
+                    try {
+                        await sendWelcomeEmail(exporter.email, exporter.contactPerson, tempPassword, 'exporter');
+                        userCreated = true;
+                    } catch {
+                        userCreated = true;
+                    }
+                } else {
+                    userPending = true;
                 }
             }
         }
@@ -79,7 +87,9 @@ export async function POST(request: NextRequest) {
             userCreated,
             message: userCreated
                 ? `Exporter created and login credentials sent to ${exporter.email}`
-                : 'Exporter created',
+                : userPending
+                    ? 'Exporter created. Login account is pending superadmin approval.'
+                    : 'Exporter created',
         }, { status: 201 });
     } catch (error) {
         console.error('Create exporter error:', error);
