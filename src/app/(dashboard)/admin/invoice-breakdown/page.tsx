@@ -92,15 +92,15 @@ export default function InvoiceBreakdownPage() {
     const handleExportCsv = () => {
         if (rows.length === 0) return;
         const lines = [
-            'Exporter / Date,Workers/Sessions,Worker Cost (RWF),Umucyo Margin (RWF),Total Cost (RWF)',
+            'Exporter / Date,Umucyo Margin (RWF),Workers/Sessions,Worker Cost (RWF),Total Cost (RWF)',
             ...exporterTotals.flatMap(t => [
-                [`${t.exporterName} (Week Total)`, t.sessionCount, t.workerCost, t.umucyoMargin, t.totalCost].join(','),
+                [`${t.exporterName} (Week Total)`, t.umucyoMargin, t.sessionCount, t.workerCost, t.totalCost].join(','),
                 ...rows.filter(r => r.exporterId === t.exporterId).map(r =>
-                    [fmtDate(r.date), r.sessionCount, r.workerCost, r.umucyoMargin, r.totalCost].join(',')
+                    [fmtDate(r.date), r.umucyoMargin, r.sessionCount, r.workerCost, r.totalCost].join(',')
                 ),
             ]),
             '',
-            `Grand Total,${grandTotal.sessionCount},${grandTotal.workerCost},${grandTotal.umucyoMargin},${grandTotal.totalCost}`,
+            `Grand Total,${grandTotal.umucyoMargin},${grandTotal.sessionCount},${grandTotal.workerCost},${grandTotal.totalCost}`,
         ];
         const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -171,9 +171,9 @@ export default function InvoiceBreakdownPage() {
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Exporter / Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Umucyo Margin</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Workers/Sessions</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker Cost</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Umucyo Margin</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Cost</th>
                             </tr>
                         </thead>
@@ -187,17 +187,17 @@ export default function InvoiceBreakdownPage() {
                                     <>
                                         <tr key={t.exporterId} className="bg-indigo-50/60 hover:bg-indigo-50">
                                             <td className="px-6 py-3 font-bold text-gray-900">{t.exporterName}</td>
+                                            <td className="px-6 py-3 font-bold text-gray-900">{fmt(t.umucyoMargin)}</td>
                                             <td className="px-6 py-3 font-bold text-gray-900">{t.sessionCount}</td>
                                             <td className="px-6 py-3 font-bold text-gray-900">{fmt(t.workerCost)}</td>
-                                            <td className="px-6 py-3 font-bold text-gray-900">{fmt(t.umucyoMargin)}</td>
                                             <td className="px-6 py-3 font-bold text-gray-900">{fmt(t.totalCost)}</td>
                                         </tr>
                                         {rows.filter(r => r.exporterId === t.exporterId).map(r => (
                                             <tr key={`${t.exporterId}-${r.date}`} className="hover:bg-gray-50">
                                                 <td className="pl-10 pr-6 py-2 text-gray-600 text-sm">{fmtDate(r.date)}</td>
+                                                <td className="px-6 py-2 text-gray-600 text-sm">{fmt(r.umucyoMargin)}</td>
                                                 <td className="px-6 py-2 text-gray-600 text-sm">{r.sessionCount}</td>
                                                 <td className="px-6 py-2 text-gray-600 text-sm">{fmt(r.workerCost)}</td>
-                                                <td className="px-6 py-2 text-gray-600 text-sm">{fmt(r.umucyoMargin)}</td>
                                                 <td className="px-6 py-2 text-gray-600 text-sm">{fmt(r.totalCost)}</td>
                                             </tr>
                                         ))}
@@ -209,9 +209,9 @@ export default function InvoiceBreakdownPage() {
                             <tfoot className="bg-gray-50 border-t-2 border-gray-200">
                                 <tr>
                                     <td className="px-6 py-3 font-bold text-gray-900">Grand Total</td>
+                                    <td className="px-6 py-3 font-bold text-gray-900">{fmt(grandTotal.umucyoMargin)}</td>
                                     <td className="px-6 py-3 font-bold text-gray-900">{grandTotal.sessionCount}</td>
                                     <td className="px-6 py-3 font-bold text-gray-900">{fmt(grandTotal.workerCost)}</td>
-                                    <td className="px-6 py-3 font-bold text-gray-900">{fmt(grandTotal.umucyoMargin)}</td>
                                     <td className="px-6 py-3 font-bold text-gray-900">{fmt(grandTotal.totalCost)}</td>
                                 </tr>
                             </tfoot>
