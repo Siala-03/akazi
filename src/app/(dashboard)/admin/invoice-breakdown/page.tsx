@@ -92,12 +92,13 @@ export default function InvoiceBreakdownPage() {
     const handleExportCsv = () => {
         if (rows.length === 0) return;
         const lines = [
-            'Date,Exporter,Workers/Sessions,Worker Cost (RWF),Umucyo Margin (RWF),Total Cost (RWF)',
-            ...rows.map(r => [r.date, r.exporterName, r.sessionCount, r.workerCost, r.umucyoMargin, r.totalCost].join(',')),
-            '',
-            'Exporter Totals for the Week',
-            'Exporter,Workers/Sessions,Worker Cost (RWF),Umucyo Margin (RWF),Total Cost (RWF)',
-            ...exporterTotals.map(t => [t.exporterName, t.sessionCount, t.workerCost, t.umucyoMargin, t.totalCost].join(',')),
+            'Exporter / Date,Workers/Sessions,Worker Cost (RWF),Umucyo Margin (RWF),Total Cost (RWF)',
+            ...exporterTotals.flatMap(t => [
+                [`${t.exporterName} (Week Total)`, t.sessionCount, t.workerCost, t.umucyoMargin, t.totalCost].join(','),
+                ...rows.filter(r => r.exporterId === t.exporterId).map(r =>
+                    [fmtDate(r.date), r.sessionCount, r.workerCost, r.umucyoMargin, r.totalCost].join(',')
+                ),
+            ]),
             '',
             `Grand Total,${grandTotal.sessionCount},${grandTotal.workerCost},${grandTotal.umucyoMargin},${grandTotal.totalCost}`,
         ];
@@ -159,16 +160,17 @@ export default function InvoiceBreakdownPage() {
                 </button>
             </div>
 
-            {/* Exporter weekly totals — invoice-ready */}
+            {/* Per-exporter weekly total, with each day of that week nested underneath */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200">
-                    <h3 className="text-base font-semibold text-gray-900">Exporter Totals This Week</h3>
+                    <h3 className="text-base font-semibold text-gray-900">Weekly Breakdown by Exporter</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">Each exporter's total for the week, broken down day by day</p>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full table-compact">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Exporter</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Exporter / Date</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Workers/Sessions</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker Cost</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Umucyo Margin</th>
@@ -182,13 +184,24 @@ export default function InvoiceBreakdownPage() {
                                 <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-400">No sessions this week.</td></tr>
                             ) : (
                                 exporterTotals.map(t => (
-                                    <tr key={t.exporterId} className="hover:bg-gray-50">
-                                        <td className="px-6 py-3 font-medium text-gray-900">{t.exporterName}</td>
-                                        <td className="px-6 py-3 text-gray-700">{t.sessionCount}</td>
-                                        <td className="px-6 py-3 text-gray-700">{fmt(t.workerCost)}</td>
-                                        <td className="px-6 py-3 text-gray-700">{fmt(t.umucyoMargin)}</td>
-                                        <td className="px-6 py-3 font-semibold text-gray-900">{fmt(t.totalCost)}</td>
-                                    </tr>
+                                    <>
+                                        <tr key={t.exporterId} className="bg-indigo-50/60 hover:bg-indigo-50">
+                                            <td className="px-6 py-3 font-bold text-gray-900">{t.exporterName}</td>
+                                            <td className="px-6 py-3 font-bold text-gray-900">{t.sessionCount}</td>
+                                            <td className="px-6 py-3 font-bold text-gray-900">{fmt(t.workerCost)}</td>
+                                            <td className="px-6 py-3 font-bold text-gray-900">{fmt(t.umucyoMargin)}</td>
+                                            <td className="px-6 py-3 font-bold text-gray-900">{fmt(t.totalCost)}</td>
+                                        </tr>
+                                        {rows.filter(r => r.exporterId === t.exporterId).map(r => (
+                                            <tr key={`${t.exporterId}-${r.date}`} className="hover:bg-gray-50">
+                                                <td className="pl-10 pr-6 py-2 text-gray-600 text-sm">{fmtDate(r.date)}</td>
+                                                <td className="px-6 py-2 text-gray-600 text-sm">{r.sessionCount}</td>
+                                                <td className="px-6 py-2 text-gray-600 text-sm">{fmt(r.workerCost)}</td>
+                                                <td className="px-6 py-2 text-gray-600 text-sm">{fmt(r.umucyoMargin)}</td>
+                                                <td className="px-6 py-2 text-gray-600 text-sm">{fmt(r.totalCost)}</td>
+                                            </tr>
+                                        ))}
+                                    </>
                                 ))
                             )}
                         </tbody>
@@ -203,46 +216,6 @@ export default function InvoiceBreakdownPage() {
                                 </tr>
                             </tfoot>
                         )}
-                    </table>
-                </div>
-            </div>
-
-            {/* Day-by-day breakdown */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200">
-                    <h3 className="text-base font-semibold text-gray-900">Day-by-Day Breakdown</h3>
-                    <p className="text-sm text-gray-500 mt-0.5">Every exporter served on each day of the selected week</p>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full table-compact">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Exporter</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Workers/Sessions</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Worker Cost</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Umucyo Margin</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Cost</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {loading ? (
-                                <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-400">Loading...</td></tr>
-                            ) : rows.length === 0 ? (
-                                <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-400">No sessions this week.</td></tr>
-                            ) : (
-                                rows.map((r, i) => (
-                                    <tr key={`${r.date}-${r.exporterId}`} className="hover:bg-gray-50">
-                                        <td className="px-6 py-2.5 text-gray-700">{fmtDate(r.date)}</td>
-                                        <td className="px-6 py-2.5 font-medium text-gray-900">{r.exporterName}</td>
-                                        <td className="px-6 py-2.5 text-gray-700">{r.sessionCount}</td>
-                                        <td className="px-6 py-2.5 text-gray-700">{fmt(r.workerCost)}</td>
-                                        <td className="px-6 py-2.5 text-gray-700">{fmt(r.umucyoMargin)}</td>
-                                        <td className="px-6 py-2.5 font-semibold text-gray-900">{fmt(r.totalCost)}</td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
                     </table>
                 </div>
             </div>
