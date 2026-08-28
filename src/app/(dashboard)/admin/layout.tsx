@@ -36,6 +36,7 @@ const navigation = [
     { name: 'Cooperatives',    href: '/admin/cooperatives',      icon: GitBranch },
     { name: 'Worker Requests', href: '/admin/worker-requests',   icon: ClipboardList },
     { name: 'Payroll',         href: '/admin/payroll',           icon: FileSpreadsheet },
+    { name: 'Invoice Breakdown', href: '/admin/invoice-breakdown', icon: FileSpreadsheet },
     { name: 'Reports',         href: '/admin/reports',           icon: BarChart3 },
     { name: 'NAEB Users',     href: '/admin/naeb-users',        icon: Shield },
 ];
