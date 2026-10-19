@@ -24,6 +24,12 @@ export interface Worker {
     ageRange?: string;
     phone: string;
     email?: string;
+    // Address
+    province?: string;
+    district?: string;
+    sector?: string;
+    cell?: string;
+    village?: string;
     photo: string;
     cooperativeId: string;
     primaryRole: string;

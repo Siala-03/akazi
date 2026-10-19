@@ -7,6 +7,7 @@ import QRCode from 'qrcode';
 import { sendQrBadgeEmail } from '@/lib/email';
 import { toMongoArray, toMongo } from '@/lib/serialize';
 import { getSettings } from '@/lib/settings';
+import { RWANDA_DISTRICTS } from '@/lib/rwanda-locations';
 
 export async function GET(request: NextRequest) {
     try {
@@ -126,6 +127,19 @@ export async function POST(request: NextRequest) {
         if (!/^\d{16}$/.test(workerId)) {
             return NextResponse.json({ error: 'National ID must be exactly 16 numerical digits' }, { status: 400 });
         }
+        const ADDRESS_FIELDS = ['province', 'district', 'sector', 'cell', 'village'] as const;
+        const address: Record<string, string> = {};
+        for (const field of ADDRESS_FIELDS) {
+            const value = typeof body[field] === 'string' ? body[field].trim() : '';
+            if (!value) {
+                return NextResponse.json({ error: `${field.charAt(0).toUpperCase() + field.slice(1)} is required` }, { status: 400 });
+            }
+            address[field] = value;
+        }
+        if (!RWANDA_DISTRICTS[address.province]?.includes(address.district)) {
+            return NextResponse.json({ error: 'Invalid province or district' }, { status: 400 });
+        }
+
         const existing = await prisma.worker.findUnique({ where: { workerId } });
         if (existing) {
             return NextResponse.json({ error: 'A worker with this National ID is already registered' }, { status: 409 });
@@ -157,6 +171,7 @@ export async function POST(request: NextRequest) {
         const worker = await prisma.worker.create({
             data: {
                 ...rest,
+                ...address,
                 workerId,
                 facilityId,
                 dateOfBirth: parsedDateOfBirth,

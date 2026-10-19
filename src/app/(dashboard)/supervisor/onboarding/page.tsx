@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import { UserPlus, ChevronRight, ChevronLeft, Check, User, Phone, Briefcase, FileCheck } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
+import { RWANDA_DISTRICTS, RWANDA_PROVINCES } from '@/lib/rwanda-locations';
 
 const STEPS = [
     { id: 1, label: 'Identity', icon: User, desc: 'Name, ID & gender' },
-    { id: 2, label: 'Contact & Work', icon: Briefcase, desc: 'Phone, role & cooperative' },
+    { id: 2, label: 'Contact & Work', icon: Briefcase, desc: 'Phone, address & work' },
     { id: 3, label: 'Consent', icon: FileCheck, desc: 'Review & confirm' },
 ];
 
@@ -19,6 +20,11 @@ const empty = {
     dateOfBirth: '',
     phone: '',
     email: '',
+    province: '',
+    district: '',
+    sector: '',
+    cell: '',
+    village: '',
     primaryRole: 'Coffee Sorter',
     cooperativeId: '',
     facilityId: '',
@@ -50,6 +56,11 @@ function validate(step: number, data: FormData): Errors {
         if (!phone) e.phone = 'Phone number is required';
         else if (!/^07\d{8}$/.test(phone))
             e.phone = 'Phone must start with 07 and be exactly 10 digits';
+        if (!data.province) e.province = 'Province is required';
+        if (!data.district) e.district = 'District is required';
+        if (!data.sector.trim()) e.sector = 'Sector is required';
+        if (!data.cell.trim()) e.cell = 'Cell is required';
+        if (!data.village.trim()) e.village = 'Village is required';
         if (!data.primaryRole.trim()) e.primaryRole = 'Primary role is required';
         if (!data.cooperativeId) e.cooperativeId = 'Please select a cooperative';
     }
@@ -107,7 +118,7 @@ export default function OnboardingPage() {
         const errs = validate(currentStep, formData);
         const stepFields: Record<number, (keyof FormData)[]> = {
             1: ['fullName', 'workerId', 'dateOfBirth'],
-            2: ['phone', 'primaryRole', 'cooperativeId'],
+            2: ['phone', 'province', 'district', 'sector', 'cell', 'village', 'primaryRole', 'cooperativeId'],
             3: ['consentWorkRecords'],
         };
         const relevantErrors = stepFields[currentStep].filter(f => errs[f]);
@@ -252,6 +263,45 @@ export default function OnboardingPage() {
                                 <p className="mt-1 text-xs text-gray-400">QR badge emailed if provided</p>
                             </div>
                         </div>
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Address</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Province *</label>
+                                    <select
+                                        value={formData.province}
+                                        onChange={e => { setFormData(prev => ({ ...prev, district: '' })); set('province', e.target.value); }}
+                                        className={inputClass('province')}
+                                    >
+                                        <option value="">Select province</option>
+                                        {RWANDA_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                                    </select>
+                                    {fieldError('province') && <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('province')}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">District *</label>
+                                    <select
+                                        value={formData.district}
+                                        onChange={e => set('district', e.target.value)}
+                                        disabled={!formData.province}
+                                        className={`${inputClass('district')} disabled:opacity-60 disabled:cursor-not-allowed`}
+                                    >
+                                        <option value="">{formData.province ? 'Select district' : 'Select province first'}</option>
+                                        {(RWANDA_DISTRICTS[formData.province] || []).map(d => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                    {fieldError('district') && <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError('district')}</p>}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                {(['sector', 'cell', 'village'] as const).map(field => (
+                                    <div key={field}>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 capitalize">{field} *</label>
+                                        <input type="text" value={formData[field]} onChange={e => set(field, e.target.value)} className={inputClass(field)} placeholder={`Enter ${field}`} />
+                                        {fieldError(field) && <p className="mt-1 text-xs font-medium text-red-700 dark:text-red-400">{fieldError(field)}</p>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Primary Role *</label>
                             <input type="text" value={formData.primaryRole} onChange={e => set('primaryRole', e.target.value)} className={inputClass('primaryRole')} placeholder="Coffee Sorter" />
@@ -294,6 +344,12 @@ export default function OnboardingPage() {
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Phone</span>
                                 <span className="font-medium text-gray-700 dark:text-gray-300">{formData.phone}</span>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                                <span className="text-gray-500">Address</span>
+                                <span className="font-medium text-gray-700 dark:text-gray-300 text-right">
+                                    {[formData.village, formData.cell, formData.sector, formData.district, formData.province].filter(Boolean).join(', ')}
+                                </span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Role</span>

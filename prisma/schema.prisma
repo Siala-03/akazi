@@ -111,6 +111,11 @@ model Worker {
   ageRange                   String?
   phone                      String
   email                      String?
+  province                   String?
+  district                   String?
+  sector                     String?
+  cell                       String?
+  village                    String?
   photo                      String
   cooperativeId              String
   facilityId                 String?
