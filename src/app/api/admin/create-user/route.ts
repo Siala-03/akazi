@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getCurrentUser, hashPassword } from '@/lib/auth';
 import { sendWelcomeEmail } from '@/lib/email';
@@ -162,6 +163,13 @@ export async function DELETE(request: NextRequest) {
 
         return NextResponse.json({ success: true });
     } catch (error) {
+        // Users who have recorded attendance, sessions, bags, etc. are referenced by that
+        // history and can't be removed without destroying it — deactivate them instead.
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+            return NextResponse.json({
+                error: 'This user has work history (attendance, sessions or bags) and cannot be deleted. Deactivate them instead to block their login.',
+            }, { status: 409 });
+        }
         console.error('[Admin Delete User] Error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
