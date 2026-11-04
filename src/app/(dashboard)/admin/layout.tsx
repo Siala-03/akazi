@@ -19,6 +19,7 @@ import {
     Activity,
     ShieldAlert,
     ChevronDown,
+    CalendarClock,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Breadcrumb } from '@/components/Breadcrumb';
@@ -63,6 +64,7 @@ const navigation: NavEntry[] = [
         icon: Building2,
         items: [
             { name: 'Exporters', href: '/admin/exporters', icon: Building2 },
+            { name: 'Sessions', href: '/admin/sessions', icon: CalendarClock },
             { name: 'Cooperatives', href: '/admin/cooperatives', icon: GitBranch },
             { name: 'Worker Requests', href: '/admin/worker-requests', icon: ClipboardList },
         ],
