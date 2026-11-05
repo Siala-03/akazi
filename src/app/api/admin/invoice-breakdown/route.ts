@@ -12,6 +12,10 @@ function getWeekStart(date: Date): Date {
     return d;
 }
 
+function dayKey(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export async function GET(request: NextRequest) {
     const currentUser = await getCurrentUser();
     if (!currentUser || currentUser.role !== 'admin') {
@@ -45,6 +49,7 @@ export async function GET(request: NextRequest) {
     // Group by (dateKey, exporterId)
     const cellMap = new Map<string, {
         date: string; exporterId: string; exporterName: string; sessionCount: number; totalCost: number;
+        recordedCount: number; agreedCount: number | null;
     }>();
 
     for (const s of sessions) {
@@ -58,11 +63,44 @@ export async function GET(request: NextRequest) {
                 exporterName: s.exporter.companyTradingName,
                 sessionCount: 0,
                 totalCost: 0,
+                recordedCount: 0,
+                agreedCount: null,
             });
         }
         const entry = cellMap.get(key)!;
         entry.sessionCount += 1;
+        entry.recordedCount += 1;
         entry.totalCost += rate;
+    }
+
+    // Where a total was agreed with the exporter for a day, bill that count instead of the
+    // recorded check-ins, at the average rate of that day's sessions (or the exporter's rate).
+    const agreed = await prisma.agreedSessionCount.findMany({
+        where: {
+            date: { gte: new Date(`${dayKey(weekStart)}T00:00:00Z`), lte: new Date(`${dayKey(weekEnd)}T00:00:00Z`) },
+            ...(exporterIdFilter && { exporterId: exporterIdFilter }),
+        },
+        include: { exporter: { select: { companyTradingName: true, dailyRate: true } } },
+    });
+    for (const a of agreed) {
+        const dateKey = a.date.toISOString().slice(0, 10);
+        const key = `${dateKey}::${a.exporterId}`;
+        const entry = cellMap.get(key) ?? {
+            date: dateKey,
+            exporterId: a.exporterId,
+            exporterName: a.exporter.companyTradingName,
+            sessionCount: 0,
+            totalCost: 0,
+            recordedCount: 0,
+            agreedCount: null,
+        };
+        const rate = entry.recordedCount > 0
+            ? entry.totalCost / entry.recordedCount
+            : a.exporter.dailyRate ?? DEFAULT_DAILY_RATE;
+        entry.agreedCount = a.agreedCount;
+        entry.sessionCount = a.agreedCount;
+        entry.totalCost = a.agreedCount * rate;
+        cellMap.set(key, entry);
     }
 
     const rows = Array.from(cellMap.values())
@@ -74,16 +112,17 @@ export async function GET(request: NextRequest) {
         .sort((a, b) => a.date.localeCompare(b.date) || a.exporterName.localeCompare(b.exporterName));
 
     // Per-exporter weekly totals (invoice-ready)
-    const exporterTotalsMap = new Map<string, { exporterId: string; exporterName: string; sessionCount: number; totalCost: number; workerCost: number; umucyoMargin: number }>();
+    const exporterTotalsMap = new Map<string, { exporterId: string; exporterName: string; sessionCount: number; recordedCount: number; totalCost: number; workerCost: number; umucyoMargin: number }>();
     for (const r of rows) {
         if (!exporterTotalsMap.has(r.exporterId)) {
             exporterTotalsMap.set(r.exporterId, {
                 exporterId: r.exporterId, exporterName: r.exporterName,
-                sessionCount: 0, totalCost: 0, workerCost: 0, umucyoMargin: 0,
+                sessionCount: 0, recordedCount: 0, totalCost: 0, workerCost: 0, umucyoMargin: 0,
             });
         }
         const t = exporterTotalsMap.get(r.exporterId)!;
         t.sessionCount += r.sessionCount;
+        t.recordedCount += r.recordedCount;
         t.totalCost += r.totalCost;
         t.workerCost += r.workerCost;
         t.umucyoMargin += r.umucyoMargin;
@@ -92,10 +131,11 @@ export async function GET(request: NextRequest) {
 
     const grandTotal = exporterTotals.reduce((acc, t) => ({
         sessionCount: acc.sessionCount + t.sessionCount,
+        recordedCount: acc.recordedCount + t.recordedCount,
         totalCost: acc.totalCost + t.totalCost,
         workerCost: acc.workerCost + t.workerCost,
         umucyoMargin: acc.umucyoMargin + t.umucyoMargin,
-    }), { sessionCount: 0, totalCost: 0, workerCost: 0, umucyoMargin: 0 });
+    }), { sessionCount: 0, recordedCount: 0, totalCost: 0, workerCost: 0, umucyoMargin: 0 });
 
     return NextResponse.json({
         weekStart: weekStart.toISOString(),

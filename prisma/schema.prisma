@@ -67,6 +67,7 @@ model Exporter {
   users              User[]          @relation("UserExporter")
   workerRequests     WorkerRequest[] @relation("WorkerRequestExporter")
   notes              ExporterNote[]  @relation("ExporterNoteExporter")
+  agreedCounts       AgreedSessionCount[]
 
   @@index([isActive])
 }
@@ -374,4 +375,21 @@ enum WorkerRequestStatus {
   approved
   rejected
   fulfilled
+}
+
+// Session total agreed with an exporter (and NAEB) for a given day, used for invoicing
+// when it differs from the recorded check-ins. Individual attendance records are untouched.
+model AgreedSessionCount {
+  id          String   @id @default(cuid())
+  exporterId  String
+  date        DateTime @db.Date
+  agreedCount Int
+  note        String?
+  setBy       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  exporter    Exporter @relation(fields: [exporterId], references: [id])
+
+  @@unique([exporterId, date])
+  @@index([date])
 }
