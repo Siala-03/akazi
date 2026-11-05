@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/PageHeader';
 import toast, { Toaster } from 'react-hot-toast';
 import Pagination from '@/components/Pagination';
 import { SkeletonTable } from '@/components/SkeletonTable';
+import { AddressFields, addressFrom, addressError, type Address } from '@/components/AddressFields';
 
 interface Worker {
     _id: string;
@@ -17,6 +18,11 @@ interface Worker {
     primaryRole: string;
     status: string;
     dateOfBirth?: string;
+    province?: string | null;
+    district?: string | null;
+    sector?: string | null;
+    cell?: string | null;
+    village?: string | null;
     cooperativeId: {
         _id: string;
         name: string;
@@ -62,6 +68,8 @@ export default function AdminWorkersPage() {
     const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
     const [editMode, setEditMode] = useState(false);
     const [formData, setFormData] = useState<any>({});
+    const [editAddress, setEditAddress] = useState<Address>(addressFrom({}));
+    const [newAddress, setNewAddress] = useState<Address>(addressFrom({}));
 
     // New worker registration state
     const [showAddForm, setShowAddForm] = useState(false);
@@ -118,28 +126,31 @@ export default function AdminWorkersPage() {
             gender: worker.gender,
             primaryRole: worker.primaryRole,
         });
+        setEditAddress(addressFrom(worker));
         setEditMode(true);
     };
 
     const handleUpdateWorker = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedWorker) return;
+        const addrErr = addressError(editAddress);
+        if (addrErr) { toast.error(addrErr); return; }
 
         try {
             const res = await fetch(`/api/workers/${selectedWorker._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ ...formData, ...editAddress }),
             });
 
-            if (!res.ok) throw new Error('Update failed');
+            if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Update failed');
 
             toast.success('Worker updated successfully');
             setEditMode(false);
             setSelectedWorker(null);
             fetchWorkers();
-        } catch {
-            toast.error('Failed to update worker');
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to update worker');
         }
     };
 
@@ -202,10 +213,16 @@ export default function AdminWorkersPage() {
             return;
         }
 
+        if (Object.values(newAddress).some(v => !v.trim())) {
+            toast.error('Address is required: province, district, sector, cell and village');
+            return;
+        }
+
         setSubmitting(true);
         try {
             const payload: any = {
                 ...newWorker,
+                ...newAddress,
                 photo: '/uploads/placeholder.jpg',
             };
 
@@ -221,6 +238,7 @@ export default function AdminWorkersPage() {
             toast.success('Worker registered successfully!');
             setShowAddForm(false);
             setNewWorker(emptyNewWorker);
+            setNewAddress(addressFrom({}));
             fetchWorkers();
         } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Registration failed');
@@ -489,6 +507,15 @@ export default function AdminWorkersPage() {
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Primary Role</label>
                                 <input type="text" value={formData.primaryRole} onChange={(e) => setFormData({ ...formData, primaryRole: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white" required />
                             </div>
+                            <div>
+                                <p className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</p>
+                                <AddressFields
+                                    value={editAddress}
+                                    onChange={setEditAddress}
+                                    labelClassName="block text-xs text-gray-500 dark:text-gray-400 mb-1"
+                                    inputClassName="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
+                                />
+                            </div>
                             <div className="flex space-x-4 pt-4">
                                 <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors">Save Changes</button>
                                 <button type="button" onClick={() => { setEditMode(false); setSelectedWorker(null); }} className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">Cancel</button>
@@ -625,6 +652,16 @@ export default function AdminWorkersPage() {
                                         ))}
                                     </select>
                                 </div>
+                            </div>
+
+                            <div>
+                                <p className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Address *</p>
+                                <AddressFields
+                                    value={newAddress}
+                                    onChange={setNewAddress}
+                                    labelClassName="block text-xs text-gray-500 dark:text-gray-400 mb-1"
+                                    inputClassName="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white"
+                                />
                             </div>
 
                             {/* Consent */}

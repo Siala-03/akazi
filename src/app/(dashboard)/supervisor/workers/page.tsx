@@ -6,6 +6,7 @@ import { UserPlus, Users, Phone, Calendar, User, Filter, X, ChevronDown, Search,
 import DataTable, { Column } from '@/components/DataTable';
 import { WorkerQrModal } from '@/components/qr/WorkerQrModal';
 import { PageHeader } from '@/components/PageHeader';
+import { AddressFields, addressFrom, addressError } from '@/components/AddressFields';
 
 interface Worker {
     _id: string;
@@ -17,6 +18,11 @@ interface Worker {
     dateOfBirth?: string;
     enrollmentDate: string;
     weekSessions?: number;
+    province?: string | null;
+    district?: string | null;
+    sector?: string | null;
+    cell?: string | null;
+    village?: string | null;
 }
 
 interface WorkerStats {
@@ -659,6 +665,7 @@ function EditWorkerModal({ worker, onClose, onSaved }: {
         status: worker.status,
         dateOfBirth: worker.dateOfBirth ? worker.dateOfBirth.slice(0, 10) : '',
     });
+    const [address, setAddress] = useState(addressFrom(worker));
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
 
@@ -668,6 +675,8 @@ function EditWorkerModal({ worker, onClose, onSaved }: {
         if (!/^07\d{8}$/.test(cleanPhone)) { setError('Phone must start with 07 and be exactly 10 digits'); return; }
         const cleanId = form.workerId.replace(/\s/g, '');
         if (!/^\d{16}$/.test(cleanId)) { setError('National ID must be exactly 16 digits'); return; }
+        const addrErr = addressError(address);
+        if (addrErr) { setError(addrErr); return; }
 
         setSaving(true);
         setError('');
@@ -675,11 +684,11 @@ function EditWorkerModal({ worker, onClose, onSaved }: {
             const res = await fetch(`/api/workers/${worker._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...form, phone: cleanPhone, workerId: cleanId }),
+                body: JSON.stringify({ ...form, ...address, phone: cleanPhone, workerId: cleanId }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to save');
-            onSaved({ ...worker, ...form, phone: cleanPhone, workerId: cleanId });
+            onSaved({ ...worker, ...form, ...address, phone: cleanPhone, workerId: cleanId });
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -689,7 +698,7 @@ function EditWorkerModal({ worker, onClose, onSaved }: {
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
                         <Pencil className="w-5 h-5 text-blue-600" />
@@ -772,6 +781,16 @@ function EditWorkerModal({ worker, onClose, onSaved }: {
                             max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().slice(0, 10)}
                             onChange={e => setForm(p => ({ ...p, dateOfBirth: e.target.value }))}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    <div>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Address</p>
+                        <AddressFields
+                            value={address}
+                            onChange={setAddress}
+                            labelClassName="block text-xs text-gray-500 dark:text-gray-400 mb-1"
+                            inputClassName="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 

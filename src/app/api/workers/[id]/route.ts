@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { toMongo } from '@/lib/serialize';
+import { RWANDA_DISTRICTS } from '@/lib/rwanda-locations';
 
 export async function GET(
     _request: NextRequest,
@@ -67,10 +68,24 @@ export async function PUT(
             data.workerId = cleanId;
         }
 
-        if (rawDob) {
-            data.dateOfBirth = new Date(rawDob);
-        } else {
-            data.dateOfBirth = null;
+        // Only touch date of birth when the request includes it — partial updates such as
+        // activate/deactivate must not wipe it
+        if ('dateOfBirth' in body) {
+            data.dateOfBirth = rawDob ? new Date(rawDob) : null;
+        }
+
+        // Address: all five fields together, or all empty (older workers may have none)
+        const ADDRESS_FIELDS = ['province', 'district', 'sector', 'cell', 'village'] as const;
+        if (ADDRESS_FIELDS.some(f => f in body)) {
+            const values = ADDRESS_FIELDS.map(f => (typeof body[f] === 'string' ? body[f].trim() : ''));
+            const filled = values.filter(Boolean).length;
+            if (filled > 0 && filled < ADDRESS_FIELDS.length) {
+                return NextResponse.json({ error: 'Fill in all address fields or leave them all empty' }, { status: 400 });
+            }
+            if (filled > 0 && !RWANDA_DISTRICTS[values[0]]?.includes(values[1])) {
+                return NextResponse.json({ error: 'Invalid province or district' }, { status: 400 });
+            }
+            ADDRESS_FIELDS.forEach((f, i) => { data[f] = values[i] || null; });
         }
 
         const worker = await prisma.worker.update({
