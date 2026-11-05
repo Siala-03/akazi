@@ -12,6 +12,7 @@ export interface JWTPayload {
     role: 'supervisor' | 'admin' | 'exporter';
     exporterId?: string;
     facilityId?: string;
+    impersonatorId?: string;
 }
 
 /**
@@ -30,6 +31,7 @@ export async function verifyTokenEdge(token: string): Promise<JWTPayload | null>
             role: payload.role as 'supervisor' | 'admin' | 'exporter',
             exporterId: payload.exporterId as string | undefined,
             facilityId: payload.facilityId as string | undefined,
+            impersonatorId: payload.impersonatorId as string | undefined,
         };
     } catch (error) {
         console.error('[Auth Edge] Token verification failed:', error instanceof Error ? error.message : error);

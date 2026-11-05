@@ -58,7 +58,15 @@ export default function AdminExportersPage() {
     const [noteMessage, setNoteMessage] = useState('');
     const [sendingNote, setSendingNote] = useState(false);
 
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
     useEffect(() => { fetchExporters(); }, []);
+    useEffect(() => {
+        fetch('/api/auth/me')
+            .then(res => res.json())
+            .then(data => setIsSuperAdmin(!!data.user?.isSuperAdmin))
+            .catch(() => {});
+    }, []);
 
     const fetchExporters = async () => {
         try {
@@ -593,13 +601,15 @@ export default function AdminExportersPage() {
                                         </td>
                                         <td className="px-4 sm:px-6 py-4">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => handleLoginAs(exp)}
-                                                    className="p-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors"
-                                                    title="Log in as this exporter"
-                                                >
-                                                    <LogIn className="w-4 h-4" strokeWidth={2.5} />
-                                                </button>
+                                                {isSuperAdmin && (
+                                                    <button
+                                                        onClick={() => handleLoginAs(exp)}
+                                                        className="p-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors"
+                                                        title="View as this exporter (view-only)"
+                                                    >
+                                                        <LogIn className="w-4 h-4" strokeWidth={2.5} />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => openNoteModal(exp)}
                                                     className="p-1 text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 transition-colors"

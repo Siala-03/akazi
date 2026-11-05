@@ -12,8 +12,28 @@ const routeAccess: Record<string, string[]> = {
     '/exporter': ['exporter', 'admin'],
 };
 
+// While a superadmin is viewing as another user, the session is view-only: every API
+// request that could change data is rejected, except leaving the session.
+const READ_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+const ALLOWED_WHILE_VIEWING = ['/api/admin/impersonate', '/api/auth/logout'];
+
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
+
+    if (pathname.startsWith('/api/')) {
+        if (READ_METHODS.includes(request.method) || ALLOWED_WHILE_VIEWING.includes(pathname)) {
+            return NextResponse.next();
+        }
+        const apiToken = request.cookies.get('token')?.value;
+        const apiUser = apiToken ? await verifyTokenEdge(apiToken) : null;
+        if (apiUser?.impersonatorId) {
+            return NextResponse.json(
+                { error: 'View-only: changes are disabled while viewing as another user. Return to admin to make changes.' },
+                { status: 403 }
+            );
+        }
+        return NextResponse.next();
+    }
 
     // Debug: Check if JWT_SECRET is available
     console.log('[Middleware] JWT_SECRET available:', !!process.env.JWT_SECRET);
@@ -74,12 +94,12 @@ export const config = {
     matcher: [
         /*
          * Match all request paths except for the ones starting with:
-         * - api (API routes)
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
          * - uploads (uploaded files)
          */
-        '/((?!api|_next/static|_next/image|favicon.ico|uploads).*)',
+        // API routes are matched only to enforce view-only impersonation (see top of middleware)
+        '/((?!_next/static|_next/image|favicon.ico|uploads).*)',
     ],
 };

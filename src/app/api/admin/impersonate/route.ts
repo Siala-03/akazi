@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser, generateToken, setAuthCookie } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
 
-// Admin starts viewing the app as a given exporter's account, without their password.
+// Superadmin starts viewing the app as a given exporter's account, without their password,
+// to diagnose problems. The session is view-only: middleware.ts rejects every write request
+// while impersonatorId is set.
 export async function POST(request: NextRequest) {
     try {
         const currentUser = await getCurrentUser();
         if (!currentUser || currentUser.role !== 'admin') {
             return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 401 });
+        }
+        // Checked against the database, not the token, so revoking superadmin takes effect immediately
+        const admin = await prisma.user.findUnique({ where: { id: currentUser.userId }, select: { isSuperAdmin: true } });
+        if (!admin?.isSuperAdmin) {
+            return NextResponse.json({ error: 'Only the superadmin can view as an exporter' }, { status: 403 });
         }
 
         const { exporterId } = await request.json();
@@ -35,6 +43,14 @@ export async function POST(request: NextRequest) {
         });
         await setAuthCookie(token);
 
+        await logAudit(request, {
+            userId: currentUser.userId,
+            action: 'impersonate-start',
+            entity: 'User',
+            entityId: exporterUser.id,
+            changes: { viewedAs: exporterUser.email, exporterId, mode: 'view-only' },
+        });
+
         return NextResponse.json({ success: true, redirectUrl: '/exporter/dashboard' });
     } catch (error) {
         console.error('Impersonate error:', error);
@@ -43,7 +59,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Return to the original admin session.
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
     try {
         const currentUser = await getCurrentUser();
         if (!currentUser?.impersonatorId) {
@@ -61,8 +77,17 @@ export async function DELETE() {
             role: admin.role,
             exporterId: admin.exporterId ?? undefined,
             facilityId: admin.facilityId ?? undefined,
+            isSuperAdmin: admin.isSuperAdmin,
         });
         await setAuthCookie(token);
+
+        await logAudit(request, {
+            userId: admin.id,
+            action: 'impersonate-stop',
+            entity: 'User',
+            entityId: currentUser.userId,
+            changes: { viewedAs: currentUser.email },
+        });
 
         return NextResponse.json({ success: true, redirectUrl: '/admin/exporters' });
     } catch (error) {
