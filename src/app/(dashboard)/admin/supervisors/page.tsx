@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import Pagination from '@/components/Pagination';
+import { ViewAsButton, useIsSuperAdmin } from '@/components/ViewAsButton';
 
 interface SupervisorUser {
     _id: string;
@@ -38,6 +39,7 @@ export default function AdminSupervisorsPage() {
     const [confirmToggle, setConfirmToggle] = useState<SupervisorUser | null>(null);
     const [deleteSup, setDeleteSup] = useState<SupervisorUser | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const isSuperAdmin = useIsSuperAdmin();
 
     useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
@@ -314,6 +316,7 @@ export default function AdminSupervisorsPage() {
                                         {/* Actions */}
                                         <td className="px-4 sm:px-6 py-4">
                                             <div className="flex items-center justify-end gap-1.5">
+                                                {isSuperAdmin && sup.isActive && <ViewAsButton userId={sup._id} name={sup.name} />}
                                                 <button
                                                     onClick={() => handleResendCredentials(sup)}
                                                     title="Reset Password"

@@ -15,6 +15,7 @@ import {
 import dynamic from 'next/dynamic';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { InactivityLogout } from '@/components/InactivityLogout';
+import { ImpersonationBanner } from '@/components/ImpersonationBanner';
 
 const SidebarProfile = dynamic(() => import('@/components/wrappers/SidebarProfile').then(mod => ({ default: mod.SidebarProfile })), { ssr: false });
 
@@ -72,6 +73,8 @@ export default function NaebLayout({ children }: { children: ReactNode }) {
                     </div>
                 </div>
             </nav>
+
+            <ImpersonationBanner />
 
             <div className="flex">
                 {sidebarOpen && (

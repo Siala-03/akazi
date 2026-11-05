@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { Shield, Plus, RefreshCw, Power, PowerOff, X, User, Phone, Mail, Trash2, AlertTriangle } from 'lucide-react';
+import { ViewAsButton, useIsSuperAdmin } from '@/components/ViewAsButton';
 import { PageHeader } from '@/components/PageHeader';
 
 interface NaebUser {
@@ -26,6 +27,7 @@ export default function AdminNaebUsersPage() {
     const [confirmToggle, setConfirmToggle] = useState<NaebUser | null>(null);
     const [deleteUser, setDeleteUser] = useState<NaebUser | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const isSuperAdmin = useIsSuperAdmin();
     const [resendingId, setResendingId] = useState<string | null>(null);
 
     const fetchUsers = async () => {
@@ -201,6 +203,7 @@ export default function AdminNaebUsersPage() {
                                             Inactive
                                         </span>
                                     )}
+                                    {isSuperAdmin && user.isActive && <ViewAsButton userId={user._id} name={user.name} />}
                                     <button
                                         onClick={() => handleResend(user)}
                                         disabled={resendingId === user._id}

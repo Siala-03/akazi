@@ -32,7 +32,7 @@ export function ImpersonationBanner() {
     return (
         <div className="sticky top-16 z-40 bg-amber-500 text-amber-950 px-4 py-2 flex items-center justify-center gap-3 text-sm font-medium shadow-md">
             <ShieldAlert className="w-4 h-4 shrink-0" />
-            <span>View-only: viewing as this exporter ({impersonatorEmail}). Changes are disabled.</span>
+            <span>View-only: viewing as this account ({impersonatorEmail}). Changes are disabled.</span>
             <button
                 onClick={handleReturn}
                 disabled={returning}
