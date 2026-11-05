@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { toMongo } from '@/lib/serialize';
 import { getSettings } from '@/lib/settings';
+import { logAudit } from '@/lib/audit';
 
 export async function PUT(
     _request: NextRequest,
@@ -83,6 +84,17 @@ export async function PATCH(
             data: { exporterId, dailyRate: exporter.dailyRate ?? defaultRate },
             include: { worker: true, exporter: true, facility: true },
         });
+        await logAudit(request, {
+            userId: currentUser.userId,
+            action: 'switch-exporter',
+            entity: 'Session',
+            entityId: id,
+            changes: {
+                workerId: existing.workerId, date: existing.date.toISOString(),
+                before: { exporterId: existing.exporterId, dailyRate: existing.dailyRate },
+                after: { exporterId, dailyRate: session.dailyRate },
+            },
+        });
 
         return NextResponse.json({
             session: toMongo(session, { worker: 'workerId', exporter: 'exporterId', facility: 'facilityId' }),
@@ -94,7 +106,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-    _request: NextRequest,
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -118,6 +130,14 @@ export async function DELETE(
             if (remaining > 0) return false;
             await tx.attendance.delete({ where: { id: existing.attendanceId } });
             return true;
+        });
+
+        await logAudit(request, {
+            userId: currentUser.userId,
+            action: 'delete',
+            entity: 'Session',
+            entityId: id,
+            changes: { before: { ...existing, date: existing.date.toISOString() }, attendanceDeleted },
         });
 
         return NextResponse.json({ success: true, attendanceDeleted });

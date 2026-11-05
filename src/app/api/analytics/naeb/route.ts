@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { getAgreedAdjustments } from '@/lib/agreed-counts';
 
 const DEFAULT_RATE = 2000;
 
@@ -70,10 +71,13 @@ export async function GET() {
             `,
         ]);
 
+        // Agreed totals (exporter/NAEB sign-off) replace recorded counts where set
+        const adj = await getAgreedAdjustments({ defaultRate: DEFAULT_RATE });
+
         // Total wages paid across all sessions
         const totalWagesPaid = allSessions.reduce((sum, s) => {
             return sum + (s.dailyRate ?? s.exporter?.dailyRate ?? DEFAULT_RATE);
-        }, 0);
+        }, 0) + adj.extraCost;
 
         // Build women-per-exporter map
         const womenMap = new Map<string, number>(
@@ -99,11 +103,11 @@ export async function GET() {
         const exporterBreakdown = exporterRows.map(row => ({
             exporterId: row.exporterId,
             exporterName: row.exporterName,
-            sessionCount: Number(row.sessionCount),
+            sessionCount: Number(row.sessionCount) + (adj.byExporter.get(row.exporterId)?.extraSessions ?? 0),
             daysActive: Number(row.daysActive),
             uniqueWorkers: Number(row.uniqueWorkers),
             womenWorkers: womenMap.get(row.exporterId) ?? 0,
-            totalAmountPaid: costMap.get(row.exporterId) ?? 0,
+            totalAmountPaid: (costMap.get(row.exporterId) ?? 0) + (adj.byExporter.get(row.exporterId)?.extraCost ?? 0),
         }));
 
         const activeExporters = exporterBreakdown.length;

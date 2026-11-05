@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfDay, getEndOfDay } from '@/lib/utils';
 import { getSettings } from '@/lib/settings';
+import { getAgreedAdjustments } from '@/lib/agreed-counts';
 
 export async function GET(request: NextRequest) {
     try {
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
         }
 
         // ── Session-based cost model (uses snapshotted dailyRate on each session) ──
-        const [costTodayRows, costWeekRows, costCumulativeRows] = await Promise.all([
+        let [costTodayRows, costWeekRows, costCumulativeRows] = await Promise.all([
             prisma.$queryRaw<{ exporterId: string; cnt: bigint; cost: number }[]>`
                 SELECT s."exporterId",
                        COUNT(*)::bigint AS cnt,
@@ -82,6 +83,27 @@ export async function GET(request: NextRequest) {
                 LEFT JOIN "Exporter" e ON e.id = s."exporterId"
                 GROUP BY s."exporterId"`,
         ]);
+
+        // Agreed totals (exporter/NAEB sign-off) replace recorded counts where set
+        const trendStartDay = getStartOfDay(new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000));
+        const [adjToday, adjWeek, adjTrend, adjAll] = await Promise.all([
+            getAgreedAdjustments({ from: startOfDay, to: endOfDay, defaultRate: DEFAULT_DAILY_RATE }),
+            getAgreedAdjustments({ from: weekStart, to: weekEnd, defaultRate: DEFAULT_DAILY_RATE }),
+            getAgreedAdjustments({ from: trendStartDay, to: endOfDay, defaultRate: DEFAULT_DAILY_RATE }),
+            getAgreedAdjustments({ defaultRate: DEFAULT_DAILY_RATE }),
+        ]);
+        const applyAdj = (rows: { exporterId: string; cnt: bigint; cost: number }[], adj: typeof adjToday) => {
+            const out = rows.map(r => ({ ...r }));
+            for (const [exporterId, a] of adj.byExporter) {
+                const row = out.find(r => r.exporterId === exporterId);
+                if (row) { row.cnt = row.cnt + BigInt(a.extraSessions); row.cost += a.extraCost; }
+                else out.push({ exporterId, cnt: BigInt(a.extraSessions), cost: a.extraCost });
+            }
+            return out.filter(r => r.cnt > BigInt(0));
+        };
+        costTodayRows = applyAdj(costTodayRows, adjToday);
+        costWeekRows = applyAdj(costWeekRows, adjWeek);
+        costCumulativeRows = applyAdj(costCumulativeRows, adjAll);
 
         let workerDaysToday = 0;
         let dailyCostToExporters = 0;
@@ -167,6 +189,11 @@ export async function GET(request: NextRequest) {
         const sessDayMap = new Map<string, { sessions: number; cost: number }>();
         for (const row of sessTrendByExporter) {
             sessDayMap.set(row.day, { sessions: Number(row.cnt), cost: row.cost });
+        }
+        for (const [day, a] of adjTrend.byDay) {
+            attMap.set(day, (attMap.get(day) ?? 0) + a.extraSessions);
+            const t = sessDayMap.get(day) ?? { sessions: 0, cost: 0 };
+            sessDayMap.set(day, { sessions: t.sessions + a.extraSessions, cost: t.cost + a.extraCost });
         }
 
         const trendData = [];

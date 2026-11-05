@@ -125,14 +125,30 @@ export default function AdminReportsPage() {
     }
   };
 
+  // Agreed totals (exporter/NAEB sign-off) replace recorded counts where set; this returns
+  // the per exporter/day difference (agreed − recorded) to add on top of recorded sessions.
+  const fetchAgreedAdjustments = async (params: URLSearchParams): Promise<{ exporterId: string; day: string; extraSessions: number }[]> => {
+    const q = new URLSearchParams({ adjustments: 'true' });
+    if (params.get('startDate')) q.set('from', params.get('startDate')!);
+    if (params.get('endDate')) q.set('to', params.get('endDate')!);
+    try {
+      const res = await fetch(`/api/admin/agreed-counts?${q.toString()}`);
+      const data = await res.json();
+      return res.ok ? data.adjustments || [] : [];
+    } catch {
+      return [];
+    }
+  };
+
   const loadExporterReports = async (params: URLSearchParams) => {
     try {
       // Fetch exporters, bags, and settings from real API
-      const [exportersRes, bagsRes, sessionsRes, settingsRes] = await Promise.all([
+      const [exportersRes, bagsRes, sessionsRes, settingsRes, adjustments] = await Promise.all([
         fetch('/api/exporters?all=true'),
         fetch(`/api/bags?${params.toString()}`),
         fetch(`/api/sessions?all=true&${params.toString()}`),
-        fetch('/api/admin/settings')
+        fetch('/api/admin/settings'),
+        fetchAgreedAdjustments(params),
       ]);
 
       const exportersData = await exportersRes.json();
@@ -199,7 +215,10 @@ export default function AdminReportsPage() {
         const exporterSessions = sessions.filter((session: any) =>
           getId(session.exporterId) === exporterIdValue
         );
-        const laborCost = exporterSessions.length * workerDailyWage;
+        const extraSessions = adjustments
+          .filter(a => a.exporterId === exporterIdValue)
+          .reduce((sum, a) => sum + a.extraSessions, 0);
+        const laborCost = (exporterSessions.length + extraSessions) * workerDailyWage;
 
         return {
           exporterId: formatExporterIdentifier(exporter),
@@ -347,12 +366,13 @@ export default function AdminReportsPage() {
     try {
       // Fetch data from real APIs
       const dateQuery = params.toString();
-      const [attendanceRes, sessionsRes, bagsRes, exportersRes, settingsRes] = await Promise.all([
+      const [attendanceRes, sessionsRes, bagsRes, exportersRes, settingsRes, adjustments] = await Promise.all([
         fetch(`/api/attendance/checkin${dateQuery ? `?${dateQuery}` : ''}`),
         fetch(`/api/sessions?all=true${dateQuery ? `&${dateQuery}` : ''}`),
         fetch(`/api/bags${dateQuery ? `?${dateQuery}` : ''}`),
         fetch('/api/exporters?all=true'),
-        fetch('/api/admin/settings')
+        fetch('/api/admin/settings'),
+        fetchAgreedAdjustments(params),
       ]);
 
       const attendanceData = await attendanceRes.json();
@@ -410,6 +430,17 @@ export default function AdminReportsPage() {
         day.bagsCompleted++;
       });
 
+      // Agreed totals: add the difference to that day's workers, sessions and labor cost
+      const extraByDay = new Map<string, number>();
+      adjustments.forEach(a => {
+        extraByDay.set(a.day, (extraByDay.get(a.day) ?? 0) + a.extraSessions);
+        const day = ensureDay(a.day);
+        const exporterExists = exporters.some((e: any) => getId(e) === a.exporterId);
+        if (exporterExists) day.exporterIds.add(a.exporterId);
+        day.activeSessions += a.extraSessions;
+        day.totalLaborCost += a.extraSessions * workerDailyWage;
+      });
+
       // Convert map to array and add exporter names
       const operations: DailyOperation[] = Array.from(dateMap.values())
         .map((day: any) => {
@@ -421,7 +452,7 @@ export default function AdminReportsPage() {
 
           return {
             date: day.date,
-            workersOnSite: day.workerIds.size,
+            workersOnSite: day.workerIds.size + (extraByDay.get(day.date) ?? 0),
             activeSessions: day.activeSessions,
             bagsCompleted: day.bagsCompleted,
             exportersActive: activeExporterNames,

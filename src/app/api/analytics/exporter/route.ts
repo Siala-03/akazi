@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { getStartOfDay, getEndOfDay, formatExporterIdentifier } from '@/lib/utils';
 import { getSettings } from '@/lib/settings';
+import { getAgreedAdjustments } from '@/lib/agreed-counts';
 
 export async function GET(request: NextRequest) {
     try {
@@ -143,21 +144,29 @@ export async function GET(request: NextRequest) {
                 WHERE "exporterId" = ${exporterId}`,
         ]);
 
-        const workerDaysToday = Number(costRangeRows[0]?.cnt ?? 0);
-        const workerDaysWeek = Number(costWeekRows[0]?.cnt ?? 0);
-        const workerDaysCumulative = Number(costCumulativeRows[0]?.cnt ?? 0);
+        // Agreed totals (exporter/NAEB sign-off) replace recorded counts where set
+        const [adjRange, adjWeek, adjAll] = await Promise.all([
+            getAgreedAdjustments({ from: rangeStart, to: rangeEnd, exporterId, defaultRate: EXPORTER_RATE }),
+            getAgreedAdjustments({ from: weekStart, to: weekEnd, exporterId, defaultRate: EXPORTER_RATE }),
+            getAgreedAdjustments({ exporterId, defaultRate: EXPORTER_RATE }),
+        ]);
 
-        const dailyCost = costRangeRows[0]?.cost ?? 0;
-        const weeklyCost = costWeekRows[0]?.cost ?? 0;
-        const cumulativeCost = costCumulativeRows[0]?.cost ?? 0;
+        const workerDaysToday = Number(costRangeRows[0]?.cnt ?? 0) + adjRange.extraSessions;
+        const workerDaysWeek = Number(costWeekRows[0]?.cnt ?? 0) + adjWeek.extraSessions;
+        const workerDaysCumulative = Number(costCumulativeRows[0]?.cnt ?? 0) + adjAll.extraSessions;
+
+        const dailyCost = (costRangeRows[0]?.cost ?? 0) + adjRange.extraCost;
+        const weeklyCost = (costWeekRows[0]?.cost ?? 0) + adjWeek.extraCost;
+        const cumulativeCost = (costCumulativeRows[0]?.cost ?? 0) + adjAll.extraCost;
 
         const dailyWorkerWages = workerDaysToday * WORKER_DAILY_WAGE;
         const weeklyWorkerWages = workerDaysWeek * WORKER_DAILY_WAGE;
         const cumulativeWorkerWages = workerDaysCumulative * WORKER_DAILY_WAGE;
 
         const workersEngaged = Number(workersEngagedRows[0]?.count ?? 0);
-        const periodWorkersEngaged = Number(periodWorkersEngagedRows[0]?.count ?? 0);
         const periodDays = Math.max(1, Math.ceil((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+        // For a single day, workers engaged equals worker-days, so it follows the agreed total too
+        const periodWorkersEngaged = Number(periodWorkersEngagedRows[0]?.count ?? 0) + (periodDays === 1 ? adjRange.extraSessions : 0);
 
         const periodSessionsCount = workerDaysToday;
         const periodCostToExporter = dailyCost;
@@ -211,6 +220,10 @@ export async function GET(request: NextRequest) {
         ]);
 
         const sessionTrendMap = new Map(sessionTrendRows.map(d => [d.day, { sessions: Number(d.sessions), cost: Number(d.cost ?? 0) }]));
+        for (const [day, adj] of adjAll.byDay) {
+            const t = sessionTrendMap.get(day) ?? { sessions: 0, cost: 0 };
+            sessionTrendMap.set(day, { sessions: t.sessions + adj.extraSessions, cost: t.cost + adj.extraCost });
+        }
         const topWorkers = workerFrequencyRows.map((r) => ({
             workerId: r.workerId,
             fullName: r.fullName,
@@ -219,6 +232,10 @@ export async function GET(request: NextRequest) {
             lastSeen: r.lastSeen,
         }));
         const dailySessionsMap = new Map(dailySessionRows.map(row => [row.day, { sessions: Number(row.sessions), cost: row.cost }]));
+        for (const [day, adj] of adjRange.byDay) {
+            const t = dailySessionsMap.get(day) ?? { sessions: 0, cost: 0 };
+            dailySessionsMap.set(day, { sessions: t.sessions + adj.extraSessions, cost: t.cost + adj.extraCost });
+        }
 
         const trendData = [];
         for (let i = 6; i >= 0; i--) {

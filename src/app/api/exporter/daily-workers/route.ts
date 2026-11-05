@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { getSettings } from '@/lib/settings';
 import { getEndOfDay, getStartOfDay } from '@/lib/utils';
 import { Prisma } from '@prisma/client';
+import { getAgreedAdjustments } from '@/lib/agreed-counts';
 
 type SessionRow = {
     id: string;
@@ -187,10 +188,18 @@ export async function GET(request: NextRequest) {
             })
             .sort((a, b) => a.workerName.localeCompare(b.workerName));
 
+        // Agreed totals (exporter/NAEB sign-off): workers counted in the agreed figure but not
+        // individually checked in are reported as one adjustment, never as named workers.
+        const adj = await getAgreedAdjustments({
+            from: rangeStart, to: rangeEnd, exporterId: currentUser.exporterId, defaultRate: exporterDailyRate,
+        });
+        const isSingleDay = rangeStart.toDateString() === rangeEnd.toDateString();
+
         const totals = {
-            workers: workers.length,
+            workers: workers.length + (isSingleDay ? adj.extraSessions : 0),
+            workerDays: workers.reduce((sum, worker) => sum + worker.sessionCount, 0) + adj.extraSessions,
             totalBags: workers.reduce((sum, worker) => sum + worker.totalBags, 0),
-            totalPayout: workers.reduce((sum, worker) => sum + worker.totalPayout, 0),
+            totalPayout: workers.reduce((sum, worker) => sum + worker.totalPayout, 0) + adj.extraCost,
         };
 
         return NextResponse.json({
@@ -199,6 +208,11 @@ export async function GET(request: NextRequest) {
             exporterDailyRate,
             totals,
             workers,
+            agreedAdjustment: adj.adjustments.length > 0 ? {
+                extraWorkerDays: adj.extraSessions,
+                extraPayout: adj.extraCost,
+                days: adj.adjustments.map(a => ({ day: a.day, agreed: a.agreed, recorded: a.recorded, note: a.note })),
+            } : null,
         });
     } catch (error) {
         console.error('Exporter daily workers error:', error);
