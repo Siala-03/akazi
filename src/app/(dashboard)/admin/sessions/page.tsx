@@ -54,7 +54,7 @@ export default function AdminSessionsPage() {
     const [sessions, setSessions] = useState<SessionRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<Set<string>>(new Set());
-    const [switchTarget, setSwitchTarget] = useState<{ ids: string[]; exporterId: string } | null>(null);
+    const [switchTarget, setSwitchTarget] = useState<{ ids: string[]; exporterId: string; date: string } | null>(null);
     const [working, setWorking] = useState(false);
 
     useEffect(() => {
@@ -107,24 +107,33 @@ export default function AdminSessionsPage() {
     const allVisibleSelected = visible.length > 0 && visible.every(s => selected.has(s._id));
     const toggleAll = () => setSelected(allVisibleSelected ? new Set() : new Set(visible.map(s => s._id)));
 
+    const today = toLocalDate(new Date());
+    const changesDate = !!switchTarget && switchTarget.date !== date;
+
     const handleSwitch = async () => {
-        if (!switchTarget?.exporterId) return;
+        if (!switchTarget || (!switchTarget.exporterId && !changesDate)) return;
         setWorking(true);
         const errors: string[] = [];
-        const ids = switchTarget.ids.filter(id => exporterOf(sessions.find(s => s._id === id)!)?._id !== switchTarget.exporterId);
+        // Skip sessions already at the chosen exporter when only the exporter changes
+        const ids = changesDate
+            ? switchTarget.ids
+            : switchTarget.ids.filter(id => exporterOf(sessions.find(s => s._id === id)!)?._id !== switchTarget.exporterId);
         const ok = await runInChunks(ids, async id => {
             const res = await fetch(`/api/sessions/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ exporterId: switchTarget.exporterId }),
+                body: JSON.stringify({
+                    ...(switchTarget.exporterId && { exporterId: switchTarget.exporterId }),
+                    ...(changesDate && { date: switchTarget.date }),
+                }),
             });
-            if (!res.ok) errors.push((await res.json().catch(() => ({}))).error || 'Switch failed');
+            if (!res.ok) errors.push((await res.json().catch(() => ({}))).error || 'Update failed');
             return res.ok;
         });
         setWorking(false);
         setSwitchTarget(null);
-        if (ok > 0) toast.success(`Switched ${ok} session${ok === 1 ? '' : 's'}`);
-        if (errors.length > 0) toast.error(`${errors.length} not switched: ${errors[0]}`);
+        if (ok > 0) toast.success(`Updated ${ok} session${ok === 1 ? '' : 's'}`);
+        if (errors.length > 0) toast.error(`${errors.length} not updated: ${errors[0]}`, { duration: 6000 });
         fetchSessions();
     };
 
@@ -149,7 +158,7 @@ export default function AdminSessionsPage() {
                 iconColor="text-indigo-600 dark:text-indigo-400"
                 iconBg="bg-transparent"
                 title="Sessions"
-                subtitle="Correct check-ins: switch a session to another exporter or delete it"
+                subtitle="Correct check-ins: switch a session to another exporter, move it to another date, or delete it"
             />
 
             <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 flex flex-col lg:flex-row lg:items-center gap-4 shadow-sm">
@@ -177,11 +186,11 @@ export default function AdminSessionsPage() {
                     <span className="text-sm font-semibold text-indigo-900">{selected.size} selected</span>
                     <div className="flex-1" />
                     <button
-                        onClick={() => setSwitchTarget({ ids: selectedIds, exporterId: '' })}
+                        onClick={() => setSwitchTarget({ ids: selectedIds, exporterId: '', date })}
                         disabled={working}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50"
                     >
-                        <ArrowLeftRight className="w-4 h-4" /> Switch exporter
+                        <ArrowLeftRight className="w-4 h-4" /> Switch / change date
                     </button>
                     <button
                         onClick={() => handleDelete(selectedIds)}
@@ -238,9 +247,9 @@ export default function AdminSessionsPage() {
                                         <td className="px-6 py-2">
                                             <div className="flex justify-end gap-2">
                                                 <button
-                                                    onClick={() => setSwitchTarget({ ids: [s._id], exporterId: '' })}
+                                                    onClick={() => setSwitchTarget({ ids: [s._id], exporterId: '', date })}
                                                     disabled={working || s.status === 'validated'}
-                                                    title={s.status === 'validated' ? 'Validated sessions cannot be switched' : 'Switch exporter'}
+                                                    title={s.status === 'validated' ? 'Validated sessions cannot be changed' : 'Switch exporter or change date'}
                                                     className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 disabled:opacity-30 disabled:cursor-not-allowed"
                                                 >
                                                     <ArrowLeftRight className="w-4 h-4" />
@@ -267,33 +276,51 @@ export default function AdminSessionsPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => !working && setSwitchTarget(null)}>
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
                         <h3 className="text-lg font-semibold text-gray-900">
-                            Switch {switchTarget.ids.length === 1 ? 'session' : `${switchTarget.ids.length} sessions`} to another exporter
+                            Change {switchTarget.ids.length === 1 ? 'session' : `${switchTarget.ids.length} sessions`}
                         </h3>
                         {switchTarget.ids.length === 1 && (() => {
                             const s = sessions.find(x => x._id === switchTarget.ids[0]);
                             return s ? (
                                 <p className="text-sm text-gray-600">
-                                    {workerOf(s)?.fullName} is currently with <span className="font-semibold">{exporterOf(s)?.companyTradingName}</span>.
+                                    {workerOf(s)?.fullName} is currently with <span className="font-semibold">{exporterOf(s)?.companyTradingName}</span> on <span className="font-semibold">{date}</span>.
                                 </p>
                             ) : null;
                         })()}
-                        <select
-                            value={switchTarget.exporterId}
-                            onChange={e => setSwitchTarget({ ...switchTarget, exporterId: e.target.value })}
-                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white"
-                        >
-                            <option value="">Select new exporter</option>
-                            {exporters.map(exp => <option key={exp._id} value={exp._id}>{exp.companyTradingName}</option>)}
-                        </select>
-                        <p className="text-xs text-gray-500">The session will be billed at the new exporter&apos;s daily rate.</p>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Exporter</label>
+                            <select
+                                value={switchTarget.exporterId}
+                                onChange={e => setSwitchTarget({ ...switchTarget, exporterId: e.target.value })}
+                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white"
+                            >
+                                <option value="">Keep current exporter</option>
+                                {exporters.map(exp => <option key={exp._id} value={exp._id}>{exp.companyTradingName}</option>)}
+                            </select>
+                            {switchTarget.exporterId && <p className="text-xs text-gray-500 mt-1">Billed at the new exporter&apos;s daily rate.</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <input
+                                type="date"
+                                value={switchTarget.date}
+                                max={today}
+                                onChange={e => e.target.value && setSwitchTarget({ ...switchTarget, date: e.target.value })}
+                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm"
+                            />
+                            {changesDate && (
+                                <p className="text-xs text-amber-700 mt-1">
+                                    Moves the session from {date} to {switchTarget.date}, keeping the same times. Workers who already have a check-in on {switchTarget.date} are skipped. Active sessions must be checked out first.
+                                </p>
+                            )}
+                        </div>
                         <div className="flex justify-end gap-3 pt-2">
                             <button onClick={() => setSwitchTarget(null)} disabled={working} className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200">Cancel</button>
                             <button
                                 onClick={handleSwitch}
-                                disabled={working || !switchTarget.exporterId}
+                                disabled={working || (!switchTarget.exporterId && !changesDate)}
                                 className="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
                             >
-                                {working ? 'Switching...' : 'Switch'}
+                                {working ? 'Saving...' : 'Save'}
                             </button>
                         </div>
                     </div>

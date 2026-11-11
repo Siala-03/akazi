@@ -6,10 +6,14 @@ interface RateSettings {
     supervisorCanEditWorkers: boolean;
 }
 
+// Each serverless instance keeps its own copy, so expire it after a minute
+// for rate changes to reach every instance.
+const CACHE_TTL_MS = 60_000;
 let cache: RateSettings | null = null;
+let cachedAt = 0;
 
 export async function getSettings(): Promise<RateSettings> {
-    if (cache) return cache;
+    if (cache && Date.now() - cachedAt < CACHE_TTL_MS) return cache;
 
     let settings = await prisma.settings.findFirst();
     if (!settings) {
@@ -23,6 +27,7 @@ export async function getSettings(): Promise<RateSettings> {
         workerDailyWage: settings.workerDailyWage,
         supervisorCanEditWorkers: settings.supervisorCanEditWorkers,
     };
+    cachedAt = Date.now();
     return cache;
 }
 
