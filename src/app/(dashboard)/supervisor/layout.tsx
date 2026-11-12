@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -12,7 +12,8 @@ import {
     LogOut, 
     Menu, 
     X,
-    Coffee
+    Coffee,
+    Radio
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Breadcrumb } from '@/components/Breadcrumb';
@@ -34,6 +35,18 @@ export default function SupervisorLayout({ children }: { children: ReactNode }) 
     const router = useRouter();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [isSuperSupervisor, setIsSuperSupervisor] = useState(false);
+
+    useEffect(() => {
+        fetch('/api/auth/me')
+            .then(res => res.json())
+            .then(data => setIsSuperSupervisor(!!data.user?.isSuperSupervisor))
+            .catch(() => {});
+    }, []);
+
+    const navItems = isSuperSupervisor
+        ? [...navigation, { name: 'Live On-Site', href: '/supervisor/live', icon: Radio }]
+        : navigation;
 
     const handleLogout = async () => {
         await fetch('/api/auth/logout', { method: 'POST' });
@@ -110,7 +123,7 @@ export default function SupervisorLayout({ children }: { children: ReactNode }) 
                     </div>
 
                     <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-                        {navigation.map((item) => {
+                        {navItems.map((item) => {
                             const isActive = pathname === item.href;
                             const Icon = item.icon;
                             return (

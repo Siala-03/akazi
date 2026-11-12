@@ -30,19 +30,7 @@ type DailyWorkersResponse = {
         totalPayout: number;
     };
     workers: DailyWorkerRow[];
-    // Workers in the agreed (exporter/NAEB-signed) total who weren't individually checked in
-    agreedAdjustment?: {
-        extraWorkerDays: number;
-        extraPayout: number;
-        days: { day: string; agreed: number; recorded: number; note: string | null }[];
-    } | null;
 };
-
-function adjustmentLabel(adj: NonNullable<DailyWorkersResponse['agreedAdjustment']>) {
-    const n = adj.extraWorkerDays;
-    const days = adj.days.map((d) => `${d.day}: agreed ${d.agreed}, recorded ${d.recorded}`).join('; ');
-    return `Agreed with exporter (manual records): ${n >= 0 ? '+' : '−'}${Math.abs(n)} worker-day${Math.abs(n) === 1 ? '' : 's'} not individually recorded (${days})`;
-}
 
 type FilterMode = 'day' | 'week';
 
@@ -173,12 +161,8 @@ export default function ExporterDailyWorkersPage() {
             String(row.totalPayout),
         ]);
 
-        if (data.agreedAdjustment && data.agreedAdjustment.extraWorkerDays !== 0) {
-            rows.push([adjustmentLabel(data.agreedAdjustment), '', '', '', '', '', '', '', String(data.agreedAdjustment.extraWorkerDays), '', String(data.agreedAdjustment.extraPayout)]);
-        }
-
         return [header, ...rows.map((r) => r.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(','))].join('\n');
-    }, [data.workers, data.agreedAdjustment]);
+    }, [data.workers]);
 
     const exportCsv = () => {
         if (data.workers.length === 0) return;
@@ -238,9 +222,6 @@ export default function ExporterDailyWorkersPage() {
                     row.sessionStatus,
                     formatMoney(row.totalPayout),
                 ]),
-                ...(data.agreedAdjustment && data.agreedAdjustment.extraWorkerDays !== 0
-                    ? [[adjustmentLabel(data.agreedAdjustment), '', '', '', '', '', '', formatMoney(data.agreedAdjustment.extraPayout)]]
-                    : []),
             ],
             theme: 'striped',
             headStyles: { fillColor: [6, 95, 70], fontSize: 8 },
@@ -454,16 +435,6 @@ export default function ExporterDailyWorkersPage() {
                                         </td>
                                     </tr>
                                 ))
-                            )}
-                            {!loading && data.agreedAdjustment && data.agreedAdjustment.extraWorkerDays !== 0 && (
-                                <tr className="bg-amber-50/70 dark:bg-amber-900/10">
-                                    <td colSpan={8} className="px-4 py-2.5 text-sm font-medium text-amber-800 dark:text-amber-300">
-                                        {adjustmentLabel(data.agreedAdjustment)}
-                                    </td>
-                                    <td className="px-4 py-2.5 text-sm text-right font-semibold text-amber-900 dark:text-amber-200">
-                                        {formatMoney(data.agreedAdjustment.extraPayout)}
-                                    </td>
-                                </tr>
                             )}
                         </tbody>
                     </table>

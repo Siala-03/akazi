@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { toMongo } from '@/lib/serialize';
 import { getSettings } from '@/lib/settings';
 import { logAudit } from '@/lib/audit';
+import { isSuperSupervisor, kigaliToday } from '@/lib/super-supervisor';
 
 export async function PUT(
     _request: NextRequest,
@@ -52,12 +53,20 @@ export async function PATCH(
 ) {
     try {
         const currentUser = await getCurrentUser();
-        if (!currentUser || currentUser.role !== 'admin') {
-            return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 401 });
+        if (!currentUser) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+        // Super supervisors may only switch the exporter of today's sessions; everything else is admin-only
+        const asSuperSupervisor = currentUser.role === 'supervisor' && await isSuperSupervisor(currentUser.userId);
+        if (currentUser.role !== 'admin' && !asSuperSupervisor) {
+            return NextResponse.json({ error: 'Unauthorized - Admin or super supervisor only' }, { status: 401 });
         }
 
         const { id } = await params;
         const body = await request.json();
+        if (asSuperSupervisor && body.date) {
+            return NextResponse.json({ error: 'Only admins can change the date of a session' }, { status: 403 });
+        }
         const exporterId: string | undefined = body.exporterId || undefined;
         const newDay: string | undefined = body.date || undefined;
         if (!exporterId && !newDay) {
@@ -73,6 +82,9 @@ export async function PATCH(
         });
         if (!existing) {
             return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+        }
+        if (asSuperSupervisor && dayKey(existing.date) !== kigaliToday()) {
+            return NextResponse.json({ error: "Super supervisors can only switch today's sessions" }, { status: 403 });
         }
         const switchExporter = !!exporterId && exporterId !== existing.exporterId;
         const moveDay = !!newDay && newDay !== dayKey(existing.date);

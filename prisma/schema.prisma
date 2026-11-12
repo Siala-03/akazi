@@ -22,6 +22,8 @@ model User {
   resetOtp              String?
   resetOtpExpiry        DateTime?
   isSuperAdmin           Boolean         @default(false)
+  // Granted by an admin: supervisor can see who is on site for every exporter and switch today's sessions
+  isSuperSupervisor      Boolean         @default(false)
   approvedAt             DateTime?
   approvedBy             String?
   createdAt             DateTime        @default(now())

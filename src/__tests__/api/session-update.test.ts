@@ -8,6 +8,7 @@ const mockPrisma = vi.hoisted(() => {
         attendance: { findFirst: vi.fn(), update: vi.fn(), create: vi.fn() },
         session: { findUnique: vi.fn(), update: vi.fn(), count: vi.fn() },
         exporter: { findUnique: vi.fn() },
+        user: { findUnique: vi.fn() },
         $transaction: vi.fn(),
     };
     p.$transaction.mockImplementation((fn: (tx: typeof p) => unknown) => fn(p));
@@ -118,5 +119,46 @@ describe('PATCH /api/sessions/[id] — change date', () => {
     it('rejects a no-op change', async () => {
         const res = await patch({ exporterId: 'exp-a', date: '2026-11-09' });
         expect(res.status).toBe(400);
+    });
+});
+
+describe('PATCH /api/sessions/[id] — super supervisor', () => {
+    const SUP = { userId: 'sup-1', email: 'sup@test.com', role: 'supervisor' as const };
+    const TODAY_SESSION = {
+        ...SESSION, status: 'active', endTime: null,
+        date: new Date('2026-11-11T06:00:00Z'), startTime: new Date('2026-11-11T06:00:00Z'),
+    };
+
+    beforeEach(() => {
+        mockGetCurrentUser.mockResolvedValue(SUP);
+        mockPrisma.session.findUnique.mockResolvedValue(TODAY_SESSION);
+        mockPrisma.exporter.findUnique.mockResolvedValue({ id: 'exp-b', dailyRate: null });
+    });
+
+    it('can switch the exporter of a session from today', async () => {
+        mockPrisma.user.findUnique.mockResolvedValue({ role: 'supervisor', isActive: true, isSuperSupervisor: true });
+        const res = await patch({ exporterId: 'exp-b' });
+        expect(res.status).toBe(200);
+        expect(mockPrisma.session.update.mock.calls[0][0].data.exporterId).toBe('exp-b');
+    });
+
+    it('is refused without super supervisor access', async () => {
+        mockPrisma.user.findUnique.mockResolvedValue({ role: 'supervisor', isActive: true, isSuperSupervisor: false });
+        const res = await patch({ exporterId: 'exp-b' });
+        expect(res.status).toBe(401);
+        expect(mockPrisma.session.update).not.toHaveBeenCalled();
+    });
+
+    it('cannot switch sessions from another day', async () => {
+        mockPrisma.user.findUnique.mockResolvedValue({ role: 'supervisor', isActive: true, isSuperSupervisor: true });
+        mockPrisma.session.findUnique.mockResolvedValue(SESSION);
+        const res = await patch({ exporterId: 'exp-b' });
+        expect(res.status).toBe(403);
+    });
+
+    it('cannot change dates', async () => {
+        mockPrisma.user.findUnique.mockResolvedValue({ role: 'supervisor', isActive: true, isSuperSupervisor: true });
+        const res = await patch({ date: '2026-11-10' });
+        expect(res.status).toBe(403);
     });
 });

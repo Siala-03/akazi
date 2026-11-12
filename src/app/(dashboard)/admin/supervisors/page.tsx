@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import {
     Shield, Plus, Search, RefreshCw, Power, PowerOff, X,
-    User, Phone, Mail, KeyRound, Trash2, AlertTriangle,
+    User, Phone, Mail, KeyRound, Trash2, AlertTriangle, ShieldCheck,
 } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import Pagination from '@/components/Pagination';
@@ -17,6 +17,7 @@ interface SupervisorUser {
     phone: string;
     role: string;
     isActive: boolean;
+    isSuperSupervisor?: boolean;
     createdAt: string;
 }
 
@@ -96,6 +97,26 @@ export default function AdminSupervisorsPage() {
             fetchSupervisors();
         } catch {
             toast.error('Failed to update status');
+        }
+    };
+
+    const handleToggleSuper = async (user: SupervisorUser) => {
+        const grant = !user.isSuperSupervisor;
+        if (!confirm(grant
+            ? `Give ${user.name} super supervisor access? They will see who is on site for every exporter and can switch today's sessions between exporters.`
+            : `Remove super supervisor access from ${user.name}?`)) return;
+        try {
+            const res = await fetch('/api/admin/create-user', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user._id, isSuperSupervisor: grant }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Update failed');
+            toast.success(grant ? `${user.name} is now a super supervisor` : `Super supervisor access removed from ${user.name}`);
+            fetchSupervisors();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to update access');
         }
     };
 
@@ -278,7 +299,14 @@ export default function AdminSupervisorsPage() {
                                                     {getInitials(sup.name)}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="font-semibold text-gray-900 dark:text-white text-sm leading-tight">{sup.name}</p>
+                                                    <p className="font-semibold text-gray-900 dark:text-white text-sm leading-tight flex items-center gap-1.5">
+                                                        {sup.name}
+                                                        {sup.isSuperSupervisor && (
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">
+                                                                <ShieldCheck className="w-3 h-3" /> Super
+                                                            </span>
+                                                        )}
+                                                    </p>
                                                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Added {new Date(sup.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                                                 </div>
                                             </div>
@@ -317,6 +345,13 @@ export default function AdminSupervisorsPage() {
                                         <td className="px-4 sm:px-6 py-4">
                                             <div className="flex items-center justify-end gap-1.5">
                                                 {isSuperAdmin && sup.isActive && <ViewAsButton userId={sup._id} name={sup.name} />}
+                                                <button
+                                                    onClick={() => handleToggleSuper(sup)}
+                                                    title={sup.isSuperSupervisor ? 'Remove super supervisor access' : 'Give super supervisor access (live on-site for all exporters + switch sessions)'}
+                                                    className={`p-1 transition-colors ${sup.isSuperSupervisor ? 'text-indigo-600 dark:text-indigo-400 hover:text-indigo-800' : 'text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
+                                                >
+                                                    <ShieldCheck className="w-4 h-4" strokeWidth={2.5} />
+                                                </button>
                                                 <button
                                                     onClick={() => handleResendCredentials(sup)}
                                                     title="Reset Password"

@@ -188,8 +188,8 @@ export async function GET(request: NextRequest) {
             })
             .sort((a, b) => a.workerName.localeCompare(b.workerName));
 
-        // Agreed totals (exporter/NAEB sign-off): workers counted in the agreed figure but not
-        // individually checked in are reported as one adjustment, never as named workers.
+        // Agreed totals (exporter/NAEB sign-off) are folded into the totals only; the
+        // exporter portal shows no separate agreed/recorded breakdown.
         const adj = await getAgreedAdjustments({
             from: rangeStart, to: rangeEnd, exporterId: currentUser.exporterId, defaultRate: exporterDailyRate,
         });
@@ -208,11 +208,6 @@ export async function GET(request: NextRequest) {
             exporterDailyRate,
             totals,
             workers,
-            agreedAdjustment: adj.adjustments.length > 0 ? {
-                extraWorkerDays: adj.extraSessions,
-                extraPayout: adj.extraCost,
-                days: adj.adjustments.map(a => ({ day: a.day, agreed: a.agreed, recorded: a.recorded, note: a.note })),
-            } : null,
         });
     } catch (error) {
         console.error('Exporter daily workers error:', error);

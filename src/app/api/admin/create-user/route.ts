@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getCurrentUser, hashPassword } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
 import { sendWelcomeEmail } from '@/lib/email';
 import crypto from 'crypto';
 
@@ -98,7 +99,7 @@ export async function GET(request: NextRequest) {
             select: {
                 id: true, email: true, name: true, phone: true, role: true,
                 profilePicture: true, exporterId: true, facilityId: true,
-                isActive: true, createdAt: true, updatedAt: true,
+                isActive: true, isSuperSupervisor: true, createdAt: true, updatedAt: true,
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -117,19 +118,40 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { userId, isActive } = await request.json();
-        if (!userId || typeof isActive !== 'boolean') {
-            return NextResponse.json({ error: 'userId and isActive are required' }, { status: 400 });
+        const { userId, isActive, isSuperSupervisor } = await request.json();
+        if (!userId || (typeof isActive !== 'boolean' && typeof isSuperSupervisor !== 'boolean')) {
+            return NextResponse.json({ error: 'userId and isActive or isSuperSupervisor are required' }, { status: 400 });
+        }
+
+        const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true, isActive: true, isSuperSupervisor: true } });
+        if (!target) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+        if (typeof isSuperSupervisor === 'boolean' && target.role !== 'supervisor') {
+            return NextResponse.json({ error: 'Only supervisors can be given super supervisor access' }, { status: 400 });
         }
 
         const user = await prisma.user.update({
             where: { id: userId },
-            data: { isActive },
+            data: {
+                ...(typeof isActive === 'boolean' && { isActive }),
+                ...(typeof isSuperSupervisor === 'boolean' && { isSuperSupervisor }),
+            },
             select: {
                 id: true, email: true, name: true, phone: true, role: true,
-                exporterId: true, facilityId: true, isActive: true, createdAt: true, updatedAt: true,
+                exporterId: true, facilityId: true, isActive: true, isSuperSupervisor: true, createdAt: true, updatedAt: true,
             },
         });
+
+        if (typeof isSuperSupervisor === 'boolean' && isSuperSupervisor !== target.isSuperSupervisor) {
+            await logAudit(request, {
+                userId: currentUser.userId,
+                action: isSuperSupervisor ? 'grant-super-supervisor' : 'revoke-super-supervisor',
+                entity: 'User',
+                entityId: userId,
+                changes: { before: { isSuperSupervisor: target.isSuperSupervisor }, after: { isSuperSupervisor } },
+            });
+        }
 
         return NextResponse.json({ user: { ...user, _id: user.id } });
     } catch (error) {
