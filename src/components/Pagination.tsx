@@ -49,7 +49,7 @@ export default function Pagination({
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
                     {totalItems === 0
                         ? `No ${itemLabel}`
-                        : <><span className="text-emerald-600 font-semibold">{from}–{to}</span> of <span className="font-semibold text-gray-900 dark:text-white">{totalItems}</span> {itemLabel}</>
+                        : <><span className="text-emerald-600 font-semibold">{from}-{to}</span> of <span className="font-semibold text-gray-900 dark:text-white">{totalItems}</span> {itemLabel}</>
                     }
                 </p>
                 <div className="flex items-center gap-2">

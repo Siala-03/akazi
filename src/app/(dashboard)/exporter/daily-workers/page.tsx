@@ -72,8 +72,13 @@ function weekRangeFromInput(weekValue: string) {
 }
 
 function formatTime(iso: string | null) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDate(iso: string | null) {
+    if (!iso) return '-';
+    return new Date(iso).toLocaleDateString('en-GB');
 }
 
 function formatMoney(value: number) {
@@ -199,8 +204,8 @@ export default function ExporterDailyWorkersPage() {
 
         autoTable(doc, {
             startY: y,
-            head: [['Workers', 'Total Bags', 'Total Payout']],
-            body: [[String(data.totals.workers), String(data.totals.totalBags), formatMoney(data.totals.totalPayout)]],
+            head: [['Workers', 'Total Bags']],
+            body: [[String(data.totals.workers), String(data.totals.totalBags)]],
             theme: 'grid',
             headStyles: { fillColor: [6, 95, 70], fontSize: 8, halign: 'center' },
             bodyStyles: { fontSize: 9, halign: 'center', fontStyle: 'bold' },
@@ -210,17 +215,18 @@ export default function ExporterDailyWorkersPage() {
 
         autoTable(doc, {
             startY: y,
-            head: [['Worker', 'ID', 'Phone', 'Check-in', 'Checkout', 'Method', 'Status', 'Payout']],
+            head: [['Date', 'Worker', 'ID', 'Phone', 'Check-in', 'Checkout', 'Method', 'Status']],
             body: [
                 ...data.workers.map((row) => [
+                    // Over a range a worker appears once: show their first day and how many days
+                    row.sessionCount > 1 ? `${formatDate(row.checkInTime)} (${row.sessionCount} days)` : formatDate(row.checkInTime),
                     row.workerName,
                     row.workerId,
-                    row.phone || '—',
+                    row.phone || '-',
                     formatTime(row.checkInTime),
                     formatTime(row.checkoutTime),
                     row.checkInMethod,
                     row.sessionStatus,
-                    formatMoney(row.totalPayout),
                 ]),
             ],
             theme: 'striped',
@@ -240,7 +246,7 @@ export default function ExporterDailyWorkersPage() {
                 <div className="mb-4">
                     <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Daily Workers</h1>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        Worker activity and payout summary — including check-in method for fraud verification.
+                        Worker activity and payout summary, including check-in method for fraud verification.
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Period: {formatRange(data.rangeStart, data.rangeEnd)}
@@ -346,7 +352,7 @@ export default function ExporterDailyWorkersPage() {
                         <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">QR Verified</p>
                         <QrCode className="w-4 h-4 text-teal-500" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : qrCount}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{loading ? '-' : qrCount}</p>
                     <p className="text-xs text-gray-400 mt-0.5">of {data.totals.workers} workers</p>
                 </div>
 
@@ -355,7 +361,7 @@ export default function ExporterDailyWorkersPage() {
                         <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Manual Entry</p>
                         <MousePointer className="w-4 h-4 text-amber-500" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : manualCount}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{loading ? '-' : manualCount}</p>
                     <p className="text-xs text-gray-400 mt-0.5">supervisor entered</p>
                 </div>
             </div>
@@ -404,7 +410,7 @@ export default function ExporterDailyWorkersPage() {
                                             <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{row.workerName}</span>
                                         </td>
                                         <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 font-mono">{row.workerId}</td>
-                                        <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300">{row.phone || '—'}</td>
+                                        <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300">{row.phone || '-'}</td>
                                         <td className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.checkInTime)}</td>
                                         <td className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.assignmentTime)}</td>
                                         <td className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{formatTime(row.checkoutTime)}</td>

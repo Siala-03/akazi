@@ -72,8 +72,8 @@ export default function NaebWorkersPage() {
             w.gender,
             w.phone,
             w.primaryRole,
-            w.cooperativeId?.name ?? '—',
-            w.dateOfBirth ? new Date(w.dateOfBirth).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
+            w.cooperativeId?.name ?? '-',
+            w.dateOfBirth ? new Date(w.dateOfBirth).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
             w.status,
             new Date(w.enrollmentDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         ]);
@@ -197,12 +197,12 @@ export default function NaebWorkersPage() {
                                             </div>
                                         </td>
                                         <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-400">
-                                            {worker.cooperativeId?.name ?? '—'}
+                                            {worker.cooperativeId?.name ?? '-'}
                                         </td>
                                         <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-400">
                                             {worker.dateOfBirth
                                                 ? new Date(worker.dateOfBirth).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-                                                : '—'}
+                                                : '-'}
                                         </td>
                                         <td className="px-5 py-3.5">
                                             {worker.status === 'active' ? (

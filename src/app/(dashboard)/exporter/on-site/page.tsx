@@ -96,7 +96,7 @@ export default function ExporterOnSitePage() {
                             <Users className="w-5 h-5 text-white" />
                             <h1 className="text-3xl font-bold text-white">Live On-Site View</h1>
                         </div>
-                        <p className="text-white/80 text-sm">Workers currently active at the warehouse — auto-refreshes every 30 seconds</p>
+                        <p className="text-white/80 text-sm">Workers currently active at the warehouse. Refreshes every 30 seconds.</p>
                         {lastRefreshed && (
                             <p className="text-white/60 text-xs mt-1">Last updated: {lastRefreshed.toLocaleTimeString()}</p>
                         )}
@@ -121,7 +121,7 @@ export default function ExporterOnSitePage() {
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total On-Site</p>
                         <Users className="w-4 h-4 text-emerald-600" />
                     </div>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.onSiteCount ?? 0)}</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '-' : (data?.onSiteCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">currently checked in</p>
                 </div>
 
@@ -130,7 +130,7 @@ export default function ExporterOnSitePage() {
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">QR Check-ins</p>
                         <QrCode className="w-4 h-4 text-teal-600" />
                     </div>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.qrCount ?? 0)}</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '-' : (data?.qrCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">verified by QR scan</p>
                 </div>
 
@@ -139,7 +139,7 @@ export default function ExporterOnSitePage() {
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Manual Check-ins</p>
                         <MousePointer className="w-4 h-4 text-amber-600" />
                     </div>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.manualCount ?? 0)}</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '-' : (data?.manualCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">entered by supervisor</p>
                 </div>
             </div>
@@ -196,7 +196,7 @@ export default function ExporterOnSitePage() {
                                                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{w.workerName}</span>
                                             </td>
                                             <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 font-mono">{w.workerId}</td>
-                                            <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300">{w.phone || '—'}</td>
+                                            <td className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300">{w.phone || '-'}</td>
                                             <td className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300">{formatTime(w.checkInTime)}</td>
                                             <td className="px-4 py-2.5">
                                                 <span className="inline-flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300">

@@ -56,7 +56,7 @@ export default function NaebLayout({ children }: { children: ReactNode }) {
                                 <div className="hidden sm:block">
                                     <span className="text-lg font-bold text-white tracking-wide">NAEB Portal</span>
                                     <div>
-                                        <span className="text-xs font-medium text-white/50">Akazi — Read-Only Access</span>
+                                        <span className="text-xs font-medium text-white/50">Akazi | Read-Only Access</span>
                                     </div>
                                 </div>
                             </div>

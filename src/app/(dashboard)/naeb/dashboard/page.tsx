@@ -122,7 +122,7 @@ export default function NaebDashboardPage() {
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">NAEB Overview</h1>
-                        <p className="text-white/80 text-base mt-1">Akazi — Coffee Sorting Workforce Summary</p>
+                        <p className="text-white/80 text-base mt-1">Akazi | Coffee Sorting Workforce Summary</p>
                         {lastUpdated && (
                             <p className="text-xs text-white/60 mt-1">Last updated: {lastUpdated.toLocaleTimeString()}</p>
                         )}
@@ -154,7 +154,7 @@ export default function NaebDashboardPage() {
                             </div>
                             <p className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">{card.label}</p>
                             <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100 truncate">
-                                {loading ? '—' : card.value}
+                                {loading ? '-' : card.value}
                             </p>
                             <p className={`mt-1 text-xs font-medium ${card.subColor}`}>{card.sub}</p>
                         </div>
@@ -174,7 +174,7 @@ export default function NaebDashboardPage() {
                             </div>
                             <p className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">{card.label}</p>
                             <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100 truncate">
-                                {loading ? '—' : card.value}
+                                {loading ? '-' : card.value}
                             </p>
                             <p className={`mt-1 text-xs font-medium ${card.subColor}`}>{card.sub}</p>
                         </div>
@@ -188,7 +188,7 @@ export default function NaebDashboardPage() {
                     <BarChart2 className="w-5 h-5 text-teal-600" />
                     <div>
                         <h3 className="text-base font-semibold text-gray-900 dark:text-white">Exporter Activity Breakdown</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">Frequency, workers, women, and amounts paid — all time</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Frequency, workers, women and amounts paid (all time)</p>
                     </div>
                 </div>
 

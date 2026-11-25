@@ -63,7 +63,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setTimeout(() => setPermSaved(false), 3000);
     } catch {
       setSupervisorCanEdit(!value);
-      setPermError('Failed to save — try again');
+      setPermError('Failed to save. Please try again.');
     } finally {
       setPermSaving(false);
     }

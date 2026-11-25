@@ -86,7 +86,7 @@ export default function NaebOnSitePage() {
                             <Users className="w-5 h-5 text-white" />
                             <h1 className="text-3xl font-bold text-white">Live On-Site View</h1>
                         </div>
-                        <p className="text-white/80 text-sm">Casual workers currently in the sorting warehouse — auto-refreshes every 30 seconds</p>
+                        <p className="text-white/80 text-sm">Casual workers currently in the sorting warehouse. Refreshes every 30 seconds.</p>
                         {lastRefreshed && (
                             <p className="text-white/60 text-xs mt-1">Last updated: {lastRefreshed.toLocaleTimeString()}</p>
                         )}
@@ -122,7 +122,7 @@ export default function NaebOnSitePage() {
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total On-Site</p>
                         <Users className="w-4 h-4 text-emerald-600" />
                     </div>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.onSiteCount ?? 0)}</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '-' : (data?.onSiteCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">workers currently in the warehouse</p>
                 </div>
 
@@ -131,7 +131,7 @@ export default function NaebOnSitePage() {
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">QR Check-ins</p>
                         <QrCode className="w-4 h-4 text-teal-600" />
                     </div>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.qrCount ?? 0)}</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '-' : (data?.qrCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">verified by QR scan</p>
                 </div>
 
@@ -140,7 +140,7 @@ export default function NaebOnSitePage() {
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Manual Check-ins</p>
                         <MousePointer className="w-4 h-4 text-amber-600" />
                     </div>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '—' : (data?.manualCount ?? 0)}</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? '-' : (data?.manualCount ?? 0)}</p>
                     <p className="text-xs text-gray-400 mt-1">entered by supervisor</p>
                 </div>
             </div>
@@ -202,7 +202,7 @@ export default function NaebOnSitePage() {
                                                 </td>
                                                 <td className="px-6 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">{e.count}</td>
                                                 <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">
-                                                    {totalOnSite > 0 ? `${Math.round((e.count / totalOnSite) * 100)}%` : '—'}
+                                                    {totalOnSite > 0 ? `${Math.round((e.count / totalOnSite) * 100)}%` : '-'}
                                                 </td>
                                             </tr>
                                         ))
@@ -214,7 +214,7 @@ export default function NaebOnSitePage() {
                             <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        Showing {(safeBreakdownPage - 1) * breakdownPageSize + 1}–{Math.min(safeBreakdownPage * breakdownPageSize, exporters.length)} of {exporters.length} exporters
+                                        Showing {(safeBreakdownPage - 1) * breakdownPageSize + 1}-{Math.min(safeBreakdownPage * breakdownPageSize, exporters.length)} of {exporters.length} exporters
                                     </p>
                                     <select
                                         value={breakdownPageSize}
