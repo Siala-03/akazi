@@ -81,7 +81,8 @@ export async function sendWelcomeEmail(
     role: string
 ): Promise<{ success: boolean; error?: string }> {
     const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
-    const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://akazi.umucyocooperative.com'}/login`;
+    // Always the public domain: the Vercel env value pointed at the .vercel.app address
+    const loginUrl = 'https://akazi.umucyocooperative.com/login';
 
     return sendEmail({
         to,
